@@ -6,32 +6,45 @@
 /*   By: dreijans <dreijans@student.codam.nl>         +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2024/09/23 16:02:20 by dreijans      #+#    #+#                 */
-/*   Updated: 2024/09/23 17:03:32 by dreijans      ########   odam.nl         */
+/*   Updated: 2024/09/24 16:49:47 by dreijans      ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "SimpleSocket.hpp"
 
-/**
- * why pass address,
- * what is sin_port
- * what is sin_family
- * what does htons do?
- * what does the sock entail?
-**/
-
 //Default constructor
 SimpleSocket::SimpleSocket(int domain, int service, int protocol, int port, u_long interface){
 	//define address structure
-	_address.sin_port = htons(port); //replace by setters?
-	_address.sin_family = domain; //replace by setters?
-	_address.sin_addr.s_addr = htonl(interface); //replace by setters?
+	set_port(port);
+	set_family(domain);
+	set_address(interface);
 	//establish socket
-	_sock = socket(domain, service, protocol); //replace by setters?
+	_sock = socket(domain, service, protocol);
 	testConnection(_sock);
 	//establish network connection
 	_connection = connectToNetwork(_sock, _address);//call bind or connect
 	testConnection(_connection);
+}
+
+//deconstructor
+SimpleSocket::~SimpleSocket() {
+	if (_sock > 0) {
+		close(_sock);
+		std::cout << "Socket closed in destructor." << std::endl;
+	}
+}
+
+//setter functions
+void SimpleSocket::set_port(int port) {
+	_address.sin_port = htons(port);
+}
+
+void SimpleSocket::set_family(int domain) {
+	_address.sin_family = domain;
+}
+
+void SimpleSocket::set_address(u_long interface) {
+	_address.sin_addr.s_addr = htonl(interface);
 }
 
 //test connection virtual function
@@ -55,4 +68,3 @@ int SimpleSocket::get_sock() {
 int SimpleSocket::get_connection() {
 	return _connection;
 }
-

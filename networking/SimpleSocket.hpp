@@ -6,7 +6,7 @@
 /*   By: dreijans <dreijans@student.codam.nl>         +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2024/09/23 16:00:32 by dreijans      #+#    #+#                 */
-/*   Updated: 2024/09/23 17:02:49 by dreijans      ########   odam.nl         */
+/*   Updated: 2024/09/24 16:49:29 by dreijans      ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,6 +15,7 @@
 #include "sys/socket.h"
 #include <netinet/in.h>
 #include <iostream>
+#include <unistd.h>  // for close()
 
 // int server_fd = socket(domain, type, protocol);
 // domain = type of IP address
@@ -31,14 +32,21 @@ class SimpleSocket {
 	public:
 		
 		SimpleSocket(int domain, int service, int protocol, int port, u_long interface);
-		SimpleSocket(const SimpleSocket &copy);
-		SimpleSocket& operator=(const SimpleSocket &copy);
+		SimpleSocket(const SimpleSocket &copy) = delete;
+		SimpleSocket& operator=(const SimpleSocket &copy) = delete;
 		~SimpleSocket();
 
 		//virtual fucntion to connect to a network
 		virtual int 		connectToNetwork(int sock, struct sockaddr_in address) = 0;
+		
 		//function to test sockets and connections
 		void 				testConnection(int); //maybe virtual function?
+		
+		//setter functions
+		void				set_port(int port);
+		void				set_family(int domain);
+		void				set_address(u_long interface);
+		
 		//getter functions
 		struct sockaddr_in 	get_address();
 		int 				get_sock();
