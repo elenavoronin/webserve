@@ -6,7 +6,7 @@
 /*   By: dreijans <dreijans@student.codam.nl>         +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2024/09/23 16:02:20 by dreijans      #+#    #+#                 */
-/*   Updated: 2024/09/24 16:49:47 by dreijans      ########   odam.nl         */
+/*   Updated: 2024/09/25 16:56:17 by dreijans      ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,9 +21,6 @@ SimpleSocket::SimpleSocket(int domain, int service, int protocol, int port, u_lo
 	//establish socket
 	_sock = socket(domain, service, protocol);
 	testConnection(_sock);
-	//establish network connection
-	_connection = connectToNetwork(_sock, _address);//call bind or connect
-	testConnection(_connection);
 }
 
 //deconstructor
@@ -45,6 +42,10 @@ void SimpleSocket::set_family(int domain) {
 
 void SimpleSocket::set_address(u_long interface) {
 	_address.sin_addr.s_addr = htonl(interface);
+}
+
+void SimpleSocket::set_connection(int connection) {
+	_connection = con;
 }
 
 //test connection virtual function

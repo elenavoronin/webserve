@@ -6,7 +6,7 @@
 /*   By: dreijans <dreijans@student.codam.nl>         +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2024/09/23 16:00:32 by dreijans      #+#    #+#                 */
-/*   Updated: 2024/09/24 16:49:29 by dreijans      ########   odam.nl         */
+/*   Updated: 2024/09/25 16:55:33 by dreijans      ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -46,6 +46,7 @@ class SimpleSocket {
 		void				set_port(int port);
 		void				set_family(int domain);
 		void				set_address(u_long interface);
+		void				set_connection(int connection);
 		
 		//getter functions
 		struct sockaddr_in 	get_address();

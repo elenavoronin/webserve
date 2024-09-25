@@ -6,7 +6,7 @@
 /*   By: dreijans <dreijans@student.codam.nl>         +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2024/09/25 15:51:47 by dreijans      #+#    #+#                 */
-/*   Updated: 2024/09/25 16:48:47 by dreijans      ########   odam.nl         */
+/*   Updated: 2024/09/25 16:58:50 by dreijans      ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,7 +14,9 @@
 
 //Constructor
 BindingSocket::BindingSocket(int domain, int service, int protocol, int port, u_long interface) : SimpleSocket(domain, service, protocol, port, interface) {
-	std::cout << "BindingSocket: Socket successfully bound." << std::endl;
+	//establish network connection
+	set_connection(connectToNetwork(get_sock(), get_address()));//call bind
+	testConnection(get_connection());
 }
 
 //Destructor
