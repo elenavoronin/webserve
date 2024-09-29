@@ -1,0 +1,36 @@
+body{
+	background-color: white;
+}
+h1{
+	color: black;
+}
+.top-img{
+	height: 200px;
+	background: #aaa;
+	padding: 30px;
+	text-align: center;
+}
+#navbar{
+	position:sticky;
+	top: 0;
+	overflow:hidden;
+	background-color: rgb(252, 176, 252);
+	text-align: center;
+}
+#navbar a{
+	float:left;
+	/* display: block; */
+	color: black;
+	text-align: center;
+	padding: 14px;
+
+}
+/* #navbar a.active {
+	background-color: #04AA6D;
+	color: white;
+  } */
+
+#navbar a:hover {
+background-color: #ddd;
+color: black;
+}
