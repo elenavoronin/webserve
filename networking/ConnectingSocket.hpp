@@ -1,17 +1,17 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        ::::::::            */
-/*   BindingSocket.hpp                                  :+:    :+:            */
+/*   ConnectingSocket.hpp                               :+:    :+:            */
 /*                                                     +:+                    */
 /*   By: dreijans <dreijans@student.codam.nl>         +#+                     */
 /*                                                   +#+                      */
-/*   Created: 2024/09/25 15:51:50 by dreijans      #+#    #+#                 */
-/*   Updated: 2024/09/29 17:02:55 by dreijans      ########   odam.nl         */
+/*   Created: 2024/09/29 16:52:14 by dreijans      #+#    #+#                 */
+/*   Updated: 2024/09/29 17:05:25 by dreijans      ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
 /**
- * This class implements a call to bind() function of 
+ * This class implements a call to connect() function of 
  * sockets as a definition of the connectToNetwork
  * virtual function form SimpleSocket
  */
@@ -21,20 +21,15 @@
 #include "SimpleSocket.hpp"
 #include <iostream>
 
-class BindingSocket : public SimpleSocket {
-
+class ConnectingSocket : public SimpleSocket {
 	private:
 
 	public:
-		//constructor
-		BindingSocket(int domain, int service, int protocol, int port, u_long interface);
-		BindingSocket(const SimpleSocket &copy) = delete;
-		BindingSocket& operator=(const SimpleSocket &copy) = delete;
-		//destructor
-		~BindingSocket();
+		ConnectingSocket(int domain, int service, int protocol, int port, u_long interface);
+		ConnectingSocket(const SimpleSocket &copy) = delete;
+		ConnectingSocket& operator=(const SimpleSocket &copy);
+		~ConnectingSocket();
 		
-		//virtual function from parent
 		int	connectToNetwork(int sock, struct sockaddr_in address) override;
-		int	testBind(int);
-	
+		int	testConnect(int);		
 };

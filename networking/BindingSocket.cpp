@@ -6,7 +6,7 @@
 /*   By: dreijans <dreijans@student.codam.nl>         +#+                     */
 /*                                                   +#+                      */
 /*   Created: 2024/09/25 15:51:47 by dreijans      #+#    #+#                 */
-/*   Updated: 2024/09/25 16:58:50 by dreijans      ########   odam.nl         */
+/*   Updated: 2024/09/29 17:07:55 by dreijans      ########   odam.nl         */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,7 +15,7 @@
 //Constructor
 BindingSocket::BindingSocket(int domain, int service, int protocol, int port, u_long interface) : SimpleSocket(domain, service, protocol, port, interface) {
 	//establish network connection
-	set_connection(connectToNetwork(get_sock(), get_address()));//call bind
+	set_connection(connectToNetwork(get_sock(), get_address()));
 	testConnection(get_connection());
 }
 
@@ -25,7 +25,7 @@ BindingSocket::~BindingSocket() {
     std::cout << "BindingSocket Destructor: Cleaning up resources." << std::endl;
 }
 
-//binding method
+//definition of connectToNetwork virtual funtion, binding
 int BindingSocket::connectToNetwork(int sock, struct sockaddr_in address) {
 	int bindResult = bind(sock, (struct sockaddr*)&address, sizeof(address));
 	testBind(bindResult);
