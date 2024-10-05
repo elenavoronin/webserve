@@ -1,4 +1,4 @@
-#include "Client.hpp"
+#include "../Client.hpp"
 #include "../Server.hpp"
 #include <iostream>     // for std::cout
 #include <vector>      // for std::vector
@@ -33,7 +33,22 @@ void Server::run() {
 
 
 int main() {
+	//for creating server here I need to get info from config: port, server_name.....
     Server server;
     server.run();
     return 0;
 }
+
+/*
+to test non blocking:
+
+# In terminal 1
+curl -X POST --data-binary "@large_file_1.txt" http://localhost:8080/endpoint
+
+# In terminal 2
+curl -X POST --data-binary "@large_file_2.txt" http://localhost:8080/endpoint
+
+# In terminal 3
+curl -X POST --data-binary "@large_file_3.txt" http://localhost:8080/endpoint
+
+*/
