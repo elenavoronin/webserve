@@ -13,9 +13,12 @@ const int PORT = 8080;
 
 // Function to handle CGI requests
 void handle_cgi_request(int client_socket, const std::string& path) {
-    // Example of running a simple CGI script (you can replace this with real logic)
     std::cout << "cgi here" << std::endl;
+    std::string cgi_path = "." + path;  // Assuming the cgi-bin folder is in the current directory
 
+    // fork here
+
+    // Example of running a simple CGI script (you can replace this with real logic)
     std::string cgi_response = "<html><body><h1>CGI Script Response</h1><p>This is output from your CGI script.</p></body></html>";
     
     std::string http_response = "HTTP/1.1 200 OK\r\n"

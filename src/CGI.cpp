@@ -10,5 +10,5 @@ CGI::~CGI(){
 }
 
 void::CGI::read_input(){
-
+	
 }

@@ -34,7 +34,7 @@ class CGI {
 		// Internal storage for input data (POST request body)
 		std::string 						_input_data;
 		// Internal method to decode URL-encoded strings
-		std::string urlDecode(const std::string& str);
+		std::string _urlDecode(const std::string& str);
 		
 	public:
 		CGI();
