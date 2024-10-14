@@ -6,7 +6,7 @@
 #include <sys/socket.h>
 #include <sstream>
 #include <fstream>
-#include "CGI.hpp"
+#include "../include/CGI.hpp"
 
 // Port to run the server on
 const int PORT = 8080;
@@ -14,6 +14,8 @@ const int PORT = 8080;
 // Function to handle CGI requests
 void handle_cgi_request(int client_socket, const std::string& path) {
     // Example of running a simple CGI script (you can replace this with real logic)
+    std::cout << "cgi here" << std::endl;
+
     std::string cgi_response = "<html><body><h1>CGI Script Response</h1><p>This is output from your CGI script.</p></body></html>";
     
     std::string http_response = "HTTP/1.1 200 OK\r\n"
@@ -30,6 +32,8 @@ void handle_cgi_request(int client_socket, const std::string& path) {
 void handle_non_cgi_request(int client_socket, const std::string& path) {
     // Simple example of serving an HTML file or a 404 page
     std::ifstream file("html" + path);  // Look for files in the htdocs folder
+
+    std::cout << "non cgi here" << std::endl;
 
     if (file.is_open()) {
         std::string content((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
