@@ -3,16 +3,17 @@
 #define Client_HPP
 #include "Server.hpp"
 
-class Client : public Server{
+class Client {
 	private:
-		Client();
-	
+		int clientSocket; //do I even need it?
 	public:
+		Client();
 		~Client();
 		Client& operator=(const Client& copy);
 		Client(const Client& copy);
-
-		// sendRespond();
+		void setSocket(int i);
+		int getSocket();
+		//sendRequest();
 };
 
 

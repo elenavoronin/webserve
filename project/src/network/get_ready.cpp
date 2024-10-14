@@ -1,4 +1,5 @@
 #include "../Server.hpp"
+#include "../Client.hpp"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -12,7 +13,6 @@
 #include <iostream>
 #include <vector>
 
-#define PORT "9034"
 #define BACKLOG 10
 
 int Server::get_listener_socket(){
@@ -28,7 +28,7 @@ int Server::get_listener_socket(){
 	hints.ai_family = AF_UNSPEC; // allows either IPv4 or IPv6.
 	hints.ai_socktype = SOCK_STREAM; // tells the system to use TCP
 	hints.ai_flags = AI_PASSIVE; //makes the program automatically fill in the IP 
-	if ((status = getaddrinfo(NULL, PORT, &hints, &servinfo)) != 0){
+	if ((status = getaddrinfo(NULL, this->port, &hints, &servinfo)) != 0){
 		std::cout << "Error get Address information" << std::endl;
 		return 1;
 	}

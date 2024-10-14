@@ -1,4 +1,5 @@
 #include "../Server.hpp"
+#include "../Client.hpp"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -12,14 +13,35 @@
 #include <iostream>
 #include <vector>
 
+void Server::addClient(std::vector<struct pollfd> &pfds, int clientSocket){
+	Client* newClient = new Client();
+	newClient->setSocket(clientSocket);
+	//	clients.push_back(newClient); //do I need it?
+	add_to_pfds(pfds, clientSocket);
+	std::cout << "Add client. ClientSocket: " << clientSocket << std::endl;
+}
+
+void Server::removeClient(std::vector<struct pollfd> pfds, int i, int clientSocket){
+	del_from_pfds(pfds, i);
+	// for (auto it = clients.begin(); it != clients.end(); ++it) {
+	// 	if (it->getSocket() == clientSocket) {
+	// 		clients.erase(it);
+	// 		break;
+	// 	}
+	// }
+	// close(clientSocket);
+}
+
 void Server::handle_new_connection(int listener, std::vector<struct pollfd> &pfds){
-    struct sockaddr_storage clientsAddr;
+	struct sockaddr_storage clientsAddr;
     socklen_t clientsAddrSize = sizeof(clientsAddr);
     int newfd = accept(listener, (struct sockaddr *)&clientsAddr, &clientsAddrSize);
     if (newfd == -1) {
         perror("accept");
     } else {
-        add_to_pfds(pfds, newfd);
+		addClient(pfds, newfd);
+		
+        //add_to_pfds(pfds, newfd);
         std::cout << "New connection. Newfd: " << newfd << std::endl;
     }
 }
@@ -52,7 +74,7 @@ int Server::sendall(int s, char *buf, int *len){
 }
 
 void Server::handle_client_data(std::vector<struct pollfd> &pfds, int i, int listener){
-	char buf[256] = {0};
+	char buf[1024] = {0}; //problemo for big requests
 	int received = recv(pfds[i].fd, buf, sizeof buf, 0);
 	std::cout << "Received bytes: " << received << std:: endl;
 	int sender_fd = pfds[i].fd;
@@ -63,8 +85,14 @@ void Server::handle_client_data(std::vector<struct pollfd> &pfds, int i, int lis
 			perror("recv");
 		}
 		close(sender_fd);
-		del_from_pfds(pfds, i);
+		// del_from_pfds(pfds, i);
+		removeClient(pfds, i, sender_fd);
 		}
-	else
-		broadcast_message(sender_fd, buf, received, pfds, listener);
+	else {
+		buf[received] = '\0';
+		std::string request(buf);
+		if (handleRequest(sender_fd, request) != 0)
+			broadcast_message(sender_fd, buf, received, pfds, listener);
+		del_from_pfds(pfds, i); //should it be here?
+	}
 }

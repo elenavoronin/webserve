@@ -2,9 +2,17 @@
 #ifndef SERVER_HPP
 #define SERVER_HPP
 #include <vector>
+#include <iostream>
+#include "Client.hpp"
+
+class Client; 
 
 class Server{
+	private:
+		const char* port;
+		std::string server_name;
 	public:
+		std::vector<Client> clients; //do i need it?
 		Server();
 		~Server();
 		Server& operator=(const Server& copy);
@@ -24,7 +32,9 @@ class Server{
 		void 	handle_client_data(std::vector<struct pollfd> &pfds, int i, int listener);
 		void 	broadcast_message(int sender_fd, char *buf, int received, std::vector<struct pollfd> &pfds, int listener);
 
-
+		void addClient(std::vector<struct pollfd> &pfds, int clientSocket);
+		void removeClient(std::vector<struct pollfd> pfds, int i, int clientSocket);
+		int handleRequest(int clientSocket, std::string request);
 
 
 };
