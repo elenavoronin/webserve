@@ -1,6 +1,6 @@
-#include "../Server.hpp"
-#include "../Client.hpp"
-#include "../HttpRequest.hpp"
+#include "../include/Server.hpp"
+#include "../include/Client.hpp"
+#include "../include/HttpRequest.hpp"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

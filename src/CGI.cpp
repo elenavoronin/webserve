@@ -9,3 +9,6 @@ CGI::~CGI(){
 	std::cout<< "CGI destructor called" << std::endl;
 }
 
+void::CGI::read_input(){
+
+}

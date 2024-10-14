@@ -1,6 +1,5 @@
+#pragma once
 
-#ifndef Client_HPP
-#define Client_HPP
 #include "Server.hpp"
 
 class Client {
@@ -15,9 +14,3 @@ class Client {
 		int getSocket();
 		//sendRequest();
 };
-
-
-
-
-
-#endif

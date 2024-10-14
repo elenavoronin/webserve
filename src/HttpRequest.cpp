@@ -1,4 +1,4 @@
-#include "HttpRequest.hpp"
+#include "./include/HttpRequest.hpp"
 
 HttpRequest::HttpRequest(std::string method, std::string path, std::string version){
 	this->method = method;

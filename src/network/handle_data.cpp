@@ -1,5 +1,5 @@
-#include "../Server.hpp"
-#include "../Client.hpp"
+#include "../include/Server.hpp"
+#include "../include/Client.hpp"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

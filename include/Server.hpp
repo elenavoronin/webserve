@@ -1,6 +1,5 @@
+#pragma once
 
-#ifndef SERVER_HPP
-#define SERVER_HPP
 #include <vector>
 #include <iostream>
 #include "Client.hpp"
@@ -36,7 +35,5 @@ class Server{
 		void removeClient(std::vector<struct pollfd> pfds, int i, int clientSocket);
 		int handleRequest(int clientSocket, std::string request);
 
-
+		void fork_and_handle_cgi(int client_socket, const std::string& cgi_script_path);
 };
-
-#endif

@@ -1,9 +1,7 @@
-#ifndef HTTPREQUEST_HPP
-#define HTTPREQUEST_HPP
+#pragma once
+
 #include <iostream>
-
 #include "Server.hpp"
-
 
 class HttpRequest {
 	private:
@@ -23,5 +21,3 @@ class HttpRequest {
 
 
 };
-
-#endif

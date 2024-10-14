@@ -1,5 +1,5 @@
-#include "../Client.hpp"
-#include "../Server.hpp"
+#include "../include/Client.hpp"
+#include "../include/Server.hpp"
 #include <iostream>     // for std::cout
 #include <vector>      // for std::vector
 #include <poll.h>      // for poll() and struct pollfd

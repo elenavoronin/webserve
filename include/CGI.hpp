@@ -2,11 +2,29 @@
 
 #include <iostream>
 #include <map>
+#include <string>
+#include <cstdlib> //for getenv
+#include <sstream> //for string stream manipulation
 
-// Reading environment variables like QUERY_STRING, REQUEST_METHOD, etc.
-// Reading input from standard input (useful for POST requests).
-// Generating HTTP headers (e.g., Content-Type, etc.).
-// Sending the response back to the client.
+/**
+ * urlDecode: 			This method decodes URL-encoded strings, 
+ * 						which is useful when processing query parameters 
+ * 						from a GET request or form data.
+ * read_input: 			This reads the input from stdin, 
+ * 						typically for POST requests.
+ * get_env: 			This retrieves environment variables 
+ * 						like QUERY_STRING, REQUEST_METHOD, etc., 
+ * 						that are made available by the web server.
+ * parse_query_string: 	This parses the QUERY_STRING into key-value pairs 
+ * 						and stores them in _query_params.
+ * get_query_param: 	This retrieves a specific query parameter's value 
+ * 						from the _query_params map.
+ * send_header: 		This sends HTTP headers back to the client.
+ * send_response: 		This constructs and sends a full HTTP response, 
+ * 						including status, headers, and body.
+ * output: 				This outputs the actual content to stdout, 
+ * 						which will be served to the client.
+ */
 
 class CGI {
 
