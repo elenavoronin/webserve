@@ -29,6 +29,14 @@
 class CGI {
 
 	private:
+		// Example: Storing key environment variables
+    	const char* _env_vars[5] = {
+        "REQUEST_METHOD=GET",
+        "QUERY_STRING=name=JohnDoe&age=30",
+        "CONTENT_TYPE=text/html",
+        "SCRIPT_NAME=/cgi-bin/hello.cgi",
+        nullptr  // Null-terminated array
+   		};
 		// Internal storage for CGI parameters (like parsed query strings)
 		std::map<std::string, std::string> 	_query_params;
 		// Internal storage for input data (POST request body)
@@ -54,5 +62,6 @@ class CGI {
 		void send_response(const std::string& status, const std::map<std::string, std::string>& headers, const std::string& body);
 		// Method to output HTML or other content
 		void output(const std::string& content);
-
+		// Method to run the CGI script with environment variables
+    	void execute_cgi();
 };
