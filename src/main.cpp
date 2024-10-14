@@ -17,6 +17,22 @@ void handle_cgi_request(int client_socket, const std::string& path) {
     std::string cgi_path = "." + path;  // Assuming the cgi-bin folder is in the current directory
 
     // fork here
+    int pipefd[2]; // 0 read end and 1 is write end
+    pipe(pipefd); //create pipe for interprocess comunnication
+    pid_t pid = fork();
+
+    if (pid == 0) {
+        //child process
+        std::cout << "This is the child process with PID: " << getpid() << std::endl;
+    }
+    else if (pid < 0) {
+        //parent process
+        std::cout << "This is the parent process. Child PID: " << pid << std::endl; 
+    }
+    else {
+        std::cerr << "Fork failed!" << std::endl;
+    }
+
 
     // Example of running a simple CGI script (you can replace this with real logic)
     std::string cgi_response = "<html><body><h1>CGI Script Response</h1><p>This is output from your CGI script.</p></body></html>";
