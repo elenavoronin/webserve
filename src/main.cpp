@@ -18,21 +18,29 @@ void handle_cgi_request(int client_socket, const std::string& path) {
 
     // fork here
     int pipefd[2]; // 0 read end and 1 is write end
-    pipe(pipefd); //create pipe for interprocess comunnication
+    pipe(pipefd); // create pipe for interprocess comunnication
     pid_t pid = fork();
 
-    if (pid == 0) {
-        //child process
-        std::cout << "This is the child process with PID: " << getpid() << std::endl;
+    if (pid == -1)
+        std::cerr << "Fork failed!" << std::endl;
+        close(client_socket);
+        return ;
     }
-    else if (pid < 0) {
-        //parent process
-        std::cout << "This is the parent process. Child PID: " << pid << std::endl; 
+    else if (pid == 0) {
+        //  child process
+        std::cout << "This is the child process with PID: " << getpid() << std::endl;
+        // set environment variable for CGI
+        // redirect the output to the client socket (stdout -> client)
+        // Execute the CGI script
+        // If execve fails
+
     }
     else {
-        std::cerr << "Fork failed!" << std::endl;
+        // parent process
+        std::cout << "This is the parent process. Child PID: " << pid << std::endl;
+        // wait for the child process to finish
+        // close sockets after child is done 
     }
-
 
     // Example of running a simple CGI script (you can replace this with real logic)
     std::string cgi_response = "<html><body><h1>CGI Script Response</h1><p>This is output from your CGI script.</p></body></html>";
