@@ -29,7 +29,7 @@ void handle_cgi_request(int client_socket, const std::string& path) {
 // Function to handle non-CGI requests
 void handle_non_cgi_request(int client_socket, const std::string& path) {
     // Simple example of serving an HTML file or a 404 page
-    std::ifstream file("htdocs" + path);  // Look for files in the htdocs folder
+    std::ifstream file("html" + path);  // Look for files in the htdocs folder
 
     if (file.is_open()) {
         std::string content((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
