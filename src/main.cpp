@@ -12,6 +12,8 @@
 #include <cstring>
 #include "../include/CGI.hpp"
 
+//test haha
+
 // Port to run the server on
 const int PORT = 8080;
 CGI cgi;
