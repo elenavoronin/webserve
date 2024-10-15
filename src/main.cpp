@@ -6,53 +6,69 @@
 #include <sys/socket.h>
 #include <sstream>
 #include <fstream>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <iostream>
+#include <cstring>
 #include "../include/CGI.hpp"
 
 // Port to run the server on
 const int PORT = 8080;
+CGI cgi;
 
 // Function to handle CGI requests
 void handle_cgi_request(int client_socket, const std::string& path) {
     std::cout << "cgi here" << std::endl;
-    std::string cgi_path = "." + path;  // Assuming the cgi-bin folder is in the current directory
 
-    // fork here
-    int pipefd[2]; // 0 read end and 1 is write end
+    // _path = "." + path;  // Assuming the cgi-bin folder is in the current directory
+
+    int pipefd[2];
     pipe(pipefd); // create pipe for interprocess comunnication
     pid_t pid = fork();
 
-    if (pid == -1)
+    if (pid == -1) {
         std::cerr << "Fork failed!" << std::endl;
         close(client_socket);
         return ;
     }
     else if (pid == 0) {
-        //  child process
         std::cout << "This is the child process with PID: " << getpid() << std::endl;
-        // set environment variable for CGI
-        // redirect the output to the client socket (stdout -> client)
-        // Execute the CGI script
-        // If execve fails
 
+        //child writes
+
+        // close(pipefd[READ]);
+        // dup2(pipefd[WRITE], STDOUT_FILENO);
+        // close(pipefd[WRITE]);
+        // choose environmental variable
+        dup2(client_socket, STDOUT_FILENO); // is this legal
+        close(client_socket);
+        cgi.execute_cgi();
     }
     else {
-        // parent process
         std::cout << "This is the parent process. Child PID: " << pid << std::endl;
+
+        //parent reads
+
         // wait for the child process to finish
-        // close sockets after child is done 
+        waitpid(pid, nullptr, 0);
+        // while (waitpid(pid, nullptr, 0))
+        //     //read from child pipe
+        
+        //parent writes to the client //send response to client
+        close(client_socket);
     }
 
     // Example of running a simple CGI script (you can replace this with real logic)
-    std::string cgi_response = "<html><body><h1>CGI Script Response</h1><p>This is output from your CGI script.</p></body></html>";
+    // std::string cgi_response = "<html><body><h1>CGI Script Response</h1><p>This is output from your CGI script.</p></body></html>";
     
-    std::string http_response = "HTTP/1.1 200 OK\r\n"
-                                "Content-Type: text/html\r\n"
-                                "Content-Length: " + std::to_string(cgi_response.length()) + "\r\n"
-                                "Connection: close\r\n"
-                                "\r\n" +
-                                cgi_response;
+    // std::string http_response = "HTTP/1.1 200 OK\r\n"
+    //                             "Content-Type: text/html\r\n"
+    //                             "Content-Length: " + std::to_string(cgi_response.length()) + "\r\n"
+    //                             "Connection: close\r\n"
+    //                             "\r\n" +
+    //                             cgi_response;
 
-    send(client_socket, http_response.c_str(), http_response.size(), 0);
+    // send(client_socket, http_response.c_str(), http_response.size(), 0);
 }
 
 // Function to handle non-CGI requests

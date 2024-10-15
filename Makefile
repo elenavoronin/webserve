@@ -7,7 +7,8 @@ CC			= c++
 # CPPFLAGS	= -Wall -Wextra -Werror -std=c++11 -g -fsanitize=address -I $(HEADERDIR)
 
 #sources
-SRC 		= 	./src/main.cpp	
+SRC 		= 	./src/main.cpp	\
+				./src/CGI.cpp		
 TESTSRC		= 	./tests/test_cgi.cpp  # Test source file	
 				
 #object files
@@ -19,7 +20,7 @@ OBJTESTDIR 	= obj_test
 OBJTEST 	= $(addprefix $(OBJTESTDIR)/, $(notdir $(TESTSRC:.cpp=.o)))
 
 # Header files
-HEADERDIR	= ./include
+HEADERDIR	= ./include	
 
 #colours
 DONE		:= \033[0m
@@ -42,7 +43,7 @@ $(NAME): $(OBJ)
 
 $(OBJDIR)/%.o: ./src/%.cpp
 	@ mkdir -p $(OBJDIR)
-	$(CC) $(CPPFLAGS) -c -o $@ $^
+	$(CC) $(CPPFLAGS) -c -I $(HEADERDIR) -o $@ $^
 
 # Compile object files for the tests
 $(OBJTESTDIR)/%.o: ./tests/%.cpp

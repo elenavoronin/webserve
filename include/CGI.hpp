@@ -5,6 +5,10 @@
 #include <string>
 #include <cstdlib> //for getenv
 #include <sstream> //for string stream manipulation
+#include <unistd.h>
+
+# define READ 0
+# define WRITE 1
 
 /**
  * urlDecode: 			This method decodes URL-encoded strings, 
@@ -29,18 +33,19 @@
 class CGI {
 
 	private:
-		// Example: Storing key environment variables
+		// Example: Storing key environment variables //should I make this const?
     	const char* _env_vars[5] = {
         "REQUEST_METHOD=GET",
-        "QUERY_STRING=name=JohnDoe&age=30",
+        "QUERY_STRING=name=Djoyke&age=33",
         "CONTENT_TYPE=text/html",
-        "SCRIPT_NAME=/cgi-bin/hello.cgi",
+        "SCRIPT_NAME=/cgi-bin/hello.py",
         nullptr  // Null-terminated array
    		};
 		// Internal storage for CGI parameters (like parsed query strings)
 		std::map<std::string, std::string> 	_query_params;
 		// Internal storage for input data (POST request body)
 		std::string 						_input_data;
+		std::string							_path;
 		// Internal method to decode URL-encoded strings
 		std::string _urlDecode(const std::string& str);
 		
@@ -64,4 +69,5 @@ class CGI {
 		void output(const std::string& content);
 		// Method to run the CGI script with environment variables
     	void execute_cgi();
+
 };
