@@ -1,8 +1,10 @@
 #pragma once
 
 class Server;
-class Client;
+// class Client;
 
+#include <sstream>
+#include <fstream>
 #include <vector>
 #include <iostream>
 
@@ -14,4 +16,8 @@ class Config {
         Config();
         ~Config();
         int check_config(const std::string &config_file);
+		std::vector<std::string> tokenize(const std::string &line);
+		bool isFileEmpty(const std::string& fileName);
+		std::vector<Server> parse_config(std::ifstream &file);
+		void print_servers() const;
 };

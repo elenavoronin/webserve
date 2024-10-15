@@ -1,6 +1,5 @@
 #include "../include/Config.hpp"
 #include "../include/Server.hpp"
-#include "../include/Client.hpp"
 #include <sstream>
 #include <fstream>
 #include <vector>
@@ -15,7 +14,7 @@ Config::~Config() {
     // std::cout << "Config destructor called" << std::endl;
 }
 
-std::vector<std::string> tokenize(const std::string &line) {
+std::vector<std::string> Config::tokenize(const std::string &line) {
     std::vector<std::string> tokens;
     std::stringstream ss(line);
     std::string token;
@@ -27,12 +26,12 @@ std::vector<std::string> tokenize(const std::string &line) {
 
 
 
-bool isFileEmpty(const std::string& fileName) {
+bool Config::isFileEmpty(const std::string& fileName) {
     std::ifstream file(fileName, std::ios::binary | std::ios::ate);
     return file.tellg() == 0;
 }
 
-std::vector<Server> parse_config(std::ifstream &file) {
+std::vector<Server> Config::parse_config(std::ifstream &file) {
     std::vector<Server> servers;
     Server current_server;
     std::string line;
@@ -91,17 +90,17 @@ int Config::check_config(const std::string &config_file) {
     return 0;
 }
 
-
+void Config::print_servers() const {
+    for (std::vector<Server>::const_iterator it = _servers.begin(); it != _servers.end(); ++it) {
+        it->print_info();
+        std::cout << "---------------------------" << std::endl;
+    }
+}
 int main() {
     Config config;
 
-    // Assuming you have a config file "server_config.txt"
-    config.check_config("server_config.txt");
-
-    // Print server information
-    for (const auto& server: config._servers) {
-        server.print_info();
-        std::cout << "---------------------------" << std::endl;
+    if (config.check_config("../configs/default.conf") == 0) {
+        config.print_servers();
     }
 
     return 0;

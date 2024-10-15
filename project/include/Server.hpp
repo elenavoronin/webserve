@@ -1,9 +1,9 @@
-
-#ifndef SERVER_HPP
-#define SERVER_HPP
+#pragma once
 #include <vector>
 #include <iostream>
-#include "Client.hpp"
+// #include "Client.hpp"
+#include <sstream>
+#include <fstream>
 
 class Client; 
 
@@ -53,17 +53,16 @@ class Server{
 
 	    //for debugging only
 
-        void print_info() {
+        void print_info() const {
         std::cout << "Server Name: " << _server_name << std::endl;
         std::cout << "Port: " << (_port ? _port : "None") << std::endl;
         std::cout << "Root: " << _root << std::endl;
         std::cout << "Allowed Methods: ";
-        for (const auto& method : _allowed_methods) {
-            std::cout << method << " ";
-        }
+       for (std::vector<std::string>::const_iterator it = _allowed_methods.begin(); it != _allowed_methods.end(); ++it) {
+    			std::cout << *it << " ";
+        	}
         std::cout << std::endl;
+		}
     
 
 };
-
-#endif
