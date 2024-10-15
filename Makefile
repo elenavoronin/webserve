@@ -7,17 +7,23 @@ CC			= c++
 # CPPFLAGS	= -Wall -Wextra -Werror -std=c++11 -g -fsanitize=address -I $(HEADERDIR)
 
 #sources
-SRC 		= 	./src/main.cpp	\
-				./src/CGI.cpp		
+SRC 		= 	./src/network/get_ready.cpp			\
+				./src/network/handle_data.cpp		\
+				./src/network/request.cpp			\
+				./src/network/run_network.cpp		\
+				./src/CGI.cpp						\
+				./src/Client.cpp					\
+				./src/HttpRequest.cpp 				\
+				./src/Server.cpp			
 TESTSRC		= 	./tests/test_cgi.cpp  # Test source file	
 				
 #object files
 OBJDIR 		= obj
-OBJ			= $(addprefix $(OBJDIR)/, $(notdir $(SRC:.cpp=.o)))
+OBJ			= $(SRC:./src/%.cpp=$(OBJDIR)/%.o)
 
 # Test object files
 OBJTESTDIR 	= obj_test
-OBJTEST 	= $(addprefix $(OBJTESTDIR)/, $(notdir $(TESTSRC:.cpp=.o)))
+OBJTEST 	=  $(TESTSRC:./tests/%.cpp=$(OBJTESTDIR)/%.o)
 
 # Header files
 HEADERDIR	= ./include	
@@ -42,12 +48,12 @@ $(NAME): $(OBJ)
 	@ echo "${PURPLE}webserv made!${DONE}"
 
 $(OBJDIR)/%.o: ./src/%.cpp
-	@ mkdir -p $(OBJDIR)
+	@ mkdir -p $(dir $@)
 	$(CC) $(CPPFLAGS) -c -I $(HEADERDIR) -o $@ $^
 
 # Compile object files for the tests
 $(OBJTESTDIR)/%.o: ./tests/%.cpp
-	@ mkdir -p $(OBJTESTDIR)
+	@ mkdir -p $(dir $@)
 	$(CC) $(CPPFLAGS) -c -o $@ $^
 
 # Test target: compile and run the tests

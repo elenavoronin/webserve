@@ -71,109 +71,109 @@ void handle_cgi_request(int client_socket, const std::string& path) {
     // send(client_socket, http_response.c_str(), http_response.size(), 0);
 }
 
-// Function to handle non-CGI requests
-void handle_non_cgi_request(int client_socket, const std::string& path) {
-    // Simple example of serving an HTML file or a 404 page
-    std::ifstream file("html" + path);  // Look for files in the htdocs folder
+// // Function to handle non-CGI requests
+// void handle_non_cgi_request(int client_socket, const std::string& path) {
+//     // Simple example of serving an HTML file or a 404 page
+//     std::ifstream file("html" + path);  // Look for files in the htdocs folder
 
-    std::cout << "non cgi here" << std::endl;
+//     std::cout << "non cgi here" << std::endl;
 
-    if (file.is_open()) {
-        std::string content((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+//     if (file.is_open()) {
+//         std::string content((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
         
-        std::string http_response = "HTTP/1.1 200 OK\r\n"
-                                    "Content-Type: text/html\r\n"
-                                    "Content-Length: " + std::to_string(content.length()) + "\r\n"
-                                    "Connection: close\r\n"
-                                    "\r\n" + content;
+//         std::string http_response = "HTTP/1.1 200 OK\r\n"
+//                                     "Content-Type: text/html\r\n"
+//                                     "Content-Length: " + std::to_string(content.length()) + "\r\n"
+//                                     "Connection: close\r\n"
+//                                     "\r\n" + content;
                                     
-        send(client_socket, http_response.c_str(), http_response.size(), 0);
-    } else {
-        std::string not_found = "<html><body><h1>404 Not Found</h1></body></html>";
-        std::string http_response = "HTTP/1.1 404 Not Found\r\n"
-                                    "Content-Type: text/html\r\n"
-                                    "Content-Length: " + std::to_string(not_found.length()) + "\r\n"
-                                    "Connection: close\r\n"
-                                    "\r\n" + not_found;
-        send(client_socket, http_response.c_str(), http_response.size(), 0);
-    }
-}
+//         send(client_socket, http_response.c_str(), http_response.size(), 0);
+//     } else {
+//         std::string not_found = "<html><body><h1>404 Not Found</h1></body></html>";
+//         std::string http_response = "HTTP/1.1 404 Not Found\r\n"
+//                                     "Content-Type: text/html\r\n"
+//                                     "Content-Length: " + std::to_string(not_found.length()) + "\r\n"
+//                                     "Connection: close\r\n"
+//                                     "\r\n" + not_found;
+//         send(client_socket, http_response.c_str(), http_response.size(), 0);
+//     }
+// }
 
-// Function to handle client requests
-void handle_client(int client_socket) {
-    char buffer[1024] = {0};
-    int read_size = read(client_socket, buffer, 1024);
+// // Function to handle client requests
+// void handle_client(int client_socket) {
+//     char buffer[1024] = {0};
+//     int read_size = read(client_socket, buffer, 1024);
     
-    if (read_size > 0) {
-        // Parse the HTTP request
-        std::istringstream request_stream(buffer);
-        std::string request_line;
-        std::getline(request_stream, request_line);
+//     if (read_size > 0) {
+//         // Parse the HTTP request
+//         std::istringstream request_stream(buffer);
+//         std::string request_line;
+//         std::getline(request_stream, request_line);
 
-        // Simple HTTP request parsing
-        std::istringstream line_stream(request_line);
-        std::string method, path, http_version;
-        line_stream >> method >> path >> http_version;
+//         // Simple HTTP request parsing
+//         std::istringstream line_stream(request_line);
+//         std::string method, path, http_version;
+//         line_stream >> method >> path >> http_version;
 
-        std::cout << "Received request: " << method << " " << path << " " << http_version << std::endl;
+//         std::cout << "Received request: " << method << " " << path << " " << http_version << std::endl;
 
-        // Check if the request is for a CGI script
-        if (path.rfind("/cgi-bin/", 0) == 0) {  // Path starts with "/cgi-bin/"
-            handle_cgi_request(client_socket, path);
-        } else {
-            handle_non_cgi_request(client_socket, path);
-        }
-    }
+//         // Check if the request is for a CGI script
+//         if (path.rfind("/cgi-bin/", 0) == 0) {  // Path starts with "/cgi-bin/"
+//             handle_cgi_request(client_socket, path);
+//         } else {
+//             handle_non_cgi_request(client_socket, path);
+//         }
+//     }
 
-    close(client_socket);
-}
+//     close(client_socket);
+// }
 
-// Main server loop
-int main() {
-    int server_fd, client_socket;
-    struct sockaddr_in address;
-    int addrlen = sizeof(address);
+// // Main server loop
+// int main() {
+//     int server_fd, client_socket;
+//     struct sockaddr_in address;
+//     int addrlen = sizeof(address);
 
-    // Create a socket
-    if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0) {
-        perror("Socket failed");
-        exit(EXIT_FAILURE);
-    }
+//     // Create a socket
+//     if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0) {
+//         perror("Socket failed");
+//         exit(EXIT_FAILURE);
+//     }
 
-    // Set socket options
-    int opt = 1;
-    if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt))) {
-        perror("Setsockopt failed");
-        exit(EXIT_FAILURE);
-    }
+//     // Set socket options
+//     int opt = 1;
+//     if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt))) {
+//         perror("Setsockopt failed");
+//         exit(EXIT_FAILURE);
+//     }
 
-    // Bind the socket to the port
-    address.sin_family = AF_INET;
-    address.sin_addr.s_addr = INADDR_ANY;
-    address.sin_port = htons(PORT);
-    if (bind(server_fd, (struct sockaddr*)&address, sizeof(address)) < 0) {
-        perror("Bind failed");
-        exit(EXIT_FAILURE);
-    }
+//     // Bind the socket to the port
+//     address.sin_family = AF_INET;
+//     address.sin_addr.s_addr = INADDR_ANY;
+//     address.sin_port = htons(PORT);
+//     if (bind(server_fd, (struct sockaddr*)&address, sizeof(address)) < 0) {
+//         perror("Bind failed");
+//         exit(EXIT_FAILURE);
+//     }
 
-    // Listen for incoming connections
-    if (listen(server_fd, 10) < 0) {
-        perror("Listen failed");
-        exit(EXIT_FAILURE);
-    }
+//     // Listen for incoming connections
+//     if (listen(server_fd, 10) < 0) {
+//         perror("Listen failed");
+//         exit(EXIT_FAILURE);
+//     }
 
-    std::cout << "Server is listening on port " << PORT << "..." << std::endl;
+//     std::cout << "Server is listening on port " << PORT << "..." << std::endl;
 
-    // Main loop: accept and handle client connections
-    while (true) {
-        if ((client_socket = accept(server_fd, (struct sockaddr*)&address, (socklen_t*)&addrlen)) < 0) {
-            perror("Accept failed");
-            exit(EXIT_FAILURE);
-        }
+//     // Main loop: accept and handle client connections
+//     while (true) {
+//         if ((client_socket = accept(server_fd, (struct sockaddr*)&address, (socklen_t*)&addrlen)) < 0) {
+//             perror("Accept failed");
+//             exit(EXIT_FAILURE);
+//         }
 
-        // Handle the client request in a new thread
-        std::thread(handle_client, client_socket).detach();
-    }
+//         // Handle the client request in a new thread
+//         std::thread(handle_client, client_socket).detach();
+//     }
 
-    return 0;
-}
+//     return 0;
+// }

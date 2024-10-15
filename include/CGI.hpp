@@ -6,6 +6,7 @@
 #include <cstdlib> //for getenv
 #include <sstream> //for string stream manipulation
 #include <unistd.h>
+#include <sys/wait.h>
 
 # define READ 0
 # define WRITE 1
@@ -69,5 +70,7 @@ class CGI {
 		void output(const std::string& content);
 		// Method to run the CGI script with environment variables
     	void execute_cgi();
+
+		void handle_cgi_request(int client_socket, const std::string& path, CGI cgi);
 
 };

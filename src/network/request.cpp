@@ -1,6 +1,7 @@
 #include "../include/Server.hpp"
 #include "../include/Client.hpp"
 #include "../include/HttpRequest.hpp"
+#include "../include/CGI.hpp"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -64,6 +65,7 @@ Host: localhost
 add 2 empty lines*/
 
 int checkErrors(std::string method, std::string version){
+	std::cout << "ERROR CHECK";
 	if (method != "GET" && method != "POST" && method != "DELETE")
 		return 405;
 	if (version != "HTTP/1.1")
@@ -71,11 +73,12 @@ int checkErrors(std::string method, std::string version){
 }
 
 int Server::handleRequest(int clientSocket, std::string request){
+
 	std::istringstream request_stream(request);
 	std::string method, path, version, host; //?
 
 	request_stream >> method >> path >> version; //parse header
-	std::cout << "Request: " << method << " " << path << "host " << host << std::endl;
+	std::cout << "Request: " << method << " " << path << std::endl;
 	std::cout << "Host: " << host << std::endl;
 	HttpRequest(method, path, version);
 	int status = checkErrors(method, version);
@@ -83,7 +86,12 @@ int Server::handleRequest(int clientSocket, std::string request){
 		std::string filepath = "www" + path;
 		if (path == "/")
 			filepath = "www/index.html";
+		std::cout << "ERROR CHECK - 2";		
 		serveFile(clientSocket, filepath, status);
+		if (path.rfind("/cgi-bin/", 0) == 0) {// Path starts with "/cgi-bin/" 
+			CGI cgi;
+			cgi.handle_cgi_request(clientSocket, path, cgi);
+		}
 		return 0;
 	}
 	else if (method == "POST"){
@@ -92,10 +100,7 @@ int Server::handleRequest(int clientSocket, std::string request){
 	else if (method == "DELETE"){
 		return 0;
 	}
-	else if (request_url.starts_with("/cgi-bin/")) {
-    	execute_cgi_program(request_url);
-	}
 	else
 		return 1;
-		//parse header and body
+		// parse header and body
 }
