@@ -31,11 +31,14 @@
  * 						which will be served to the client.
  */
 
+
+//Change to camelCase!
+
 class CGI {
 
 	private:
 		// Example: Storing key environment variables //should I make this const?
-    	const char* _env_vars[5] = {
+    	const char* 						_env_vars[5] = {
         "REQUEST_METHOD=GET",
         "QUERY_STRING=name=Djoyke&age=33",
         "CONTENT_TYPE=text/html",
@@ -47,6 +50,9 @@ class CGI {
 		// Internal storage for input data (POST request body)
 		std::string 						_input_data;
 		std::string							_path;
+		pid_t								_pid;
+		int									_responsePipe[2];
+		int									_requestPipe[2];
 		// Internal method to decode URL-encoded strings
 		std::string _urlDecode(const std::string& str);
 		
