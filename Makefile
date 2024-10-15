@@ -4,13 +4,13 @@ TESTNAME 	= test_cgi  # Name of the test executable
 
 #compiler + flags
 CC			= c++
-# CPPFLAGS	= -Wall -Wextra -Werror -std=c++11 -g -fsanitize=address -I $(HEADERDIR)
+CPPFLAGS	= -std=c++11 -g -fsanitize=address -I $(HEADERDIR)
 
 #sources
-SRC 		= 	./src/network/get_ready.cpp			\
-				./src/network/handle_data.cpp		\
-				./src/network/request.cpp			\
-				./src/network/run_network.cpp		\
+SRC 		= 	./src/get_ready.cpp			\
+				./src/handle_data.cpp		\
+				./src/request.cpp			\
+				./src/run_network.cpp		\
 				./src/CGI.cpp						\
 				./src/Client.cpp					\
 				./src/HttpRequest.cpp 				\
@@ -39,12 +39,11 @@ CYAN		:= \033[1;96m
 WHITE		:= \033[1;97m
 BLACK		:= \033[1;90m
 
-# $(CC) $(CPPFLAGS) $(OBJ) -o $(NAME)
 #targets
 all:	$(NAME)
 
 $(NAME): $(OBJ)
-	$(CC) $(OBJ) -o $(NAME)
+	$(CC) $(CPPFLAGS) $(OBJ) -o $(NAME)
 	@ echo "${PURPLE}webserv made!${DONE}"
 
 $(OBJDIR)/%.o: ./src/%.cpp

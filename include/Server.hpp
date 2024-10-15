@@ -34,7 +34,4 @@ class Server{
 		void addClient(std::vector<struct pollfd> &pfds, int clientSocket);
 		void removeClient(std::vector<struct pollfd> pfds, int i, int clientSocket);
 		int handleRequest(int clientSocket, std::string request);
-
-		//request for server
-		void fork_and_handle_cgi(int client_socket, const std::string& cgi_script_path);
 };

@@ -64,13 +64,36 @@ Host: localhost
 
 add 2 empty lines*/
 
-int checkErrors(std::string method, std::string version){
-	std::cout << "ERROR CHECK";
-	if (method != "GET" && method != "POST" && method != "DELETE")
-		return 405;
-	if (version != "HTTP/1.1")
-		return 400;
+// int checkErrors(std::string method, std::string version){
+// 	std::cout << "ERROR CHECK";
+// 	if (method != "GET" && method != "POST" && method != "DELETE")
+// 		return 405;
+// 	if (version != "HTTP/1.1")
+// 		return 400;
+	
+// }
+
+int checkErrors(std::string method, std::string version) {
+    std::cout << "Checking for errors. Method: " << method << ", Version: " << version << std::endl;
+
+    if (method != "GET" && method != "POST" && method != "DELETE") {
+        std::cerr << "Error: Invalid method." << std::endl;
+        return 405;
+    }
+
+    if (version.empty()) {
+        std::cerr << "Error: Version is empty or invalid!" << std::endl;
+        return 400;
+    }
+
+    if (version != "HTTP/1.1") {
+        std::cerr << "Error: Invalid HTTP version." << std::endl;
+        return 400;
+    }
+
+    return 200;
 }
+
 
 int Server::handleRequest(int clientSocket, std::string request){
 
@@ -85,7 +108,7 @@ int Server::handleRequest(int clientSocket, std::string request){
 	if (method == "GET"){
 		std::string filepath = "www" + path;
 		if (path == "/")
-			filepath = "www/index.html";
+			filepath = "www/html/index.html";
 		std::cout << "ERROR CHECK - 2";		
 		serveFile(clientSocket, filepath, status);
 		if (path.rfind("/cgi-bin/", 0) == 0) {// Path starts with "/cgi-bin/" 

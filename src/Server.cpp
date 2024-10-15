@@ -1,8 +1,8 @@
 #include "../include/Server.hpp"
 
 Server::Server(){
-	this->port = "9034";
-    // this->port = "8080";
+	// this->port = "9034";
+    this->port = "8080";
 	this->server_name = "localhost"; //should be array of names
 }
 
