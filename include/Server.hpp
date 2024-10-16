@@ -58,8 +58,8 @@ class Server{
         void set_default_file(const std::string &default_file) { _default_file = default_file; }
 
 		//getter
-		std::string getCgipass() { return _cgi_pass; }
-		std::string getCgipath() { return _cgi_path; }
+		std::string getCgiPass() { return _cgi_pass; }
+		std::string getCgiPath() { return _cgi_path; }
 
 	    //for debugging only
 
