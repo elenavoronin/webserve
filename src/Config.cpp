@@ -1,6 +1,5 @@
 #include "../include/Config.hpp"
 #include "../include/Server.hpp"
-#include "../include/Client.hpp"
 #include <sstream>
 #include <fstream>
 #include <vector>
@@ -60,40 +59,62 @@ std::vector<Server> Config::parse_config(std::ifstream &file) {
     std::vector<Server> servers;
     Server current_server;
     std::string line;
+    bool inside_server_block = false;
+    // bool inside_location_block = false;
 
     while (std::getline(file, line)) {
-        if (!line.empty()) {
-            std::vector<std::string> tokens = tokenize(line);
+        std::vector<std::string> tokens = tokenize(line);
+        
+        if (tokens.empty()) continue;
+
+        if (tokens[0] == "server" && tokens[1] == "{") {
+            inside_server_block = true;
+            continue;
+        }
+
+        // if (inside_server_block && tokens[0] == "location" && tokens[2] == "{") {
+        //     inside_location_block = true;
+        //     // Handle the start of a location block
+        //     // current_server.set_location(tokens[1]); // tokens[1] is the location path
+        //     continue;
+        // }
+
+        // if (inside_location_block && tokens[0] == "}") {
+        //     inside_location_block = false;
+        //     continue;
+        // }
+
+        if (inside_server_block && tokens[0] == "}") {
+            inside_server_block = false;
+            servers.push_back(current_server);
+            current_server = Server(); // Reset for next server block
+            continue;
+        }
+
+        // Now handle key-value pairs inside blocks
+        if (inside_server_block) {
             if (tokens.size() >= 2) {
-                // Mapping tokens to Server class attributes
                 std::string key = tokens[0];
                 std::string value = tokens[1];
 
-                if (key == "server_name") {
-                    current_server.set_server_name(value);
-                } else if (key == "port") {
-                    current_server.set_port(value.c_str());
+                if (key == "listen") {
+                    current_server.set_port(value);
                 } else if (key == "root") {
                     current_server.set_root(value);
-                } else if (key == "autoindex") {
-                    current_server.set_autoindex("on");
-                } else if (key == "cgi_path") {
-                    current_server.set_cgi_pass(value);
-                } else if (key == "upload_store") {
-                    current_server.set_upload_store(value);
-                } else if (key == "allowed_methods") {
-                    // Assuming methods are separated by a space in config file
+                } else if (key == "index") {
+                    current_server.set_index(value);
+                } else if (key == "methods") {
+                    std::vector<std::string> methods;
                     std::istringstream method_stream(value);
                     std::string method;
-                    std::vector<std::string> methods;
                     while (std::getline(method_stream, method, ' ')) {
-                       methods.push_back(method);
+                        methods.push_back(method);
                     }
                     current_server.set_allowed_methods(methods);
-                } else if (key == "default_file") {
-                    current_server.set_default_file(value);
-                }
-                servers.push_back(current_server);
+                } 
+                // else if (key.find("error_page") != std::string::npos) {
+                //     current_server.add_error_page(tokens[1], tokens[2]);
+                // }
             }
         }
     }
@@ -116,11 +137,14 @@ int Config::check_config(const std::string &config_file) {
 }
 
 
-int main() {
+
+int main(int argc, char **argv) {
     Config config;
 
-    config.check_config("../configs/default.conf");
-
+    if (argc == 1)
+        config.check_config("/home/evoronin/Documents/Codam Core/webserve/configs/default.conf");
+    else
+        config.check_config(argv[1]);
     // Print server information
     for (std::vector<Server>::const_iterator it = config.get_servers().begin(); it != config.get_servers().end(); ++it) {
         it->print_info();

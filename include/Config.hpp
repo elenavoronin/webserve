@@ -27,11 +27,19 @@ class Config {
 };
 
 
-class Location {
-    private:
+// class Location {
+//   private:
+//     std::string _root;
+//     std::vector<std::string> _allowed_methods;
+//     bool _autoindex;
+//     std::string _cgi_pass;
 
-    public:
-        Location();
-        ~Location();
+// public:
+//     Location();
+//     ~Location();
+//     void set_root(const std::string& root) { _root = root; }
+//     void set_allowed_methods(const std::vector<std::string>& methods) { _allowed_methods = methods; }
+//     void set_autoindex(bool autoindex) { _autoindex = autoindex; }
+//     void set_cgi_pass(const std::string& cgi_pass) { _cgi_pass = cgi_pass; }
 
-};
+// };
