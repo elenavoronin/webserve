@@ -13,7 +13,7 @@
 #include "../include/CGI.hpp"
 
 // Port to run the server on
-const int PORT = 8080;
+
 CGI cgi;
 
 // Function to handle CGI requests
