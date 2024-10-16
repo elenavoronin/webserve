@@ -145,5 +145,5 @@ compile webserver, in other windows connect with "curl http://localhost:8080"
 write thread simulation with several clients!
 */
 
-Generate ssh keys 
-key gen?
+// Generate ssh keys 
+// key gen?

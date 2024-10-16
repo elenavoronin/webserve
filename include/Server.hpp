@@ -10,13 +10,15 @@ class Server{
 	private:
 		const char* port;
 		std::string server_name;
+		std::string					_host;			   
+		std::string					_root;
+		// std::vector<Location> 		_locations;
+		std::vector<std::string>	_errorPage;
 	public:
 		std::vector<Client> clients; //do i need it?
 		Server();
 		~Server();
-		Server& operator=(const Server& copy);
 		Server(const Server& copy);
-
 
 		void run();
 		/*listener socket*/
@@ -31,7 +33,7 @@ class Server{
 		void 	handle_client_data(std::vector<struct pollfd> &pfds, int i, int listener);
 		void 	broadcast_message(int sender_fd, char *buf, int received, std::vector<struct pollfd> &pfds, int listener);
 
-		void addClient(std::vector<struct pollfd> &pfds, int clientSocket);
-		void removeClient(std::vector<struct pollfd> pfds, int i, int clientSocket);
-		int handleRequest(int clientSocket, std::string request);
+		void	addClient(std::vector<struct pollfd> &pfds, int clientSocket);
+		void	removeClient(std::vector<struct pollfd> pfds, int i, int clientSocket);
+		int		handleRequest(int clientSocket, std::string request);
 };

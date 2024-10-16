@@ -46,14 +46,15 @@ void serveFile(int clientSocket, std::string filepath, int statusCode){
 		statusCode = 400;
 	}
 	std::stringstream buffer;
-    buffer << file.rdbuf();
+    buffer << file.rdbuf(); //read file by bytes, go back to poll, check if finished reading
+	//make 1 gb files to test
 	std::string statusMessage = getStatusMessage(statusCode);
 	respond << "HTTP/1.1 " << 200 << " " << statusMessage << "\r\n";
 	respond << "Content-Type: text/html\r\n\r\n";
 	respond << buffer.str();
 	std::string respondStr = respond.str();
     send(clientSocket, respondStr.c_str(), respondStr.size(), 0);
-	//close(clientSocket); //should I?
+	close(clientSocket); //should I?
 
 }
 
@@ -106,15 +107,14 @@ int Server::handleRequest(int clientSocket, std::string request){
 	HttpRequest(method, path, version);
 	int status = checkErrors(method, version);
 	if (method == "GET"){
-		std::string filepath = "www" + path;
+		std::string filepath = "www/" + path;
 		if (path == "/")
-			filepath = "www/html/index.html";
-		std::cout << "ERROR CHECK - 2";		
-		serveFile(clientSocket, filepath, status);
+			filepath = "www/html/index.html";	
 		if (path.rfind("/cgi-bin/", 0) == 0) {// Path starts with "/cgi-bin/" 
 			CGI cgi;
 			cgi.handle_cgi_request(clientSocket, path, cgi);
 		}
+		serveFile(clientSocket, filepath, status);
 		return 0;
 	}
 	else if (method == "POST"){
@@ -127,3 +127,13 @@ int Server::handleRequest(int clientSocket, std::string request){
 		return 1;
 		// parse header and body
 }
+
+
+/*
+Sort stuff, add _port to private attributes
+Rename methods with CamelCase
+Check arommers
+*/
+
+/*
+*/
