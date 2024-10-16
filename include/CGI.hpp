@@ -31,11 +31,14 @@
  * 						which will be served to the client.
  */
 
+
+//Change to camelCase!
+
 class CGI {
 
 	private:
 		// Example: Storing key environment variables //should I make this const?
-    	const char* _env_vars[5] = {
+    	const char* 						_envVars[5] = {
         "REQUEST_METHOD=GET",
         "QUERY_STRING=name=Djoyke&age=33",
         "CONTENT_TYPE=text/html",
@@ -43,10 +46,13 @@ class CGI {
         nullptr  // Null-terminated array
    		};
 		// Internal storage for CGI parameters (like parsed query strings)
-		std::map<std::string, std::string> 	_query_params;
+		std::map<std::string, std::string> 	_queryParams;
 		// Internal storage for input data (POST request body)
-		std::string 						_input_data;
+		std::string 						_inputData;
 		std::string							_path;
+		pid_t								_pid;
+		int									_responsePipe[2];
+		int									_requestPipe[2];
 		// Internal method to decode URL-encoded strings
 		std::string _urlDecode(const std::string& str);
 		
@@ -55,22 +61,22 @@ class CGI {
 		~CGI();
 
 		// Method to read input (e.g., from POST requests)
-		void read_input();
+		void readInput();
 		// Method to get a specific environment variable
-		std::string get_env(const std::string& var_name);
+		std::string getEnv(const std::string& var_name);
 		// Method to parse the query string (for GET requests)
-		void parse_query_string();
+		void parseQueryString();
 		// Method to get the value of a specific query parameter
-		std::string get_query_param(const std::string& param_name);
+		std::string getQueryParam(const std::string& param_name);
 		// Method to send the HTTP content-type header (like "Content-Type: text/html")
-		void send_header(const std::string& content_type);
+		void sendHeader(const std::string& content_type);
 		// Method to send a complete HTTP response (status, headers, body)
-		void send_response(const std::string& status, const std::map<std::string, std::string>& headers, const std::string& body);
+		void sendResponse(const std::string& status, const std::map<std::string, std::string>& headers, const std::string& body);
 		// Method to output HTML or other content
 		void output(const std::string& content);
 		// Method to run the CGI script with environment variables
-    	void execute_cgi();
+    	void executeCgi();
 
-		void handle_cgi_request(int client_socket, const std::string& path, CGI cgi);
+		void handleCgiRequest(int client_socket, const std::string& path, CGI cgi);
 
 };
