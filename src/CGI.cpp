@@ -18,16 +18,13 @@ void::CGI::readInput(){
 //executable checkt argv[1] but have to pass the executable as first argument
 void CGI::executeCgi(Server server) {
 
-	// const char* cgi_program = "./www/html/cgi-bin/hello.py";
-    // std::string cgi_program = server.getCgiPath();
-    // std::cout << "cgi program is: " << cgi_program << std::endl;
-    // const char* argv[] = {"/usr/bin/python3", cgi_program.c_str(), nullptr};
-    // const char* argv[] = {server.getCgiPass().c_str(), cgi_program.c_str(), nullptr};
+	const char* cgi_program = "./www/html/cgi-bin/hello.py";
+    const char* argv[] = {"/usr/bin/python3", cgi_program, nullptr};
 
-    std::string cgi_pass = server.getCgiPass();
-    std::string cgi_path = server.getCgiPath();
+    // std::string cgi_pass = server.getCgiPass();
+    // std::string cgi_path = server.getCgiPath();
     
-    const char* argv[] = {cgi_pass.c_str(), cgi_path.c_str(), nullptr};
+    // const char* argv[] = {cgi_pass.c_str(), cgi_path.c_str(), nullptr};
 
 	execve(argv[0], const_cast<char* const*>(argv), const_cast<char* const*>(_envVars));
 	

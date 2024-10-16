@@ -52,7 +52,7 @@ class Server{
         void set_root(const std::string &root) { _root = root; }
         void set_autoindex(bool autoindex) { _autoindex = autoindex; }
         void set_cgi_pass(const std::string &cgi_pass) { _cgi_pass = cgi_pass; }
-		void set_cgi_pass(const std::string &cgi_path) { _cgi_path = cgi_path; }
+		void set_cgi_path(const std::string &cgi_path) { _cgi_path = cgi_path; }
         void set_upload_store(const std::string &upload_store) { _upload_store = upload_store; }
         void set_allowed_methods(const std::vector<std::string> &allowed_methods) { _allowed_methods = allowed_methods; }
         void set_default_file(const std::string &default_file) { _default_file = default_file; }
