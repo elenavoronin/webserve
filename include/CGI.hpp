@@ -50,9 +50,9 @@ class CGI {
 		// Internal storage for input data (POST request body)
 		std::string 						_input_data;
 		std::string							_path;
-		pid_t								_pid;
-		int									_responsePipe[2];
-		int									_requestPipe[2];
+		// pid_t								_pid;
+		// int									_responsePipe[2];
+		// int									_requestPipe[2];
 		// Internal method to decode URL-encoded strings
 		std::string _urlDecode(const std::string& str);
 		

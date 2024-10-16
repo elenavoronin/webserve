@@ -8,12 +8,12 @@ CPPFLAGS	= -std=c++11 -g -fsanitize=address -I $(HEADERDIR)
 
 #sources
 SRC 		= 	./src/request.cpp			\
-				./src/start.cpp		\
-				./src/CGI.cpp						\
-				./src/Client.cpp					\
-				./src/HttpRequest.cpp 				\
-				./src/Server.cpp			\
-TESTSRC		= 	./tests/test_cgi.cpp  # Test source file	
+				./src/start.cpp				\
+				./src/CGI.cpp				\
+				./src/Client.cpp			\
+				./src/HttpRequest.cpp 		\
+				./src/Server.cpp			
+TESTSRC		= 	./tests/testsCGI.cpp  # Test source file	
 				
 #object files
 OBJDIR 		= obj

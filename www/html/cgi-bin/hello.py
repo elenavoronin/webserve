@@ -3,18 +3,18 @@
 import cgi
 import os
 
-# cgi_response = "<html><body><h1>CGI Script Response</h1><p>This is output from your CGI script.</p></body></html>"
+cgi_response = "<html><body><h1>CGI Script Response</h1><p>This is output from your CGI script.</p></body></html>"
 
-# http_response = (
-#     f"HTTP/1.1 200 OK\r\n"
-#     f"Content-Type: text/html\r\n"
-#     f"Content-Length: {len(cgi_response)}\r\n"
-#     f"Connection: close\r\n"
-#     f"\r\n"
-#     f"{cgi_response}"
-# )
+http_response = (
+    f"HTTP/1.1 200 OK\r\n"
+    f"Content-Type: text/html\r\n"
+    f"Content-Length: {100000}\r\n" # need to parse the response at len of content
+    f"Connection: close\r\n"
+    f"\r\n"
+    f"{cgi_response}"
+)
 
-# print(http_response)
+print(http_response)
 
 # The header for an HTTP response (Content-type is required)
 print("Content-type: text/html")
