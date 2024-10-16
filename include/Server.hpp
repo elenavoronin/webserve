@@ -7,6 +7,7 @@
 #include <fstream>
 
 class Client; 
+class Location;
 
 class Server{
 	private:
@@ -14,12 +15,13 @@ class Server{
 		std::string 				_server_name;
 		std::string                 _root;
         std::vector<std::string>    _allowed_methods;
-        std::string                 _cgi_path;
-        bool                        _autoindex;
+        std::string                 _cgi_pass;
+        std::string					_cgi_path;
+		bool                        _autoindex;
         std::string                 _upload_store;
         std::string                 _default_file;
 		std::string					_host;			   
-		// std::vector<Location> 		_locations;
+		std::vector<Location> 		_locations;
 		std::vector<std::string>	_errorPage;
 	public:
 		std::vector<Client> clients; //do i need it?
@@ -49,7 +51,7 @@ class Server{
         void set_port(const char* port) { _port = port; }
         void set_root(const std::string &root) { _root = root; }
         void set_autoindex(bool autoindex) { _autoindex = autoindex; }
-        void set_cgi_path(const std::string &cgi_path) { _cgi_path = cgi_path; }
+        void set_cgi_pass(const std::string &cgi_path) { _cgi_pass = cgi_path; }
         void set_upload_store(const std::string &upload_store) { _upload_store = upload_store; }
         void set_allowed_methods(const std::vector<std::string> &allowed_methods) { _allowed_methods = allowed_methods; }
         void set_default_file(const std::string &default_file) { _default_file = default_file; }
@@ -66,7 +68,7 @@ class Server{
     			std::cout << *it << " ";
         	}
         std::cout << std::endl;
-		std::cout << "Cgi path: " << (_cgi_path) << std::endl;
+		std::cout << "Cgi path: " << (_cgi_pass) << std::endl;
 		}
     
 
