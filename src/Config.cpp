@@ -77,7 +77,7 @@ std::vector<Server> Config::parse_config(std::ifstream &file) {
                     current_server.set_root(value);
                 } else if (key == "autoindex") {
                     current_server.set_autoindex("on");
-                } else if (key == "cgi_path") {
+                } else if (key == "cgi_pass") {
                     current_server.set_cgi_pass(value);
                 } else if (key == "upload_store") {
                     current_server.set_upload_store(value);
