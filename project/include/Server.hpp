@@ -18,11 +18,10 @@ class Server{
         std::string                 _upload_store;
         std::string                 _default_file;
 	public:
-		std::vector<Client> clients; //do i need it?
+		// std::vector<Client> clients; //do i need it?
 		Server();
-		~Server();
-		Server& operator=(const Server& copy);
 		Server(const Server& copy);
+		~Server();
 		void run();
 		/*listener socket*/
 		int 	report_ready(std::vector<struct pollfd> &pfds);
@@ -62,6 +61,7 @@ class Server{
     			std::cout << *it << " ";
         	}
         std::cout << std::endl;
+		std::cout << "Cgi path: " << (_cgi_path) << std::endl;
 		}
     
 

@@ -20,4 +20,8 @@ class Config {
 		bool isFileEmpty(const std::string& fileName);
 		std::vector<Server> parse_config(std::ifstream &file);
 		void print_servers() const;
+        const std::vector<Server>& get_servers() const {
+            return _servers;
+        }
+
 };

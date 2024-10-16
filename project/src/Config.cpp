@@ -1,5 +1,6 @@
 #include "../include/Config.hpp"
 #include "../include/Server.hpp"
+#include "../include/Client.hpp"
 #include <sstream>
 #include <fstream>
 #include <vector>
@@ -23,7 +24,6 @@ std::vector<std::string> Config::tokenize(const std::string &line) {
     }
     return tokens;
 }
-
 
 
 bool Config::isFileEmpty(const std::string& fileName) {
@@ -57,21 +57,21 @@ std::vector<Server> Config::parse_config(std::ifstream &file) {
                 } else if (key == "upload_store") {
                     current_server.set_upload_store(value);
                 } else if (key == "allowed_methods") {
-                    // Assuming methods are comma-separated in config file
+                    // Assuming methods are separated by a space in config file
                     std::istringstream method_stream(value);
                     std::string method;
                     std::vector<std::string> methods;
-                    while (std::getline(method_stream, method, ',')) {
+                    while (std::getline(method_stream, method, ' ')) {
                        methods.push_back(method);
                     }
                     current_server.set_allowed_methods(methods);
                 } else if (key == "default_file") {
                     current_server.set_default_file(value);
                 }
+                servers.push_back(current_server);
             }
         }
     }
-    servers.push_back(current_server);
     return servers;
 }
 
@@ -90,17 +90,16 @@ int Config::check_config(const std::string &config_file) {
     return 0;
 }
 
-void Config::print_servers() const {
-    for (std::vector<Server>::const_iterator it = _servers.begin(); it != _servers.end(); ++it) {
-        it->print_info();
-        std::cout << "---------------------------" << std::endl;
-    }
-}
+
 int main() {
     Config config;
 
-    if (config.check_config("../configs/default.conf") == 0) {
-        config.print_servers();
+    config.check_config("../configs/default.conf");
+
+    // Print server information
+    for (std::vector<Server>::const_iterator it = config.get_servers().begin(); it != config.get_servers().end(); ++it) {
+        it->print_info();
+        std::cout << "---------------------------" << std::endl;
     }
 
     return 0;
