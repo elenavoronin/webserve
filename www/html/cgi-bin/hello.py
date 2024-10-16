@@ -8,7 +8,7 @@ cgi_response = "<html><body><h1>CGI Script Response</h1><p>This is output from y
 http_response = (
     f"HTTP/1.1 200 OK\r\n"
     f"Content-Type: text/html\r\n"
-    f"Content-Length: {100000}\r\n" # need to parse the response at len of content
+    f"Content-Length: {1000000}\r\n" # need to parse the response at len of content
     f"Connection: close\r\n"
     f"\r\n"
     f"{cgi_response}"

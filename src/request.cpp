@@ -112,7 +112,7 @@ int Server::handleRequest(int clientSocket, std::string request){
 			filepath = "www/html/index.html";	
 		if (path.rfind("/cgi-bin/", 0) == 0) {// Path starts with "/cgi-bin/" 
 			CGI cgi;
-			cgi.handle_cgi_request(clientSocket, path, cgi);
+			cgi.handleCgiRequest(clientSocket, path, cgi);
 		}
 		serveFile(clientSocket, filepath, status);
 		return 0;
