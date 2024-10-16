@@ -13,7 +13,6 @@ SRC 		= 	./src/request.cpp			\
 				./src/Client.cpp					\
 				./src/HttpRequest.cpp 				\
 				./src/Server.cpp			\
-				./src/CGI_experiment_file.cpp
 TESTSRC		= 	./tests/test_cgi.cpp  # Test source file	
 				
 #object files
