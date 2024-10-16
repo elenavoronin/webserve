@@ -7,14 +7,13 @@ CC			= c++
 CPPFLAGS	= -std=c++11 -g -fsanitize=address -I $(HEADERDIR)
 
 #sources
-SRC 		= 	./src/get_ready.cpp			\
-				./src/handle_data.cpp		\
-				./src/request.cpp			\
-				./src/run_network.cpp		\
+SRC 		= 	./src/request.cpp			\
+				./src/start.cpp		\
 				./src/CGI.cpp						\
 				./src/Client.cpp					\
 				./src/HttpRequest.cpp 				\
-				./src/Server.cpp			
+				./src/Server.cpp			\
+				./src/CGI_experiment_file.cpp
 TESTSRC		= 	./tests/test_cgi.cpp  # Test source file	
 				
 #object files
