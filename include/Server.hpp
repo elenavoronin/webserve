@@ -22,7 +22,7 @@ class Server{
 		// std::vector<Location> 		_locations;
 		std::vector<std::string>	_errorPage;
 	public:
-		// std::vector<Client> clients; //do i need it?
+		std::vector<Client> clients; //do i need it?
 		Server();
 		Server(const Server& copy);
 		~Server();

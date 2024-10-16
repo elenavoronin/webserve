@@ -1,4 +1,5 @@
 #include "../include/Server.hpp"
+#include "../include/Client.hpp"
 #include <iostream>     // for std::cout
 #include <vector>      // for std::vector
 #include <poll.h>      // for poll() and struct pollfd
@@ -16,8 +17,8 @@
 
 Server::Server(){
 	// this->port = "9034";
-    this->port = "8080";
-	this->server_name = "localhost"; //should be array of names
+    this->_port = "8080";
+	this->_server_name = "localhost"; //should be array of names
 
 }
 
@@ -86,7 +87,7 @@ int Server::get_listener_socket(){
 	hints.ai_family = AF_UNSPEC; // allows either IPv4 or IPv6.
 	hints.ai_socktype = SOCK_STREAM; // tells the system to use TCP
 	hints.ai_flags = AI_PASSIVE; //makes the program automatically fill in the IP 
-	if ((status = getaddrinfo(NULL, this->port, &hints, &servinfo)) != 0){
+	if ((status = getaddrinfo(NULL, this->_port, &hints, &servinfo)) != 0){
 		std::cout << "Error get Address information" << std::endl;
 		return 1;
 	}
