@@ -52,6 +52,7 @@ class CGI {
 		// "CONTENT_LEnGHT"= "whatever that may be" 			//get from map
         // nullptr  // Null-terminated array
    		// };
+
 		// Internal storage for CGI parameters (like parsed query strings)
 		std::map<std::string, std::string> 	_queryParams;
 		// Internal storage for input data (POST request body)
