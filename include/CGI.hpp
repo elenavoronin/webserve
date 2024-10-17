@@ -47,7 +47,7 @@ class CGI {
         // "REQUEST_METHOD=POST", 								//extract from map made from request
         // "QUERY_STRING=name=Djoyke&age=33",					//need to check this from the request n CGI
         // "CONTENT_TYPE=text/html",							//get from map
-        // "SCRIPT_NAME=/cgi-bin/hello.py",					//get from map
+        // "SCRIPT_NAME=/cgi-bin/hello.py",						//get from map
 		// "BODY"="whatever this may be"/json/img/ whatever 	//get from map
 		// "CONTENT_LEnGHT"= "whatever that may be" 			//get from map
         // nullptr  // Null-terminated array
