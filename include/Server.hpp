@@ -7,7 +7,7 @@
 #include <fstream>
 
 class Client; 
-class Location;
+// class Location;
 
 class Server{
 	private:
@@ -21,7 +21,7 @@ class Server{
         std::string                 _upload_store;
         std::string                 _default_file;
 		std::string					_host;			   
-		std::vector<Location> 		_locations;
+		// std::vector<Location> 		_locations;
 		std::vector<std::string>	_errorPage;
 	public:
 		std::vector<Client> clients; //do i need it?

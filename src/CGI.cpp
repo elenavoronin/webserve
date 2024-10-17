@@ -12,7 +12,14 @@ CGI::~CGI(){
 
 // Method to read input (e.g., from POST requests)
 void::CGI::readInput(){
-	
+	//is POST, GET or DELETE?
+    //create env etc 
+
+    //POST eg testimonials or upload file 
+    //path naar script met bestand in body
+    //content body needs to be path to file to be uploaded + content 
+    //if post feed missing info to cgi script
+
 }
 
 //executable checkt argv[1] but have to pass the executable as first argument
@@ -34,10 +41,13 @@ void CGI::executeCgi(Server server) {
 
 // Function to handle CGI requests
 void CGI::handleCgiRequest(int client_socket, const std::string& path, Server server) {
-    std::cout << "cgi here" << std::endl;
+    // std::cout << "cgi here" << std::endl;
     // _path = "." + path;  // Assuming the cgi-bin folder is in the current directory
 
-    pipe(_requestPipe); // create pipe for interprocess comunnication
+    //for GET Method
+    pipe(_responsePipe); // create pipe for interprocess comunnication
+    //if POST method
+    //create both GET and POST
     this->_pid = fork();
 
     if (this->_pid == -1) {
@@ -46,26 +56,33 @@ void CGI::handleCgiRequest(int client_socket, const std::string& path, Server se
         return ;
     }
     else if (this->_pid == 0) {
-        std::cout << "This is the child process with PID: " << getpid() << std::endl;
-
+        // std::cout << "This is the child process with PID: " << getpid() << std::endl;
         //child writes
 
-        close(_requestPipe[READ]);
-        dup2(_requestPipe[WRITE], STDOUT_FILENO);
-        close(_requestPipe[WRITE]);
+        //als POST
+        //dup request to STDIN
+
+        close(_responsePipe[READ]);
+        dup2(_responsePipe[WRITE], STDOUT_FILENO);
+        close(_responsePipe[WRITE]);
         // choose environmental variable
         dup2(client_socket, STDOUT_FILENO); // is this legal
         close(client_socket);
         this->executeCgi(server);
     }
     else {
-        std::cout << "This is the parent process. Child PID: " << this->_pid << std::endl;
-
+        // std::cout << "This is the parent process. Child PID: " << this->_pid << std::endl;
         //parent reads
 
         // wait for the child process to finish
         waitpid(this->_pid, nullptr, 0);
-        // while (waitpid(cgi._pid, nullptr, 0))
+        // 1)read from child pipe
+        // 2) pass it as body to response to be used
+        // 3)(later need to add to poll struct) and read as fast asother poll adds and read
+        // 4) if error in child keep status code
+
+
+        // while (waitpid(this->_pid, nullptr, 0))
         //     //read from child pipe
         
         //parent writes to the client //send response to client

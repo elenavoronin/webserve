@@ -99,11 +99,12 @@ int checkErrors(std::string method, std::string version) {
 int Server::handleRequest(int clientSocket, std::string request){
 
 	std::istringstream request_stream(request);
+	std::cout << "Request: " << request << std::endl;
 	std::string method, path, version, host; //?
 
 	request_stream >> method >> path >> version; //parse header
-	std::cout << "Request: " << method << " " << path << std::endl;
-	std::cout << "Host: " << host << std::endl;
+	// std::cout << "Request: " << method << " " << path << std::endl;
+	// std::cout << "Host: " << host << std::endl;
 	HttpRequest(method, path, version);
 	int status = checkErrors(method, version);
 	if (method == "GET"){
