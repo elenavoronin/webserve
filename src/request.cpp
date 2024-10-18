@@ -49,7 +49,7 @@ void serveFile(int clientSocket, std::string filepath, int statusCode){
     buffer << file.rdbuf(); //read file by bytes, go back to poll, check if finished reading
 	//make 1 gb files to test
 	std::string statusMessage = getStatusMessage(statusCode);
-	respond << "HTTP/1.1 " << 200 << " " << statusMessage << "\r\n";
+	respond << "HTTP/1.1 " << statusCode << " " << statusMessage << "\r\n";
 	respond << "Content-Type: text/html\r\n\r\n";
 	respond << buffer.str();
 	std::string respondStr = respond.str();
@@ -74,58 +74,60 @@ add 2 empty lines*/
 	
 // }
 
-int checkErrors(std::string method, std::string version) {
-    std::cout << "Checking for errors. Method: " << method << ", Version: " << version << std::endl;
+// int checkErrors(std::string method, std::string version) {
+//     std::cout << "Checking for errors. Method: " << method << ", Version: " << version << std::endl;
 
-    if (method != "GET" && method != "POST" && method != "DELETE") {
-        std::cerr << "Error: Invalid method." << std::endl;
-        return 405;
-    }
+//     if (method != "GET" && method != "POST" && method != "DELETE") {
+//         std::cerr << "Error: Invalid method." << std::endl;
+//         return 405;
+//     }
 
-    if (version.empty()) {
-        std::cerr << "Error: Version is empty or invalid!" << std::endl;
-        return 400;
-    }
+//     if (version.empty()) {
+//         std::cerr << "Error: Version is empty or invalid!" << std::endl;
+//         return 400;
+//     }
 
-    if (version != "HTTP/1.1") {
-        std::cerr << "Error: Invalid HTTP version." << std::endl;
-        return 400;
-    }
+//     if (version != "HTTP/1.1") {
+//         std::cerr << "Error: Invalid HTTP version." << std::endl;
+//         return 400;
+//     }
 
-    return 200;
-}
+//     return 200;
+// }
 
 
 int Server::handleRequest(int clientSocket, std::string request){
 
-	std::istringstream request_stream(request);
-	std::string method, path, version, host; //?
-
-	request_stream >> method >> path >> version; //parse header
-	std::cout << "Request: " << method << " " << path << std::endl;
-	std::cout << "Host: " << host << std::endl;
-	HttpRequest(method, path, version);
-	int status = checkErrors(method, version);
-	if (method == "GET"){
-		std::string filepath = "www/" + path;
-		if (path == "/")
+	// std::istringstream request_stream(request);
+	HttpRequest Http;
+	// std::string method, path, version, host; //?
+	// request_stream >> method >> path >> version; //parse header
+	Http.readRequest(request);
+	// std::cout << "Request: " << method << " " << path << std::endl;
+	// std::cout << "Host: " << host << std::endl;
+	// HttpRequest(method, path, version);
+	int status = Http.checkErrors();
+	if (Http.getField("method") == "GET"){
+		std::string filepath = "www" + Http.getField("path") ;
+		if (Http.getField("path")  == "/")
 			filepath = "www/html/index.html";	
-		if (path.rfind("/cgi-bin/", 0) == 0) {// Path starts with "/cgi-bin/" 
+		if (Http.getField("method") .rfind("/cgi-bin/", 0) == 0) {// Path starts with "/cgi-bin/" 
 			CGI cgi;
-			cgi.handleCgiRequest(clientSocket, path, cgi);
+			cgi.handleCgiRequest(clientSocket, Http.getField("method") , cgi);
 		}
 		serveFile(clientSocket, filepath, status);
 		return 0;
 	}
-	else if (method == "POST"){
+	else if (Http.getField("method")  == "POST"){
 		return 0;
 	}
-	else if (method == "DELETE"){
+	else if (Http.getField("method")  == "DELETE"){
 		return 0;
 	}
 	else
 		return 1;
-		// parse header and body
+	// 	// parse header and body
+	return 0;
 }
 
 
