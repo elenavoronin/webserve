@@ -30,6 +30,7 @@ Server::Server(const Server& copy) {
     _root = copy._root;
     _autoindex = copy._autoindex;
     _cgi_path = copy._cgi_path;
+	_cgi_pass = copy._cgi_pass;
     _upload_store = copy._upload_store;
     _allowed_methods = copy._allowed_methods;
     _default_file = copy._default_file;

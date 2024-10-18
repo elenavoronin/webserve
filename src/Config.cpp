@@ -15,16 +15,41 @@ Config::~Config() {
     // std::cout << "Config destructor called" << std::endl;
 }
 
-std::vector<std::string> Config::tokenize(const std::string &line) {
-    std::vector<std::string> tokens;
-    std::stringstream ss(line);
-    std::string token;
-    while (ss >> token) {
-        tokens.push_back(token);
-    }
-    return tokens;
+// Function to remove comments and trim leading/trailing spaces
+std::string remove_comments_and_trim(const std::string& line) {
+    std::size_t comment_pos = line.find('#');
+    std::string trimmed = (comment_pos != std::string::npos) ? line.substr(0, comment_pos) : line;
+    
+    // Remove leading and trailing whitespace
+    std::size_t first = trimmed.find_first_not_of(" \t");
+    std::size_t last = trimmed.find_last_not_of(" \t");
+    
+    return (first == std::string::npos) ? "" : trimmed.substr(first, last - first + 1);
 }
 
+std::vector<std::string> Config::tokenize(const std::string &line) {
+    std::vector<std::string> tokens;
+    
+    std::string clean_line = remove_comments_and_trim(line);
+    
+    if (clean_line.empty()) {
+        return tokens; // Skip empty or comment-only lines
+    }
+
+    std::stringstream ss(clean_line);
+    std::string token;
+    
+    while (ss >> token) {
+        tokens.push_back(token);
+        
+        // If it's the start of a block (like 'server {'), treat it as a separate token
+        if (token == "{" || token == "}") {
+            break;
+        }
+    }
+    
+    return tokens;
+}
 
 bool Config::isFileEmpty(const std::string& fileName) {
     std::ifstream file(fileName, std::ios::binary | std::ios::ate);
@@ -52,8 +77,8 @@ std::vector<Server> Config::parse_config(std::ifstream &file) {
                     current_server.set_root(value);
                 } else if (key == "autoindex") {
                     current_server.set_autoindex("on");
-                } else if (key == "cgi_path") {
-                    current_server.set_cgi_path(value);
+                } else if (key == "cgi_pass") {
+                    current_server.set_cgi_pass(value);
                 } else if (key == "upload_store") {
                     current_server.set_upload_store(value);
                 } else if (key == "allowed_methods") {
