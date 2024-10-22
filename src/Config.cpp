@@ -1,5 +1,6 @@
 #include "../include/Config.hpp"
 #include "../include/Server.hpp"
+#include "../include/Location.hpp"
 #include <sstream>
 #include <fstream>
 #include <vector>
@@ -59,9 +60,9 @@ std::vector<Server> Config::parse_config(std::ifstream &file) {
     std::vector<Server> servers;
     Server current_server;
     std::string line;
+    Location new_location;
     bool inside_server_block = false;
-    // bool inside_location_block = false;
-
+    bool inside_location_block = false;
     while (std::getline(file, line)) {
         std::vector<std::string> tokens = tokenize(line);
         
@@ -71,28 +72,24 @@ std::vector<Server> Config::parse_config(std::ifstream &file) {
             inside_server_block = true;
             continue;
         }
-
-        // if (inside_server_block && tokens[0] == "location" && tokens[2] == "{") {
-        //     inside_location_block = true;
-        //     // Handle the start of a location block
-        //     // current_server.set_location(tokens[1]); // tokens[1] is the location path
-        //     continue;
-        // }
-
-        // if (inside_location_block && tokens[0] == "}") {
-        //     inside_location_block = false;
-        //     continue;
-        // }
-
+        if (inside_server_block && tokens[0] == "location" && tokens[2] == "{") {
+            inside_location_block = true;
+            continue;
+        }
+        if (inside_location_block && tokens[0] == "}") {
+            current_server.set_location(tokens[1], new_location);
+            new_location = Location();
+            inside_location_block = false;
+            continue;
+        }
         if (inside_server_block && tokens[0] == "}") {
             inside_server_block = false;
             servers.push_back(current_server);
             current_server = Server(); // Reset for next server block
             continue;
         }
-
         // Now handle key-value pairs inside blocks
-        if (inside_server_block) {
+        if (inside_server_block || inside_location_block) {
             if (tokens.size() >= 2) {
                 std::string key = tokens[0];
                 std::string value = tokens[1];
@@ -112,9 +109,15 @@ std::vector<Server> Config::parse_config(std::ifstream &file) {
                     }
                     current_server.set_allowed_methods(methods);
                 } 
-                // else if (key.find("error_page") != std::string::npos) {
-                //     current_server.add_error_page(tokens[1], tokens[2]);
-                // }
+                  else if (inside_location_block) {
+                    if (key == "root") {
+                        new_location.set_root(value);
+                    } else if (key == "autoindex") {
+                        new_location.set_autoindex(value == "on");
+                    } else if (key == "cgi_pass") {
+                        new_location.set_cgi_pass(value);
+                    }
+                  }
             }
         }
     }
@@ -137,7 +140,6 @@ int Config::check_config(const std::string &config_file) {
 }
 
 
-
 int main(int argc, char **argv) {
     Config config;
 
@@ -146,8 +148,17 @@ int main(int argc, char **argv) {
     else
         config.check_config(argv[1]);
     // Print server information
-    for (std::vector<Server>::const_iterator it = config.get_servers().begin(); it != config.get_servers().end(); ++it) {
-        it->print_info();
+     std::vector<Server> servers = config.get_servers(); // Assuming get_servers() returns a vector of Server
+    for (std::vector<Server>::const_iterator serverIt = servers.begin(); serverIt != servers.end(); ++serverIt) {
+        serverIt->print_info(); // Assuming print_info prints server details
+
+        // Print associated locations
+        std::map<std::string, Location> locations = serverIt->get_locations(); // Assuming get_locations() returns a map
+        for (std::map<std::string, Location>::const_iterator locIt = locations.begin(); locIt != locations.end(); ++locIt) {
+            std::cout << "Location Path: " << locIt->first << std::endl; // Print the path
+            locIt->second.print_info(); // Print information of the location
+        }
+
         std::cout << "---------------------------" << std::endl;
     }
 

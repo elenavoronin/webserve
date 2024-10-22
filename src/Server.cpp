@@ -33,6 +33,23 @@ Server::Server(const Server& copy) {
     _upload_store = copy._upload_store;
     _allowed_methods = copy._allowed_methods;
     _default_file = copy._default_file;
+	_locations = copy._locations;
+}
+
+
+Server& Server::operator=(const Server& copy) {
+	if (this != &copy) {
+		_server_name = copy._server_name;
+		_port = copy._port;
+		_root = copy._root;
+		_autoindex = copy._autoindex;
+		_cgi_pass = copy._cgi_pass;
+		_upload_store = copy._upload_store;
+		_allowed_methods = copy._allowed_methods;
+		_default_file = copy._default_file;
+		_locations = copy._locations;
+	}
+	return *this;
 }
 
 
@@ -253,3 +270,4 @@ void Server::handle_client_data(std::vector<struct pollfd> &pfds, int i, int lis
 		del_from_pfds(pfds, i); //should it be here?
 	}
 }
+

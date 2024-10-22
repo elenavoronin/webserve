@@ -58,5 +58,6 @@
         "cinttypes": "cpp",
         "typeinfo": "cpp",
         "semaphore": "cpp"
-    }
+    },
+    "makefile.configureOnOpen": false
 }
