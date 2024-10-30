@@ -1,11 +1,10 @@
 #include "../include/Config.hpp"
 #include "../include/Server.hpp"
-#include "../include/Client.hpp"
+#include "../include/Location.hpp"
 #include <sstream>
 #include <fstream>
 #include <vector>
 #include <iostream>
-
 
 Config::Config() {
     // std::cout << "Config constructor called" << std::endl;
@@ -25,6 +24,17 @@ std::string remove_comments_and_trim(const std::string& line) {
     std::size_t last = trimmed.find_last_not_of(" \t");
     
     return (first == std::string::npos) ? "" : trimmed.substr(first, last - first + 1);
+}
+
+void print_tokens(const std::vector<std::string>& tokens) {
+    std::cout << "Tokens: ";
+    for (size_t i = 0; i < tokens.size(); ++i) {
+        std::cout << tokens[i];
+        if (i != tokens.size() - 1) {
+            std::cout << ", ";  // Add a comma between tokens for clarity
+        }
+    }
+    std::cout << std::endl;  // End with a newline
 }
 
 std::vector<std::string> Config::tokenize(const std::string &line) {
@@ -47,7 +57,7 @@ std::vector<std::string> Config::tokenize(const std::string &line) {
             break;
         }
     }
-    
+    print_tokens(tokens);
     return tokens;
 }
 
@@ -60,40 +70,80 @@ std::vector<Server> Config::parse_config(std::ifstream &file) {
     std::vector<Server> servers;
     Server current_server;
     std::string line;
-
+    Location new_location;
+    bool inside_server_block = false;
+    bool inside_location_block = false;
     while (std::getline(file, line)) {
-        if (!line.empty()) {
-            std::vector<std::string> tokens = tokenize(line);
+        std::vector<std::string> tokens = tokenize(line);
+        
+        if (tokens.empty()) continue;
+
+        if (tokens[0] == "server" && tokens[1] == "{") {
+            inside_server_block = true;
+            continue;
+        }
+        if (inside_server_block && tokens[0] == "location" && tokens[2] == "{") {
+            inside_location_block = true;   
+            continue;
+        }
+        if (inside_location_block && tokens[0] == "}") {
+            current_server.set_location(tokens[1], new_location);
+            new_location = Location();
+            inside_location_block = false;
+            continue;
+        }
+        if (inside_server_block && tokens[0] == "}") {
+            inside_server_block = false;
+            servers.push_back(current_server);
+            current_server = Server(); // Reset for next server block
+            continue;
+        }
+        // Now handle key-value pairs inside blocks
+        if (inside_server_block && !inside_location_block) {
             if (tokens.size() >= 2) {
-                // Mapping tokens to Server class attributes
                 std::string key = tokens[0];
                 std::string value = tokens[1];
 
-                if (key == "server_name") {
-                    current_server.set_server_name(value);
-                } else if (key == "port") {
-                    current_server.set_port(value.c_str());
+                if (key == "listen") {
+                    current_server.set_port_string(value);
                 } else if (key == "root") {
                     current_server.set_root(value);
-                } else if (key == "autoindex") {
-                    current_server.set_autoindex("on");
-                } else if (key == "cgi_pass") {
-                    current_server.set_cgi_pass(value);
-                } else if (key == "upload_store") {
-                    current_server.set_upload_store(value);
-                } else if (key == "allowed_methods") {
-                    // Assuming methods are separated by a space in config file
+                } else if (key == "server_name") {
+                    current_server.set_server_name(value);
+                } else if (key == "index") {
+                    current_server.set_index(value);
+                } else if (key == "methods") {
+                    std::vector<std::string> methods;
                     std::istringstream method_stream(value);
                     std::string method;
-                    std::vector<std::string> methods;
                     while (std::getline(method_stream, method, ' ')) {
-                       methods.push_back(method);
+                        methods.push_back(method);
                     }
                     current_server.set_allowed_methods(methods);
-                } else if (key == "default_file") {
-                    current_server.set_default_file(value);
                 }
-                servers.push_back(current_server);
+                if (key == "error_page") {
+                    std::vector<std::string> errorPages;
+                    for (size_t i = 1; i < tokens.size(); i++) {
+                        errorPages.push_back(tokens[i]);
+                    }
+                    current_server.set_error_page(errorPages);
+                }
+            
+            }
+                
+        }
+         if (inside_location_block) {
+            if (tokens.size() >= 2) {
+                std::string key = tokens[0];
+                std::string value = tokens[1];
+
+                if (key == "root") {
+                    new_location.set_root(value);
+                } else if (key == "autoindex") {
+                    new_location.set_autoindex(value == "on");
+                } else if (key == "cgi_pass") {
+                    new_location.set_cgi_pass(value);
+                }
             }
         }
     }
@@ -116,14 +166,25 @@ int Config::check_config(const std::string &config_file) {
 }
 
 
-int main() {
+int main(int argc, char **argv) {
     Config config;
 
-    config.check_config("../configs/default.conf");
-
+    if (argc == 1)
+        config.check_config("/home/evoronin/Documents/Codam Core/webserve/configs/default.conf");
+    else
+        config.check_config(argv[1]);
     // Print server information
-    for (std::vector<Server>::const_iterator it = config.get_servers().begin(); it != config.get_servers().end(); ++it) {
-        it->print_info();
+     std::vector<Server> servers = config.get_servers(); // Assuming get_servers() returns a vector of Server
+    for (std::vector<Server>::const_iterator serverIt = servers.begin(); serverIt != servers.end(); ++serverIt) {
+        serverIt->print_info(); // Assuming print_info prints server details
+
+        // Print associated locations
+        std::map<std::string, Location> locations = serverIt->get_locations(); // Assuming get_locations() returns a map
+        for (std::map<std::string, Location>::const_iterator locIt = locations.begin(); locIt != locations.end(); ++locIt) {
+            std::cout << "Location Path: " << locIt->first << std::endl; // Print the path
+            locIt->second.print_info(); // Print information of the location
+        }
+
         std::cout << "---------------------------" << std::endl;
     }
 

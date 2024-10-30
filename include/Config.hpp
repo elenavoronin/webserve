@@ -26,12 +26,3 @@ class Config {
 
 };
 
-
-class Location {
-    private:
-
-    public:
-        Location();
-        ~Location();
-
-};
