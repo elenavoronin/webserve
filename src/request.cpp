@@ -40,7 +40,7 @@ std::string getStatusMessage(int statusCode){ //Do I need to add more??????
 void serveFile(int clientSocket, std::string filepath, int statusCode){
 	std::ostringstream respond;
 	std::ifstream file(filepath);//?
-	std::cout << "Path: " << filepath << std::endl;
+	// std::cout << "Path: " << filepath << std::endl;
 	if (!file){
 		std::cout << "Wrong filepath" << std::endl;
 		statusCode = 400;
@@ -49,7 +49,11 @@ void serveFile(int clientSocket, std::string filepath, int statusCode){
     buffer << file.rdbuf(); //read file by bytes, go back to poll, check if finished reading
 	//make 1 gb files to test
 	std::string statusMessage = getStatusMessage(statusCode);
-	respond << "HTTP/1.1 " << 200 << " " << statusMessage << "\r\n";
+	respond << "HTTP/1.1 " << statusCode << " " << statusMessage << "\r\n";
+/*
+For persistent connections (such as in HTTP/1.1), you would leave the client in the pfds list to handle further requests.
+For non-persistent connections (such as in HTTP/1.0), it's appropriate to remove the client after processing the request.
+*/
 	respond << "Content-Type: text/html\r\n\r\n";
 	respond << buffer.str();
 	std::string respondStr = respond.str();
@@ -95,25 +99,47 @@ int checkErrors(std::string method, std::string version) {
     return 200;
 }
 
+int HttpRequest::findContentLength(std::string request){
+	this->readRequest(request);
+	std::string len = this->getField("Content-length");
+	std::cout << "Content length is " << len << std::endl;
+	if (len != "")
+		return(std::stoi(len));
+	else
+		return 0;
+}
 
-int Server::handleRequest(int clientSocket, std::string request){
 
+int Server::handleRequest(int clientSocket, std::string request, HttpRequest *Http){
+/*
+	TEST
+			std::ifstream file("www/html/index.html");//?
+			std::stringstream buffer;
+			buffer << file.rdbuf();
+			std::ostringstream respond;
+			respond << "HTTP/1.1 " << 200 << " " << "OK" << "\r\n";
+			respond << "Content-Type: text/html\r\n\r\n";
+			respond << buffer.str();
+			std::string respondStr = respond.str();
+			send(clientSocket, respondStr.c_str(), respondStr.size(), 0);
+			close(clientSocket);
+			return 0;
+*/
 	std::istringstream request_stream(request);
 	std::cout << "Request: " << request << std::endl;
 	std::string method, path, version, host; //?
-
 	request_stream >> method >> path >> version; //parse header
+	Http->readRequest(request);
 	// std::cout << "Request: " << method << " " << path << std::endl;
-	// std::cout << "Host: " << host << std::endl;
-	HttpRequest(method, path, version);
-	int status = checkErrors(method, version);
-	if (method == "GET"){
-		std::string filepath = "www/" + path;
-		if (path == "/")
+	// // HttpRequest(method, path, version);
+	int status = Http->checkErrors();
+	if (Http->getField("method") == "GET"){
+		std::string filepath = "www/html" + Http->getField("path") ;
+		if (Http->getField("path")  == "/")
 			filepath = "www/html/index.html";	
-		if (path.rfind("/cgi-bin/", 0) == 0) {// Path starts with "/cgi-bin/" 
+		if (Http->getField("method").rfind("/cgi-bin/", 0) == 0) {// Path starts with "/cgi-bin/" 
 			CGI cgi;
-			cgi.handleCgiRequest(clientSocket, path, *this);
+			cgi.handleCgiRequest(clientSocket, Http->getField("method") , *this);
 		}
 		serveFile(clientSocket, filepath, status);
 		return 0;
@@ -125,15 +151,16 @@ int Server::handleRequest(int clientSocket, std::string request){
 	// 	// serveFile(clientSocket, filepath, status);
 	// 	return 0;
 	// }
-	else if (method == "POST"){
+	else if (Http->getField("method")  == "POST"){
 		return 0;
 	}
-	else if (method == "DELETE"){
+	else if (Http->getField("method")  == "DELETE"){
 		return 0;
 	}
 	else
 		return 1;
-		// parse header and body
+	// 	// parse header and body
+	return 0;
 }
 
 

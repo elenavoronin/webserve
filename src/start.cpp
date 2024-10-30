@@ -7,12 +7,12 @@
 #include <sys/socket.h> // for socket-related functions and structures
 #include <netinet/in.h> // for sockaddr_in, sockaddr_storage
 
-int main() {
-	//for creating server here I need to get info from config: port, server_name.....
-    Server server;
-    server.run();
-    return 0;
-}
+// int main() {
+// 	//for creating server here I need to get info from config: port, server_name.....
+//     Server server;
+//     server.run();
+//     return 0;
+// }
 
 /*
 to test non blocking:

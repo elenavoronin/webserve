@@ -1,11 +1,15 @@
 #pragma once
 
-#include "Server.hpp"
+
+#include "HttpRequest.hpp"
+class HttpRequest;
 
 class Client {
 	private:
-		int clientSocket; //do I even need it?
+		int clientSocket;
 	public:
+		int i;
+		HttpRequest* Http;
 		Client();
 		~Client();
 		Client& operator=(const Client& copy);
