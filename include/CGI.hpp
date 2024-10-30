@@ -7,6 +7,7 @@
 #include <sstream> //for string stream manipulation
 #include <unistd.h>
 #include <sys/wait.h>
+#include "Server.hpp"
 
 # define READ 0
 # define WRITE 1
@@ -30,10 +31,6 @@
  * output: 				This outputs the actual content to stdout, 
  * 						which will be served to the client.
  */
-
-
-//Change to camelCase!
-
 class CGI {
 
 	private:
@@ -75,8 +72,8 @@ class CGI {
 		// Method to output HTML or other content
 		void output(const std::string& content);
 		// Method to run the CGI script with environment variables
-    	void executeCgi();
+    	void executeCgi(Server server);
 
-		void handleCgiRequest(int client_socket, const std::string& path, CGI cgi);
+		void handleCgiRequest(int client_socket, const std::string& path, Server server);
 
 };
