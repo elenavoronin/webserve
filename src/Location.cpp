@@ -60,6 +60,5 @@ void Location::print_info() const {
     std::cout << std::endl;
 
     std::cout << "    CGI pass: " << _cgi_pass << std::endl;
-    std::cout << "    CGI path: " << _cgi_path << std::endl;
     std::cout << std::endl;
 }

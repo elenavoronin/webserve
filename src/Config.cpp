@@ -6,7 +6,6 @@
 #include <vector>
 #include <iostream>
 
-
 Config::Config() {
     // std::cout << "Config constructor called" << std::endl;
 }
@@ -25,6 +24,17 @@ std::string remove_comments_and_trim(const std::string& line) {
     std::size_t last = trimmed.find_last_not_of(" \t");
     
     return (first == std::string::npos) ? "" : trimmed.substr(first, last - first + 1);
+}
+
+void print_tokens(const std::vector<std::string>& tokens) {
+    std::cout << "Tokens: ";
+    for (size_t i = 0; i < tokens.size(); ++i) {
+        std::cout << tokens[i];
+        if (i != tokens.size() - 1) {
+            std::cout << ", ";  // Add a comma between tokens for clarity
+        }
+    }
+    std::cout << std::endl;  // End with a newline
 }
 
 std::vector<std::string> Config::tokenize(const std::string &line) {
@@ -47,7 +57,7 @@ std::vector<std::string> Config::tokenize(const std::string &line) {
             break;
         }
     }
-    
+    print_tokens(tokens);
     return tokens;
 }
 
@@ -73,7 +83,7 @@ std::vector<Server> Config::parse_config(std::ifstream &file) {
             continue;
         }
         if (inside_server_block && tokens[0] == "location" && tokens[2] == "{") {
-            inside_location_block = true;
+            inside_location_block = true;   
             continue;
         }
         if (inside_location_block && tokens[0] == "}") {
@@ -89,15 +99,17 @@ std::vector<Server> Config::parse_config(std::ifstream &file) {
             continue;
         }
         // Now handle key-value pairs inside blocks
-        if (inside_server_block || inside_location_block) {
+        if (inside_server_block && !inside_location_block) {
             if (tokens.size() >= 2) {
                 std::string key = tokens[0];
                 std::string value = tokens[1];
 
                 if (key == "listen") {
-                    current_server.set_port(value);
+                    current_server.set_port_string(value);
                 } else if (key == "root") {
                     current_server.set_root(value);
+                } else if (key == "server_name") {
+                    current_server.set_server_name(value);
                 } else if (key == "index") {
                     current_server.set_index(value);
                 } else if (key == "methods") {
@@ -108,16 +120,30 @@ std::vector<Server> Config::parse_config(std::ifstream &file) {
                         methods.push_back(method);
                     }
                     current_server.set_allowed_methods(methods);
-                } 
-                  else if (inside_location_block) {
-                    if (key == "root") {
-                        new_location.set_root(value);
-                    } else if (key == "autoindex") {
-                        new_location.set_autoindex(value == "on");
-                    } else if (key == "cgi_pass") {
-                        new_location.set_cgi_pass(value);
+                }
+                if (key == "error_page") {
+                    std::vector<std::string> errorPages;
+                    for (size_t i = 1; i < tokens.size(); i++) {
+                        errorPages.push_back(tokens[i]);
                     }
-                  }
+                    current_server.set_error_page(errorPages);
+                }
+            
+            }
+                
+        }
+         if (inside_location_block) {
+            if (tokens.size() >= 2) {
+                std::string key = tokens[0];
+                std::string value = tokens[1];
+
+                if (key == "root") {
+                    new_location.set_root(value);
+                } else if (key == "autoindex") {
+                    new_location.set_autoindex(value == "on");
+                } else if (key == "cgi_pass") {
+                    new_location.set_cgi_pass(value);
+                }
             }
         }
     }

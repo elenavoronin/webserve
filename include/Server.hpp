@@ -15,6 +15,7 @@ class Location;
 
 class Server{
 	private:
+		std::string					_port_string;
 		const char* 				_port;
 		std::string 				_server_name;
 		std::string                 _root;
@@ -29,8 +30,8 @@ class Server{
 	public:
 		std::vector<Client> clients; //do i need it?
 		Server();
-		Server(const Server& copy);
-		Server& operator=(const Server& copy);
+		Server(const Server& copy) = default;
+		Server& operator=(const Server& copy) = default;
 		~Server();
 
 		void run();
@@ -52,20 +53,20 @@ class Server{
 
 		//setters
      	void set_server_name(const std::string &server_name) { _server_name = server_name; }
-
-        void set_port(std::string port) {std::istringstream method_stream(port.c_str());
-		 _port = port.c_str(); }
+        void set_port_string(const std::string &port) { _port_string = port; }
+		void set_port_char() {_port = _port_string.c_str(); }
         void set_root(const std::string &root) { _root = root; }
         void set_autoindex(bool autoindex) { _autoindex = autoindex; }
         void set_upload_store(const std::string &upload_store) { _upload_store = upload_store; }
         void set_allowed_methods(const std::vector<std::string> &allowed_methods) { _allowed_methods = allowed_methods; }
         void set_index(const std::string &index) { _index = index; }
-
+		void set_error_page(const std::vector<std::string>& errorPages) {
+    		_errorPage = errorPages; }
 	    //for debugging only
 
         void print_info() const {
         std::cout << "Server Name: " << _server_name << std::endl;
-        std::cout << "Port: " << (_port) << std::endl;
+        std::cout << "Port: " << _port_string << std::endl;
         std::cout << "Root: " << _root << std::endl;
         std::cout << "Index: " << _index << std::endl;
         std::cout << "Allowed Methods: ";
@@ -73,6 +74,11 @@ class Server{
     			std::cout << *it << " ";
         	}
         std::cout << std::endl;
+		std::cout << "Error Pages: ";
+    	for (std::vector<std::string>::const_iterator it = _errorPage.begin(); it != _errorPage.end(); ++it) {
+        std::cout << *it << " ";
+    	}
+    	std::cout << std::endl;
 		}
     
 		void set_location(const std::string& path, const Location& location) {
