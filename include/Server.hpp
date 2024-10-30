@@ -2,13 +2,14 @@
 #pragma once
 #include <vector>
 #include <iostream>
-// #include "Client.hpp"
+#include "Client.hpp"
+#include "HttpRequest.hpp"
 #include <sstream>
 #include <fstream>
 
 class Client; 
-class Location;
-
+// class Location;
+class HttpRequest; 
 class Server{
 	private:
 		const char* 				_port;
@@ -21,7 +22,7 @@ class Server{
         std::string                 _upload_store;
         std::string                 _default_file;
 		std::string					_host;			   
-		std::vector<Location> 		_locations;
+		// std::vector<Location> 		_locations;
 		std::vector<std::string>	_errorPage;
 	public:
 		std::vector<Client> clients; //do i need it?
@@ -38,13 +39,13 @@ class Server{
 		void 	add_to_pfds(std::vector<struct pollfd> &pfds, int newfd);
 		void 	del_from_pfds(std::vector<struct pollfd> &pfds, int i);
 		/*Main loop*/
-		void 	handle_new_connection(int listener, std::vector<struct pollfd> &pfds);
+		void 	handle_new_connection(int listener, std::vector<struct pollfd> &pfds, int i);
 		void 	handle_client_data(std::vector<struct pollfd> &pfds, int i, int listener);
 		void 	broadcast_message(int sender_fd, char *buf, int received, std::vector<struct pollfd> &pfds, int listener);
 
-		void 	addClient(std::vector<struct pollfd> &pfds, int clientSocket);
-		void 	removeClient(std::vector<struct pollfd> pfds, int i, int clientSocket);
-		int handleRequest(int clientSocket, std::string request);
+		void 	addClient(std::vector<struct pollfd> &pfds, int clientSocket, int i);
+		void 	removeClient(std::vector<struct pollfd> &pfds, int i, int clientSocket);
+		int handleRequest(int clientSocket, std::string request, HttpRequest *Http);
 
 		//setters
      	void set_server_name(const std::string &server_name) { _server_name = server_name; }

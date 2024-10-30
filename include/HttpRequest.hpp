@@ -7,14 +7,16 @@
 
 class HttpRequest {
 	private: //Or public or private??????
-		std::map<std::string, std::string> _request;
+
 	public:
-		std::string method;
+		std::map<std::string, std::string> _request;
+		std::string _strReceived;
+		bool headerReceived = false;
+		std::string method; //dont need!
 		
 		std::string path;
 		std::string version;
-
-		std::string header; //?
+		std::string header; //? change also in copy constructor
 		std::string body; //?
 		HttpRequest();
 		//HttpRequest(std::string method, std::string path, std::string version);
@@ -27,4 +29,5 @@ class HttpRequest {
 		void readRequest(std::string request);
 		std::string trim(std::string& str);
 		int checkErrors();
+		int findContentLength(std::string request);
 };
