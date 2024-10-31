@@ -47,8 +47,10 @@ std::string HttpRequest::trim(std::string& str) {
 }
 
 std::string HttpRequest::getField(std::string key){
+	// std::cout << "KEY IS: " << key << std::endl;
 	auto it = _request.find(key);
 	if (it != _request.end()){
+		// std::cout << "VALUE IS: " << it->second << std::endl;
 		return trim(it->second); //added trim
 	}
 	return "";
@@ -73,7 +75,8 @@ void HttpRequest::readRequest(std::string request){
 			key = trim(key);
 			std::string value = line.substr(colon + 1);
 			value = trim(value);
-			// std::cout << "This is the test line " << key << "    " << value << std::endl;
+			setField(key, value);
+			std::cout << "key is: " << key << "       value is: " << value << std::endl;
 		}
 	}
 }

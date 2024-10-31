@@ -35,13 +35,24 @@ class CGI {
 
 	private:
 		// Example: Storing key environment variables //should I make this const?
-    	const char* 						_envVars[5] = {
-        "REQUEST_METHOD=GET",
-        "QUERY_STRING=name=Djoyke&age=33",
-        "CONTENT_TYPE=text/html",
-        "SCRIPT_NAME=/cgi-bin/hello.py",
+    	const char* 						_envVars[5] = { //make dynamic
+        "REQUEST_METHOD=GET", 				//extract from map made from request
+        "QUERY_STRING=name=Djoyke&age=33",	//need to check this from the request n CGI
+        "CONTENT_TYPE=text/html",			//get from map
+        "SCRIPT_NAME=/cgi-bin/hello.py",	//get from map
         nullptr  // Null-terminated array
    		};
+
+		// const char* 						_envVars[7] = {
+        // "REQUEST_METHOD=POST", 								//extract from map made from request
+        // "QUERY_STRING=name=Djoyke&age=33",					//need to check this from the request n CGI
+        // "CONTENT_TYPE=text/html",							//get from map
+        // "SCRIPT_NAME=/cgi-bin/hello.py",						//get from map
+		// "BODY"="whatever this may be"/json/img/ whatever 	//get from map
+		// "CONTENT_LEnGHT"= "whatever that may be" 			//get from map
+        // nullptr  // Null-terminated array
+   		// };
+
 		// Internal storage for CGI parameters (like parsed query strings)
 		std::map<std::string, std::string> 	_queryParams;
 		// Internal storage for input data (POST request body)
@@ -67,8 +78,8 @@ class CGI {
 		std::string getQueryParam(const std::string& param_name);
 		// Method to send the HTTP content-type header (like "Content-Type: text/html")
 		void sendHeader(const std::string& content_type);
-		// Method to send a complete HTTP response (status, headers, body)
-		void sendResponse(const std::string& status, const std::map<std::string, std::string>& headers, const std::string& body);
+		// // Method to send a complete HTTP response (status, headers, body)
+		// void sendResponse(const std::string& status, const std::map<std::string, std::string>& headers, const std::string& body);
 		// Method to output HTML or other content
 		void output(const std::string& content);
 		// Method to run the CGI script with environment variables
@@ -77,3 +88,21 @@ class CGI {
 		void handleCgiRequest(int client_socket, const std::string& path, Server server);
 
 };
+
+
+
+// Request: GET /cgi-bin/hello.py?name=John&age=30 HTTP/1.1
+// Host: localhost:8080
+// Connection: keep-alive
+// sec-ch-ua: "Google Chrome";v="129", "Not=A?Brand";v="8", "Chromium";v="129"
+// sec-ch-ua-mobile: ?0
+// sec-ch-ua-platform: "Linux"
+// Upgrade-Insecure-Requests: 1
+// User-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36
+// Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7
+// Sec-Fetch-Site: none
+// Sec-Fetch-Mode: navigate
+// Sec-Fetch-User: ?1
+// Sec-Fetch-Dest: document
+// Accept-Encoding: gzip, deflate, br, zstd
+// Accept-Language: en-US,en;q=0.9
