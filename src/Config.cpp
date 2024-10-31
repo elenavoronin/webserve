@@ -57,7 +57,7 @@ std::vector<std::string> Config::tokenize(const std::string &line) {
             break;
         }
     }
-    print_tokens(tokens);
+    // print_tokens(tokens);
     return tokens;
 }
 
@@ -106,6 +106,7 @@ std::vector<Server> Config::parse_config(std::ifstream &file) {
 
                 if (key == "listen") {
                     current_server.set_port_string(value);
+					// current_server.set_port_char(value);
                 } else if (key == "root") {
                     current_server.set_root(value);
                 } else if (key == "server_name") {
@@ -160,33 +161,38 @@ int Config::check_config(const std::string &config_file) {
         std::cerr << "Error: Cannot open config file." << std::endl;
         return -1;
     }
-    _servers = parse_config(file);
+    _servers = parse_config(file); //TODO this needs to be connected to Anna's part
+	for(Server& current_server: _servers){
+		// std::cout << "PORT " << current_server.getPort() << std::endl;
+		// std::cout << "PORT " << current_server.getPortStr() << std::endl;
+		current_server.run();
+	}
     file.close();
     return 0;
 }
 
 
-int main(int argc, char **argv) {
-    Config config;
+// int main(int argc, char **argv) {
+//     Config config;
 
-    if (argc == 1)
-        config.check_config("/home/evoronin/Documents/Codam Core/webserve/configs/default.conf");
-    else
-        config.check_config(argv[1]);
-    // Print server information
-     std::vector<Server> servers = config.get_servers(); // Assuming get_servers() returns a vector of Server
-    for (std::vector<Server>::const_iterator serverIt = servers.begin(); serverIt != servers.end(); ++serverIt) {
-        serverIt->print_info(); // Assuming print_info prints server details
+//     if (argc == 1)
+//         config.check_config("../configs/default.conf");
+//     else
+//         config.check_config(argv[1]);
+//     // Print server information
+//      std::vector<Server> servers = config.get_servers(); // Assuming get_servers() returns a vector of Server
+//     for (std::vector<Server>::const_iterator serverIt = servers.begin(); serverIt != servers.end(); ++serverIt) {
+//         serverIt->print_info(); // Assuming print_info prints server details
 
-        // Print associated locations
-        std::map<std::string, Location> locations = serverIt->get_locations(); // Assuming get_locations() returns a map
-        for (std::map<std::string, Location>::const_iterator locIt = locations.begin(); locIt != locations.end(); ++locIt) {
-            std::cout << "Location Path: " << locIt->first << std::endl; // Print the path
-            locIt->second.print_info(); // Print information of the location
-        }
+//         // Print associated locations
+//         std::map<std::string, Location> locations = serverIt->get_locations(); // Assuming get_locations() returns a map
+//         for (std::map<std::string, Location>::const_iterator locIt = locations.begin(); locIt != locations.end(); ++locIt) {
+//             std::cout << "Location Path: " << locIt->first << std::endl; // Print the path
+//             locIt->second.print_info(); // Print information of the location
+//         }
 
-        std::cout << "---------------------------" << std::endl;
-    }
+//         std::cout << "---------------------------" << std::endl;
+//     }
 
-    return 0;
-}
+//     return 0;
+// }

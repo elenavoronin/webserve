@@ -17,10 +17,6 @@
 #define BACKLOG 10
 
 Server::Server(){
-	// this->port = "9034";
-    this->_port = "8080";
-	this->_server_name = "localhost"; //should be array of names
-
 }
 
 Server::~Server(){}
@@ -58,10 +54,11 @@ Server::~Server(){}
 - poll_test: Result of poll() function to check file descriptors*/
 void Server::run() {
 	std::vector<struct pollfd> pfds;
-	// std::cout << "check in Server::run";
+	std::cout << "check in Server::run" << std::endl;
 	int listener = report_ready(pfds);
 	int poll_test;
 	
+
 	while (true) {
 		poll_test = poll(pfds.data(), pfds.size(), -1);
 		if (poll_test == -1) {
@@ -96,12 +93,11 @@ int Server::get_listener_socket(){
 
 	int serverSocket;
 	int opt = 1;
-
 	memset(&hints, 0, sizeof hints); //is used to clear out the hints struct. Then, we fill in some details:
 	hints.ai_family = AF_UNSPEC; // allows either IPv4 or IPv6.
 	hints.ai_socktype = SOCK_STREAM; // tells the system to use TCP
 	hints.ai_flags = AI_PASSIVE; //makes the program automatically fill in the IP 
-	if ((status = getaddrinfo(NULL, this->_port, &hints, &servinfo)) != 0){
+	if ((status = getaddrinfo(NULL, getPortStr().c_str(), &hints, &servinfo)) != 0){
 		std::cout << "Error get Address information" << std::endl;
 		return 1;
 	}
@@ -207,37 +203,37 @@ void Server::handle_new_connection(int listener, std::vector<struct pollfd> &pfd
 - received: Number of bytes received in the message
 - pfds: Vector of pollfd structures to send the message to
 - listener: The listener file descriptor (to avoid sending to it)*/
-void Server::broadcast_message(int sender_fd, char *buf, int received, std::vector<struct pollfd> &pfds, int listener){
-    for (size_t j = 0; j < pfds.size(); j++) {
-        int dest_fd = pfds[j].fd;
-        if (dest_fd != listener && dest_fd != sender_fd) {
-            if (sendall(dest_fd, buf, &received) == -1) {
-                std::cout << "Can't send" << std::endl;
-            }
-        }
-    }
-}
+// void Server::broadcast_message(int sender_fd, char *buf, int received, std::vector<struct pollfd> &pfds, int listener){
+//     for (size_t j = 0; j < pfds.size(); j++) {
+//         int dest_fd = pfds[j].fd;
+//         if (dest_fd != listener && dest_fd != sender_fd) {
+//             if (sendall(dest_fd, buf, &received) == -1) {
+//                 std::cout << "Can't send" << std::endl;
+//             }
+//         }
+//     }
+// }
 
 
 // Function to send all data in the buffer to the specified socket
 // - s: The socket to send data to
 // - buf: The buffer containing the data to send
 // - len: Pointer to the length of data to send (will be updated with the amount actually sent)
-int Server::sendall(int s, char *buf, int *len){
-	int total = 0;
-	int bytesleft = *len;
-	int n;
+// int Server::sendall(int s, char *buf, int *len){
+// 	int total = 0;
+// 	int bytesleft = *len;
+// 	int n;
 
-	while(total < *len){
-		n = send(s, buf + total, bytesleft, 0);
-		if (n == -1)
-			break;
-		total += n;
-		bytesleft -= n;
-	}
-	*len = total;
-	return (n == -1) ? -1 : 0; 
-}
+// 	while(total < *len){
+// 		n = send(s, buf + total, bytesleft, 0);
+// 		if (n == -1)
+// 			break;
+// 		total += n;
+// 		bytesleft -= n;
+// 	}
+// 	*len = total;
+// 	return (n == -1) ? -1 : 0; 
+// }
 
 
 
@@ -246,10 +242,6 @@ int Server::sendall(int s, char *buf, int *len){
 // - i: Index of the pollfd that has client data ready
 // - listener: File descriptor for the listener socket (used to avoid sending data back to it)
 void Server::handle_client_data(std::vector<struct pollfd> &pfds, int i, int listener){
-
-
-	/*I can't read images~~~~!!!!!*/
-
 	int contentLength = 0;
 	char buf[20] = {0};
 	int sender_fd = pfds[i].fd;
@@ -260,32 +252,23 @@ void Server::handle_client_data(std::vector<struct pollfd> &pfds, int i, int lis
 	}
 	int received = recv(sender_fd, buf, sizeof(buf), 0);
 	if (received > 0){ //The only difference between recv() and read(2) is the presence of flags. 
-//		std::cout << "Received bytes: " << received << std:: endl;
 		client->Http->_strReceived.append(buf, received); //save the request in _strReceived
-	//	std::cout << "REQUEST |" << client->Http->_strReceived << "|\n" << std::endl;
 		if (client->Http->_strReceived.find("\r\n\r\n") != std::string::npos && !client->Http->headerReceived){
 			client->Http->headerReceived = true;
 			contentLength = client->Http->findContentLength(client->Http->_strReceived);
-			// std::cout << "CHECKING BODY LENGTH " << contentLength << "\n" << std::endl;
-			// std::cout << "METHOD " << client.Http->getField("method") << "\n" << std::endl;
-			if (handleRequest(sender_fd, client->Http->_strReceived,client->Http) != 0)
-				broadcast_message(sender_fd, buf, received, pfds, listener);
+			processClientRequest(sender_fd, client->Http->_strReceived,client->Http);
+				// broadcast_message(sender_fd, buf, received, pfds, listener);
 			client->Http->_strReceived.clear();
 			return;
 		}
-		if (client->Http->headerReceived && client->Http->_strReceived.length() >= contentLength)
+		if (client->Http->headerReceived && client->Http->_strReceived.length() >= contentLength) //fix it
 			return ;
 	}
 	if (received <= 0) {
-		if (received == 0) {
+		if (received == 0)
 			std::cout << "pollserver: socket" << sender_fd << "hung up\n";
-		} else {
-			perror("recv");
-		}
 		close(sender_fd);
 		removeClient(pfds, i, sender_fd);
-		}
-// 	if (handleRequest(sender_fd, client->Http->_strReceived,client->Http) != 0)
-// 		broadcast_message(sender_fd, buf, received, pfds, listener);
+	}
 }
 

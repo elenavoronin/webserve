@@ -78,23 +78,34 @@ void HttpRequest::readRequest(std::string request){
 	}
 }
 
-int HttpRequest::checkErrors() {
-    // std::cout << "Checking for errors. Method: |" << getField("method") << "|"<< " Version: " << getField("version") << std::endl;
-    if (getField("method") != "GET" && method != "POST" && method != "DELETE") {
-        std::cerr << "Error: Invalid method." << std::endl;
-        return 405;
-    }
-    if (getField("version").empty()) {
-        std::cerr << "Error: Version is empty or invalid!" << std::endl;
-        return 400;
-    }
-    if (getField("version") != "HTTP/1.1") { //should we accept HTTP/1.0?
-/*
-For persistent connections (such as in HTTP/1.1), you would leave the client in the pfds list to handle further requests.
-For non-persistent connections (such as in HTTP/1.0), it's appropriate to remove the client after processing the request.
-*/
-        std::cerr << "Error: Invalid HTTP version." << std::endl;
-        return 400;
-    }
-    return 200;
+// int HttpRequest::checkErrors() {
+//     // std::cout << "Checking for errors. Method: |" << getField("method") << "|"<< " Version: " << getField("version") << std::endl;
+//     if (getField("method") != "GET" && method != "POST" && method != "DELETE") {
+//         std::cerr << "Error: Invalid method." << std::endl;
+//         return 405;
+//     }
+//     if (getField("version").empty()) {
+//         std::cerr << "Error: Version is empty or invalid!" << std::endl;
+//         return 400;
+//     }
+//     if (getField("version") != "HTTP/1.1") { //should we accept HTTP/1.0?
+// /*
+// For persistent connections (such as in HTTP/1.1), you would leave the client in the pfds list to handle further requests.
+// For non-persistent connections (such as in HTTP/1.0), it's appropriate to remove the client after processing the request.
+// */
+//         std::cerr << "Error: Invalid HTTP version." << std::endl;
+//         return 400;
+//     }
+//     return 200;
+// }
+
+
+int HttpRequest::findContentLength(std::string request){
+	this->readRequest(request);
+	std::string len = this->getField("Content-length");
+	std::cout << "Content length is " << len << std::endl;
+	if (len != "")
+		return(std::stoi(len));
+	else
+		return 0;
 }
