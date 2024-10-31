@@ -48,16 +48,16 @@ $(NAME): $(OBJ)
 
 $(OBJDIR)/%.o: ./src/%.cpp
 	@ mkdir -p $(dir $@)
-	$(CC) $(CPPFLAGS) -c -I $(HEADERDIR) -o $@ $^
+	@ $(CC) $(CPPFLAGS) -c -I $(HEADERDIR) -o $@ $^
 
 # Compile object files for the tests
 $(OBJTESTDIR)/%.o: ./tests/%.cpp
 	@ mkdir -p $(dir $@)
-	$(CC) $(CPPFLAGS) -c -o $@ $^
+	@$ (CC) $(CPPFLAGS) -c -o $@ $^
 
 # Test target: compile and run the tests
 test: $(OBJTEST)
-	$(CC) $(CPPFLAGS) $(OBJTEST) -o $(TESTNAME)
+	@ $(CC) $(CPPFLAGS) $(OBJTEST) -o $(TESTNAME)
 	@ echo "${CYAN}Running tests...${DONE}"
 	./$(TESTNAME)
 

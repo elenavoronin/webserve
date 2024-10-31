@@ -295,6 +295,12 @@
 		<div class="flex-column-layout-with-gaps">
 			<div class="content-wrapper">
 				<p class="about-text-block">Our C++ Web Server</p>
+				<h1>Leave Your Information</h1>
+				<form action="/submit" method="POST">
+					<label for="name">Name:</label><br>
+					<input type="text" id="name" name="name" required><br><br>
+					<input type="submit" value="Submit">
+				</form>
 				<p class="unique-text-block-style">
 				<p class="readme-subheading"><strong>A simple web server written in C++ that supports HTTP requests
 						and serves static files. The following steps were undertaken to build the web server:
@@ -360,7 +366,7 @@
 			<div class="overlay"></div>
 			<form action="assets/form-image.jpg" class="container">
 				<h1 style="color: white;">Contact us</h1>
-
+				
 				<label for="email" style="color:white"><b>Your name</b></label>
 				<input type="text" placeholder="Enter your intra" name="email" required>
 

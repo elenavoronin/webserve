@@ -18,7 +18,7 @@ class HttpRequest;
 class Server{
 	private:
 		std::string					_port_string;
-		const char* 				_port;
+		// const char* 				_port;
 		std::string 				_server_name;
 		std::string                 _root;
 		std::string					_index;
@@ -51,14 +51,23 @@ class Server{
 
 		void 	addClient(std::vector<struct pollfd> &pfds, int clientSocket, int i);
 		void 	removeClient(std::vector<struct pollfd> &pfds, int i, int clientSocket);
-		int handleRequest(int clientSocket, std::string request, HttpRequest *Http);
+		/*Handle requests*/
+//		int 	handleRequest(int clientSocket, std::string request, HttpRequest *Http);
+		int processClientRequest(int clientSocket, const std::string& request, HttpRequest* Http);
+		int handleGetRequest(int clientSocket, const std::string& path, HttpRequest* Http);
+		int handlePostRequest(int clientSocket, const std::string& path, HttpRequest* Http);
+		int handleDeleteRequest(int clientSocket, const std::string& path, HttpRequest* Http);
+
+
 
 		//setters
      	void set_server_name(const std::string &server_name) { _server_name = server_name; }
         void set_port_string(const std::string &port) { _port_string = port; }
-		void set_port_char() {_port = _port_string.c_str(); }
+	//	void set_port_char(std::string &value) {_port = value.c_str(); std::cout << "PORT inside setter " << _port << std::endl;}
         void set_root(const std::string &root) { _root = root; }
         void set_autoindex(bool autoindex) { _autoindex = autoindex; }
+        // void set_cgi_pass(const std::string &cgi_pass) { set_cgi_pass = cgi_pass; }
+		// void set_cgi_path(const std::string &cgi_path) { set_cgi_path = cgi_path; }
         // void set_cgi_pass(const std::string &cgi_pass) { set_cgi_pass = cgi_pass; }
 		// void set_cgi_path(const std::string &cgi_path) { set_cgi_path = cgi_path; }
         void set_upload_store(const std::string &upload_store) { _upload_store = upload_store; }
@@ -97,4 +106,16 @@ class Server{
 		std::map<std::string, Location> get_locations() const {
 			return _locations;
 		}
+
+		std::string getPortStr() const {return this->_port_string;}
+		std::string getIndex() const {return this->_index;}
+		std::string getServer_name() const {return this->_server_name;}
+		std::string getRoot() const {return this->_root;}
+		std::vector<std::string> getAllowed_methods() const {return this->_allowed_methods;}
+		bool getAutoindex() const {return this->_autoindex;}
+		std::string getUpload_store() const {return this->_upload_store;}
+		std::string getDefault_file() const {return this->_default_file;}
+		std::string getHost() const {return this->_host;}
+		std::vector<std::string> getErrorPage() const {return this->_errorPage;}
 };
+
