@@ -1,0 +1,19 @@
+Content-type: text/html
+
+<html>
+<head>
+<title>Simple Python CGI</title>
+</head>
+<body>
+<h1>Hello, Djoyke!</h1>
+<p>Your age is 33.</p>
+<h2>Environment Variables</h2>
+<pre>
+REQUEST_METHOD: GET
+QUERY_STRING: name=Djoyke&age=33
+CONTENT_TYPE: text/html
+SCRIPT_NAME: /cgi-bin/hello.py
+LC_CTYPE: C.UTF-8
+</pre>
+</body>
+</html>
