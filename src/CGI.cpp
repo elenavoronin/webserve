@@ -31,7 +31,7 @@ void CGI::executeCgi(Server server) {
     // std::string cgi_pass = server.getCgiPass();
     // std::string cgi_path = server.getCgiPath();
 
-    // // Set up necessary environment variables?
+    // Set up necessary environment variables?
     // setenv("REQUEST_METHOD", "GET", 1);  // Example, adjust as needed
     // setenv("QUERY_STRING", "name=John&age=30", 1);  // Example query string
     

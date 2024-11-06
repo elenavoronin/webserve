@@ -17,18 +17,19 @@ class Client;
 class HttpRequest; 
 class Server{
 	private:
-		std::string					_port_string;
-		// const char* 				_port;
-		std::string 				_server_name;
-		std::string                 _root;
-		std::string					_index;
-        std::vector<std::string>    _allowed_methods;
-		bool                        _autoindex;
-        std::string                 _upload_store;
-        std::string                 _default_file;
-		std::string					_host;			   
-		std::vector<std::string>	_errorPage;
+		std::string						_port_string;
+		// const char* 					_port;
+		std::string 					_server_name;
+		std::string                 	_root;
+		std::string						_index;
+        std::vector<std::string>    	_allowed_methods;
+		bool                        	_autoindex;
+        std::string                 	_upload_store;
+        std::string                 	_default_file;
+		std::string						_host;			   
+		std::vector<std::string>		_errorPage;
 		std::map<std::string, Location> _locations;
+
 	public:
 		std::vector<Client> clients; //do i need it?
 		Server();

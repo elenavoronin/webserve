@@ -3,7 +3,7 @@
 #include <unistd.h>
 
 
-Client::Client() : clientSocket(0), Http(new HttpRequest()) {}
+Client::Client() : _clientSocket(0), _HttpRequest(new HttpRequest()), _HttpResponse(new HttpResponse()), _i(0) {}
 /*
 1. Shadowing Issue in Client Constructor
 
@@ -15,9 +15,13 @@ Client::~Client(){
 	// if (clientSocket != -1)
 	// 	close(clientSocket);
 	// std::cout << "~Client() 1 " << std::endl;
-	if (Http != nullptr){
-		delete Http;
-		Http = nullptr;
+	if (_HttpRequest != nullptr){
+		delete _HttpRequest;
+		_HttpRequest = nullptr;
+	}
+		if (_HttpResponse != nullptr){
+		delete _HttpResponse;
+		_HttpResponse = nullptr;
 	}
 	// std::cout << "~Client() 2 " << std::endl;
 }
@@ -25,10 +29,13 @@ Client::~Client(){
 Client& Client::operator=(const Client& copy){
 	// std::cout << "Client::operator= 1 " << std::endl;
 	if (this != &copy) {
-		clientSocket = copy.clientSocket;
-		if (Http != nullptr)
-			delete Http;
-		Http = new HttpRequest(*copy.Http);
+		_clientSocket = copy._clientSocket;
+		if (_HttpRequest != nullptr)
+			delete _HttpRequest;
+		_HttpRequest = new HttpRequest(*copy._HttpRequest);
+		if (_HttpResponse != nullptr)
+			delete _HttpResponse;
+		_HttpResponse = new HttpResponse(*copy._HttpResponse);
 	}
 	// std::cout << "Client::operator= 2 " << std::endl;
 	return *this;
@@ -36,16 +43,41 @@ Client& Client::operator=(const Client& copy){
 
 Client::Client(const Client& copy){
 	// std::cout << "Client(const Client& copy 1 " << std::endl;
-	clientSocket = copy.clientSocket;
-	Http = new HttpRequest(*copy.Http);
+	_clientSocket = copy._clientSocket;
+	_HttpRequest = new HttpRequest(*copy._HttpRequest);
+	_HttpResponse = new HttpResponse(*copy._HttpResponse);
 	// std::cout << "Client(const Client& copy 2 " << std::endl;
 }
 
 void Client::setSocket(int i){
-	clientSocket = i;
+	_clientSocket = i;
 	// std::cout << "Socket " << clientSocket << std::endl;
 }
 
 int Client::getSocket(){
-	return clientSocket;
+	return _clientSocket;
+}
+
+void Client::setI(int i){
+	_i = i;
+}
+
+int Client::getI(){
+	return _i;
+}
+
+void Client::setHttpRequest(HttpRequest* httpRequest){
+	_HttpRequest = httpRequest;
+}
+
+void Client::setHttpResponse(HttpResponse* httpResponse){
+	_HttpResponse = httpResponse;
+}
+
+HttpRequest* Client::getHttpRequest() const{
+	return _HttpRequest;
+}
+
+HttpResponse* Client::getHttpResponse() const{
+	return _HttpResponse;
 }

@@ -8,6 +8,8 @@
 #include <unistd.h>
 #include <sys/wait.h>
 #include "Server.hpp"
+#include "HttpRequest.hpp"
+#include "HttpResponse.hpp"
 
 # define READ 0
 # define WRITE 1
@@ -55,6 +57,7 @@ class CGI {
 
 		// Internal storage for CGI parameters (like parsed query strings)
 		std::map<std::string, std::string> 	_queryParams;
+		// const HttpRequest& 					_hhtpRequest; //reference to existing request
 		// Internal storage for input data (POST request body)
 		std::string 						_inputData;
 		std::string							_path;
@@ -65,6 +68,7 @@ class CGI {
 		std::string _urlDecode(const std::string& str);
 		
 	public:
+		// CGI(const HttpRequest& httpRequest) : _hhtpRequest(httpRequest) {};
 		CGI();
 		~CGI();
 
