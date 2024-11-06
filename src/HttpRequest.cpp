@@ -15,9 +15,9 @@ HttpRequest& HttpRequest::operator=(const HttpRequest& copy){
 	// std::cout << "HttpRequest::operator= 1"  << std::endl;
 
     if (this != &copy) { // CORRECT?
-	this->method = copy.method; // CORRECT?
-	this->path = copy.path;
-	this->version = copy.version;
+	this->_method = copy._method; // CORRECT?
+	this->_path = copy._path;
+	this->_version = copy._version;
 	this->_strReceived = copy._strReceived;
 	this->_request = copy._request;
     }
@@ -27,9 +27,9 @@ HttpRequest& HttpRequest::operator=(const HttpRequest& copy){
 
 HttpRequest::HttpRequest(const HttpRequest& copy){
 	// std::cout << "HttpRequest(const HttpRequest& copy) 1"  << std::endl;
-	this->method = copy.method; // CORRECT?
-	this->path = copy.path;
-	this->version = copy.version;
+	this->_method = copy._method; // CORRECT?
+	this->_path = copy._path;
+	this->_version = copy._version;
 	this->_strReceived = copy._strReceived;
 	this->_request = copy._request;
 	// std::cout << "HttpRequest(const HttpRequest& copy) 2"  << std::endl;
@@ -37,13 +37,6 @@ HttpRequest::HttpRequest(const HttpRequest& copy){
 
 void HttpRequest::setField(std::string key, std::string value){
 	_request[key] = value;
-}
-
-std::string HttpRequest::trim(std::string& str) {
-    size_t first = str.find_first_not_of(" \t\n\r");
-    if (first == std::string::npos) return "";
-    size_t last = str.find_last_not_of(" \t\n\r");
-    return str.substr(first, (last - first + 1));
 }
 
 std::string HttpRequest::getField(std::string key){
@@ -54,6 +47,22 @@ std::string HttpRequest::getField(std::string key){
 		return trim(it->second); //added trim
 	}
 	return "";
+}
+
+std::string& HttpRequest::getStrReceived(){
+	return _strReceived;
+}
+
+void HttpRequest::clearStrReceived(){
+	_strReceived = "";
+}
+
+bool HttpRequest::isHeaderReceived() const{
+	return _headerReceived;
+}
+
+void HttpRequest::setHeaderReceived(bool received){
+	_headerReceived = received;
 }
 
 void HttpRequest::readRequest(std::string request){
@@ -81,6 +90,13 @@ void HttpRequest::readRequest(std::string request){
 	}
 }
 
+std::string HttpRequest::trim(std::string& str) {
+    size_t first = str.find_first_not_of(" \t\n\r");
+    if (first == std::string::npos) return "";
+    size_t last = str.find_last_not_of(" \t\n\r");
+    return str.substr(first, (last - first + 1));
+}
+
 // int HttpRequest::checkErrors() {
 //     // std::cout << "Checking for errors. Method: |" << getField("method") << "|"<< " Version: " << getField("version") << std::endl;
 //     if (getField("method") != "GET" && method != "POST" && method != "DELETE") {
@@ -101,7 +117,6 @@ void HttpRequest::readRequest(std::string request){
 //     }
 //     return 200;
 // }
-
 
 int HttpRequest::findContentLength(std::string request){
 	this->readRequest(request);

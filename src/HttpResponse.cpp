@@ -39,6 +39,7 @@
 	 * by a double newline.
 	 *
 	 * @return A string containing the full HTTP response.
+	 * @todo fix this
 	 */
 	std::string HttpResponse::buildResponse() const {
 		std::ostringstream response;

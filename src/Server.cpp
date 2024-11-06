@@ -162,7 +162,7 @@ int Server::report_ready(std::vector<struct pollfd> &pfds){
 - clientSocket: The file descriptor for the client socket to add*/
 void Server::addClient(std::vector<struct pollfd> &pfds, int clientSocket, int i){
 	Client newClient;
-	newClient.i = i;
+	newClient.setI(i);
 	newClient.setSocket(clientSocket);
 	clients.push_back(newClient);
 	add_to_pfds(pfds, clientSocket);
@@ -241,27 +241,62 @@ void Server::handle_new_connection(int listener, std::vector<struct pollfd> &pfd
 // - pfds: Vector of pollfd structures
 // - i: Index of the pollfd that has client data ready
 // - listener: File descriptor for the listener socket (used to avoid sending data back to it)
+// void Server::handle_client_data(std::vector<struct pollfd> &pfds, int i, int listener){
+// 	int contentLength = 0;
+// 	char buf[20] = {0};
+// 	int sender_fd = pfds[i].fd;
+// 	Client* client;
+
+// 	for (auto& c : clients){ //find the Client
+// 		if (c.getSocket() == sender_fd)
+// 			client = &c;
+// 	}
+
+// 	int received = recv(sender_fd, buf, sizeof(buf), 0);
+// 	if (received > 0){ //The only difference between recv() and read(2) is the presence of flags. 
+// 		client->_HttpRequest->_strReceived.append(buf, received); //save the request in _strReceived
+// 		if (client->_HttpRequest->_strReceived.find("\r\n\r\n") != std::string::npos && !client->Http->headerReceived){
+// 			client->_HttpRequest->_headerReceived = true;
+// 			contentLength = client->_HttpRequest->findContentLength(client->_HttpRequest->_strReceived);
+// 			processClientRequest(sender_fd, client->_HttpRequest->_strReceived, client->_HttpRequest);
+// 				// broadcast_message(sender_fd, buf, received, pfds, listener);
+// 			client->_HttpRequest->_strReceived.clear();
+// 			return;
+// 		}
+// 		if (client->_HttpRequest->headerReceived && client->_HttpRequest->_strReceived.length() >= contentLength) //fix it
+// 			return ;
+// 	}
+// 	if (received <= 0) {
+// 		if (received == 0)
+// 			std::cout << "pollserver: socket" << sender_fd << "hung up\n";
+// 		close(sender_fd);
+// 		removeClient(pfds, i, sender_fd);
+// 	}
+// }
 void Server::handle_client_data(std::vector<struct pollfd> &pfds, int i, int listener){
 	int contentLength = 0;
 	char buf[20] = {0};
 	int sender_fd = pfds[i].fd;
 	Client* client;
+
 	for (auto& c : clients){ //find the Client
 		if (c.getSocket() == sender_fd)
 			client = &c;
 	}
+
 	int received = recv(sender_fd, buf, sizeof(buf), 0);
 	if (received > 0){ //The only difference between recv() and read(2) is the presence of flags. 
-		client->Http->_strReceived.append(buf, received); //save the request in _strReceived
-		if (client->Http->_strReceived.find("\r\n\r\n") != std::string::npos && !client->Http->headerReceived){
-			client->Http->headerReceived = true;
-			contentLength = client->Http->findContentLength(client->Http->_strReceived);
-			processClientRequest(sender_fd, client->Http->_strReceived,client->Http);
-				// broadcast_message(sender_fd, buf, received, pfds, listener);
-			client->Http->_strReceived.clear();
+		HttpRequest* request = client->getHttpRequest();
+		request->getStrReceived().append(buf, received); //save the request in _strReceived
+		if (request->getStrReceived().find("\r\n\r\n") != std::string::npos && !request->isHeaderReceived()){
+			request->setHeaderReceived(true);
+			contentLength = request->findContentLength(request->getStrReceived());
+			processClientRequest(sender_fd, request->getStrReceived(), request);
+			// broadcast_message(sender_fd, buf, received, pfds, listener);
+			request->clearStrReceived();
 			return;
 		}
-		if (client->Http->headerReceived && client->Http->_strReceived.length() >= contentLength) //fix it
+		if (request->isHeaderReceived() && request->getStrReceived().length() >= contentLength) //fix it
 			return ;
 	}
 	if (received <= 0) {
