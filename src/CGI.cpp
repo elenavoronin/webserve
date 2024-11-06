@@ -57,6 +57,7 @@ void CGI::handleCgiRequest(int client_socket, const std::string& path, Server se
         perror("pipe failed");
         return ;
     } 
+
     //if POST method
     //create both GET and POST
     this->_pid = fork();
@@ -76,11 +77,6 @@ void CGI::handleCgiRequest(int client_socket, const std::string& path, Server se
         close(_responsePipe[WRITE]);
         // wait for the child process to finish
         waitpid(this->_pid, nullptr, 0);
-        // std::ofstream file("_responsePipe.txt");
-        // if (!file.is_open()) {
-        //     std::cerr << "Error: unable to open file for writing" << std::endl;
-        //     return;
-        // }
 
         //read this in chunks
         char buffer[1024];
@@ -93,8 +89,6 @@ void CGI::handleCgiRequest(int client_socket, const std::string& path, Server se
                 return;
             }
             cgi_output.append(buffer, bytes_read);
-            // Write the read data to the file
-            // file.write(buffer, bytes_read);
             close(_responsePipe[READ]);
 
             // TODO Djoyke: append to map instead
@@ -105,12 +99,6 @@ void CGI::handleCgiRequest(int client_socket, const std::string& path, Server se
             response += "\r\n";
             response += cgi_output;  // Append the CGI output as the response body
 
-            // Check if the write operation was successful
-            // if (!file.good()) {
-            //     std::cerr << "Error: write to file failed" << std::endl;
-            //     return;
-            // }
-
             write(client_socket, response.c_str(), response.size());
             close(client_socket);
         }
@@ -119,13 +107,11 @@ void CGI::handleCgiRequest(int client_socket, const std::string& path, Server se
             std::cerr << "Error: read from pipe failed" << std::endl;
             return;
         }
-        // file.close();
         // Close the pipe file descriptor
         if (close(_responsePipe[READ]) == -1) {
             std::cerr << "Error: unable to close pipe file descriptor" << std::endl;
             return ;
         }
-        
         // 2) pass it as body to response to be used
         // 3)(later need to add to poll struct) and read as fast asother poll adds and read
         // 4) if error in child keep status code

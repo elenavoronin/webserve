@@ -42,15 +42,16 @@
 	 * @todo fix this
 	 */
 	std::string HttpResponse::buildResponse() const {
-		std::ostringstream response;
+		std::string response;
 		// Build the HTTP status line
-		response << "HTTP/1.1 " << std::to_string(_statusCode) << " " << _statusMessage << "\r\n";
+		response = "HTTP/1.1 " + std::to_string(_statusCode) + " " + _statusMessage + "\r\n";
 		// Build the headers
 		for (const auto& header : _headers) {
 			// The header name and value are separated by a colon and a space
-			response << header.first << ": " << header.second << "\r\n";
+			response += header.first + ": " + header.second + "\r\n";
 		}
 		// Add the body
-		response << "\r\n" << _body;
-		return response.str();
+		response += "\r\n";
+		response += _body;
+		return response;
 	}
