@@ -91,13 +91,25 @@ void CGI::handleCgiRequest(int client_socket, const std::string& path, Server se
             cgi_output.append(buffer, bytes_read);
             close(_responsePipe[READ]);
 
-            // TODO Djoyke: append to map instead
-            // Send headers and the CGI response to the client
-            std::string response = "HTTP/1.1 200 OK\r\n";
-            response += "Content-Type: text/html\r\n";
-            response += "Content-Length: " + std::to_string(cgi_output.size()) + "\r\n";
-            response += "\r\n";
-            response += cgi_output;  // Append the CGI output as the response body
+            HttpResponse response;
+            response.setStatus(200, "OK");
+            response.setHeader("Content-Type", "text/html");  // Set appropriate content type
+            response.setBody(cgi_output);  // Set the CGI output as the response body
+
+            // Send response to client
+            std::string response_str = response.buildResponse();
+            ssize_t bytes_written = write(client_socket, response_str.c_str(), response_str.size());
+            if (bytes_written == -1) {
+                std::cerr << "Error: failed to write response to client socket" << std::endl;
+            }
+            
+            // // TODO Djoyke: append to map instead
+            // // Send headers and the CGI response to the client
+            // std::string response = "HTTP/1.1 200 OK\r\n";
+            // response += "Content-Type: text/html\r\n";
+            // response += "Content-Length: " + std::to_string(cgi_output.size()) + "\r\n";
+            // response += "\r\n";
+            // response += cgi_output;  // Append the CGI output as the response body
 
             write(client_socket, response.c_str(), response.size());
             close(client_socket);
