@@ -28,6 +28,6 @@ class HttpRequest {
 		std::string getField(std::string key);
 		void readRequest(std::string request);
 		std::string trim(std::string& str);
-		int checkErrors();
+		// int checkErrors();
 		int findContentLength(std::string request);
 };
