@@ -21,4 +21,7 @@ class HttpResponse {
 		std::string getHeader(const std::string& key) const;
 		void setBody(const std::string& content);
 		std::string buildResponse() const;
+
+		// Redirection helper
+    	void redirect(const std::string& location, int status_code, const std::string& message);
 };

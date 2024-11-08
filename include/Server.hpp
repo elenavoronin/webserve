@@ -65,8 +65,7 @@ class Server {
 		int handleGetRequest(int clientSocket, const std::string& path, HttpRequest* Http);
 		int handlePostRequest(int clientSocket, const std::string& path, HttpRequest* Http);
 		int handleDeleteRequest(int clientSocket, const std::string& path, HttpRequest* Http);
-
-
+		void sendResponse(int clientSocket, const std::string& response);
 
 		//setters
      	void set_server_name(const std::string &server_name) { _server_name = server_name; }
@@ -120,4 +119,3 @@ class Server {
 		std::string getHost() const {return this->_host;}
 		std::vector<std::string> getErrorPage() const {return this->_errorPage;}
 };
-
