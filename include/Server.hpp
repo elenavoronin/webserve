@@ -102,6 +102,7 @@ class Server {
 		}
     
 		void set_location(const std::string& path, const Location& location) {
+			// std::cerr << path << std::endl;
 			this->_locations[path] = location;
 		}
 		std::map<std::string, Location> get_locations() const {

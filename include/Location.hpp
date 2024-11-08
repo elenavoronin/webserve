@@ -20,8 +20,8 @@ class Location {
 
 public:
     Location();
-    Location(const Location& copy);
-    Location& operator=(const Location& copy);
+    Location(const Location& copy) = default;
+    Location& operator=(const Location& copy) = default;
     ~Location();
     void set_root(const std::string& root);
     void set_allowed_methods(const std::vector<std::string>& methods);

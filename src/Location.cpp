@@ -9,27 +9,6 @@
 Location::Location() {}
 Location::~Location() {}
 
-Location::Location(const Location& copy) {
-    _root = copy._root;
-    _allowed_methods = copy._allowed_methods;
-    _autoindex = copy._autoindex;
-    _cgi_pass = copy._cgi_pass;
-    _cgi_path = copy._cgi_path;
-}
-Location& Location::operator=(const Location& copy) {
-    if (this != &copy) {
-        this->_root = copy._root;
-        this->_allowed_methods = copy._allowed_methods;
-        this->_autoindex = copy._autoindex;
-        this->_cgi_pass = copy._cgi_pass;
-        this->_cgi_path = copy._cgi_path;
-    }
-    return *this;
-}
-
-
-
-
 void Location::set_root(const std::string& root) {
     this->_root = root;
 }
