@@ -6,8 +6,6 @@
 #include <vector>
 #include <iostream>
 
-
-
 Location::Location() {}
 Location::~Location() {}
 
@@ -28,6 +26,9 @@ Location& Location::operator=(const Location& copy) {
     }
     return *this;
 }
+
+
+
 
 void Location::set_root(const std::string& root) {
     this->_root = root;
