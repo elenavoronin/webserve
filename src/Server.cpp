@@ -58,7 +58,16 @@ void Server::run() {
 	int listener = report_ready(pfds);
 	int poll_test;
 	
+/*
+TODO Create the vector of vectors, iterate like 2d array vector<vector<Client>>
+TODO StrReceived will be only for body, separate it from head
+TODO handleGet check extension (img. html ..) instead cgi-bin
+send fileto SendFile instead of filepath, cause i open it twice
+TODO in SEndFile Respond why 404? Don't I check it twice before use
+TODO Send should be done in chunks like read and go to poll, change events to POLLOUT somewhere
+*/
 
+//Creating a function mainLoop in Config.cpp
 	while (true) {
 		poll_test = poll(pfds.data(), pfds.size(), -1);
 		if (poll_test == -1) {
@@ -245,7 +254,7 @@ void Server::handle_new_connection(int listener, std::vector<struct pollfd> &pfd
 // - i: Index of the pollfd that has client data ready
 // - listener: File descriptor for the listener socket (used to avoid sending data back to it)
 void Server::handle_client_data(std::vector<struct pollfd> &pfds, int i, int listener){
-
+/*Add POLLOUT when I reached the length, don't close cause I still need to connect to client*/
 	(void)listener;//unvoid
 	unsigned long contentLength = 0;//changed from int to unsigned long because of flags
 	char buf[20] = {0};

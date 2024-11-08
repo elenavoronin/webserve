@@ -5,6 +5,8 @@
 #include <fstream>
 #include <vector>
 #include <iostream>
+#include <poll.h>
+
 
 Config::Config() {
     // std::cout << "Config constructor called" << std::endl;
@@ -151,6 +153,31 @@ std::vector<Server> Config::parse_config(std::ifstream &file) {
     return servers;
 }
 
+void mainLoop(std::vector<Server> _server){
+	std::vector<struct pollfd> pfds;
+    int poll_test;
+    for(Server& current_server: _server)
+        current_server.listener = current_server.report_ready(pfds);		
+    while (true) {
+        poll_test = poll(pfds.data(),pfds.size(), -1);
+        if (poll_test == -1) {
+            std::cout << "Poll error" << std::endl;
+            return;
+        }
+        for (size_t i = 0; i < pfds.size(); i++) 
+        {
+            if (current_server.pfds[i].revents & POLLIN) 
+            { //Add loop for servers and clients inside, check if it s server - new connection, if its client inside a server - handle data
+                if (pfds[i].fd == current_server.listener) {
+                    current_server.handle_new_connection(current_server.listener, pfds, i);
+                } else {
+                    current_server.handle_client_data(pfds, i, current_server.listener);
+                }
+            }fd from the poll equal to fd from the pipe from cgi
+        }
+    }
+}
+
 int Config::check_config(const std::string &config_file) {
     std::ifstream file(config_file.c_str());
     if (!file) {
@@ -161,12 +188,11 @@ int Config::check_config(const std::string &config_file) {
         std::cerr << "Error: Cannot open config file." << std::endl;
         return -1;
     }
-    _servers = parse_config(file); //TODO this needs to be connected to Anna's part
-	for(Server& current_server: _servers){
-		// std::cout << "PORT " << current_server.getPort() << std::endl;
-		// std::cout << "PORT " << current_server.getPortStr() << std::endl;
-		current_server.run();
-	}
+    _servers = parse_config(file);
+    mainLoop(_servers);
+	// for(Server& current_server: _servers){
+	// 	current_server.run();
+	// }
     file.close();
     return 0;
 }

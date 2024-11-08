@@ -10,7 +10,7 @@
 #include <map>
 #include "Config.hpp"
 #include "Location.hpp"
-
+#include <poll.h>
 
 class Client; 
 // class Location;
@@ -29,9 +29,16 @@ class Server{
 		std::string						_host;			   
 		std::vector<std::string>		_errorPage;
 		std::map<std::string, Location> _locations;
+		
+		
 
 	public:
-		std::vector<Client> clients; //do i need it?
+		int listener; //do i need it?
+		int poll_test; //do i need it?
+		std::vector<struct pollfd> pfds; //do i need it?
+
+
+		std::vector<Client> clients;
 		Server();
 		Server(const Server& copy) = default;
 		Server& operator=(const Server& copy) = default;
