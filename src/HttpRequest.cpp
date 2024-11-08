@@ -16,6 +16,7 @@ HttpRequest& HttpRequest::operator=(const HttpRequest& copy){
 
     if (this != &copy) { // CORRECT?
 	this->_method = copy._method; // CORRECT?
+	// std::cout << "METHOD IS: " << _method << std::endl;//TODO
 	this->_path = copy._path;
 	this->_version = copy._version;
 	this->_strReceived = copy._strReceived;
