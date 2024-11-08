@@ -85,7 +85,7 @@ int Server::handleGetRequest(int clientSocket, const std::string& path, HttpRequ
 	}
 	if (path.rfind("/cgi-bin/", 0) == 0) { //change to config
 		CGI cgi;
-		cgi.handleCgiRequest(clientSocket, path, *this, Http);
+		cgi.handleCgiRequest(clientSocket, path, *this, *Http);
 		return 0;
 	}
 	std::ifstream file(filepath);
@@ -167,7 +167,7 @@ int Server::processClientRequest(int clientSocket, const std::string& request, H
 	requestStream >> method >> path >> version;
 	Http->readRequest(request);
 	int status = validateRequest(method, version);
-	std::cout << "Content-type: " << Http->getField("Content-type") << std::endl;
+	// std::cout << "Content-type: " << Http->getField("Content-type") << std::endl;
 	if (status != 200) {
 		sendFileResponse(clientSocket, "www/html/error.html", status);  //change to a config ones?
 		return status;

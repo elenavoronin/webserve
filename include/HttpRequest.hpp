@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include "Server.hpp"
+#include <string>
 #include <map>
 
 class HttpRequest {
@@ -24,6 +25,8 @@ class HttpRequest {
 
 		void setField(std::string key, std::string value);
 		std::string getField(std::string key);
+
+		std::string getPath() const;
 
 		// Getters and setters for _strReceived
     	std::string& getStrReceived();

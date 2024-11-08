@@ -18,13 +18,36 @@ void CGI::readInput(){
 
 }
 
-std::string CGI::getEnv(const std::string& var_name){
+// std::string CGI::getEnv(const std::string& var_name){
 
+// }
+
+void CGI::parseQueryString(HttpRequest& request){
+    _path = request.getPath();
+    std::size_t startPos = _path.find("GET ");
 }
 
 void CGI::initializeEnvVars(HttpRequest& request){
+    // Add REQUEST_METHOD from HttpRequest
     _envVars.push_back("REQUEST_METHOD=" + request.getField("method"));
-    _envVars.push_back("QUERY_STRING=" + request.getField("query_string"));
+    // Add QUERY_STRING from request path or headers
+    parseQueryString(request);
+    _envVars.push_back("QUERY_STRING=" + _queryParams);
+    // Add CONTENT_TYPE from HttpRequest headers, if it exists
+    std::string contentType = request.getField("Content-Type");
+    if (!contentType.empty()) {
+        _envVars.push_back("CONTENT_TYPE=" + contentType);
+    }
+    // add SCRIPT_NAME
+    _envVars.push_back("SCRIPT_NAME=" + request.getField("script_name"));
+    std::cout << "PRINTING THISSS : " << request.getField("query_string") << std::endl;
+
+
+    // Convert envVars to char* format for execve
+    for (const auto& var : _envVars) {
+        _env.push_back(const_cast<char*>(var.c_str())); // Convert strings to char* for execve
+    }
+    _env.push_back(nullptr);  // Null-terminate for execve
 }
 
 //executable checkt argv[1] but have to pass the executable as first argument
@@ -49,7 +72,8 @@ void CGI::executeCgi(Server server) {
     close(_responsePipe[READ]);  // Close unused read end
     close(_responsePipe[WRITE]); // Close write end after dup2
 
-	execve(argv[0], const_cast<char* const*>(argv), const_cast<char* const*>(_envVars));
+	// execve(argv[0], const_cast<char* const*>(argv), const_cast<char* const*>(_envVars));
+    execve(argv[0], const_cast<char* const*>(argv), _env.data());
 	
 	perror("execve failed");
 	exit(EXIT_FAILURE);
