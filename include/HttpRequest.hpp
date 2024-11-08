@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include "Server.hpp"
+#include <string>
 #include <map>
 
 class HttpRequest {
@@ -9,11 +10,6 @@ class HttpRequest {
 		std::map<std::string, std::string> 		_request;
 		std::string 							_strReceived;
 		bool 									_headerReceived = false;
-		std::string								_method; //dont need!
-		std::string 							_path;
-		std::string 							_version;
-		std::string 							_header; //? change also in copy constructor
-		std::string 							_body; //?
 
 	public:
 		HttpRequest();

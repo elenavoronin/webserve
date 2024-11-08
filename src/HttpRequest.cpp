@@ -15,9 +15,6 @@ HttpRequest& HttpRequest::operator=(const HttpRequest& copy){
 	// std::cout << "HttpRequest::operator= 1"  << std::endl;
 
     if (this != &copy) { // CORRECT?
-	this->_method = copy._method; // CORRECT?
-	this->_path = copy._path;
-	this->_version = copy._version;
 	this->_strReceived = copy._strReceived;
 	this->_request = copy._request;
     }
@@ -27,11 +24,9 @@ HttpRequest& HttpRequest::operator=(const HttpRequest& copy){
 
 HttpRequest::HttpRequest(const HttpRequest& copy){
 	// std::cout << "HttpRequest(const HttpRequest& copy) 1"  << std::endl;
-	this->_method = copy._method; // CORRECT?
-	this->_path = copy._path;
-	this->_version = copy._version;
 	this->_strReceived = copy._strReceived;
 	this->_request = copy._request;
+	// std::cout << "PATH :" << this->_request["path"] << std::endl;
 	// std::cout << "HttpRequest(const HttpRequest& copy) 2"  << std::endl;
 }
 
@@ -85,7 +80,7 @@ void HttpRequest::readRequest(std::string request){
 			std::string value = line.substr(colon + 1);
 			value = trim(value);
 			setField(key, value);
-			std::cout << "key is: " << key << "       value is: " << value << std::endl;
+			// std::cout << "key is: " << key << "       value is: " << value << std::endl;
 		}
 	}
 }
@@ -121,7 +116,7 @@ std::string HttpRequest::trim(std::string& str) {
 int HttpRequest::findContentLength(std::string request){
 	this->readRequest(request);
 	std::string len = this->getField("Content-length");
-	std::cout << "Content length is " << len << std::endl;
+	// std::cout << "Content length is " << len << std::endl;
 	if (len != "")
 		return(std::stoi(len));
 	else
