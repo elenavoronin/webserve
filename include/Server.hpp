@@ -95,13 +95,12 @@ class Server{
         std::cout << std::endl;
 		std::cout << "Error Pages: ";
     	for (std::vector<std::string>::const_iterator it = _errorPage.begin(); it != _errorPage.end(); ++it) {
-        std::cout << *it << " ";
+    	std::cout << *it << " ";
     	}
     	std::cout << std::endl;
 		}
     
 		void set_location(const std::string& path, const Location& location) {
-			// std::cerr << path << std::endl;
 			this->_locations[path] = location;
 		}
 		std::map<std::string, Location> get_locations() const {

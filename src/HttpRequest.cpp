@@ -85,7 +85,7 @@ void HttpRequest::readRequest(std::string request){
 			std::string value = line.substr(colon + 1);
 			value = trim(value);
 			setField(key, value);
-			std::cout << "key is: " << key << "       value is: " << value << std::endl;
+			// std::cout << "key is: " << key << "       value is: " << value << std::endl;
 		}
 	}
 }
@@ -121,7 +121,7 @@ std::string HttpRequest::trim(std::string& str) {
 int HttpRequest::findContentLength(std::string request){
 	this->readRequest(request);
 	std::string len = this->getField("Content-length");
-	std::cout << "Content length is " << len << std::endl;
+	// std::cout << "Content length is " << len << std::endl;
 	if (len != "")
 		return(std::stoi(len));
 	else
