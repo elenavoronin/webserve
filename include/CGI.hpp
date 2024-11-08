@@ -37,13 +37,13 @@ class CGI {
 
 	private:
 		// Example: Storing key environment variables //should I make this const?
-    	const char* 						_envVars[5] = { //make dynamic
-        "REQUEST_METHOD=GET", 				//extract from map made from request
-        "QUERY_STRING=name=Djoyke&age=33",	//need to check this from the request n CGI
-        "CONTENT_TYPE=text/html",			//get from map
-        "SCRIPT_NAME=/cgi-bin/hello.py",	//get from map
-        nullptr  // Null-terminated array
-   		};
+    	// const char* 						_envVars[5] = { //make dynamic
+        // "REQUEST_METHOD=GET", 				//extract from map made from request
+        // "QUERY_STRING=name=Djoyke&age=33",	//need to check this from the request n CGI
+        // "CONTENT_TYPE=text/html",			//get from map
+        // "SCRIPT_NAME=/cgi-bin/hello.py",	//get from map
+        // nullptr  // Null-terminated array
+   		// };
 		std::vector<std::string>			_envVars; //store environment variables as strings
 		std::vector<char *> 				_env;// convert to char* format for execve
 
@@ -58,7 +58,7 @@ class CGI {
    		// };
 
 		// Internal storage for CGI parameters (like parsed query strings)
-		std::map<std::string, std::string> 	_queryParams;
+		std::string							_queryParams;
 		// const HttpRequest& 					_hhtpRequest; //reference to existing request
 		// Internal storage for input data (POST request body)
 		std::string 						_inputData;
@@ -80,7 +80,7 @@ class CGI {
 		// Method to get a specific environment variable
 		std::string getEnv(const std::string& var_name);
 		// Method to parse the query string (for GET requests)
-		void parseQueryString();
+		void parseQueryString(HttpRequest& request);
 		// Method to get the value of a specific query parameter
 		std::string getQueryParam(const std::string& param_name);
 		// Method to send the HTTP content-type header (like "Content-Type: text/html")

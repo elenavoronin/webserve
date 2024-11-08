@@ -16,7 +16,7 @@ HttpRequest& HttpRequest::operator=(const HttpRequest& copy){
 
     if (this != &copy) { // CORRECT?
 	this->_method = copy._method; // CORRECT?
-	// std::cout << "METHOD IS: " << _method << std::endl;//TODO
+	std::cout << "METHOD IS: " << _method << std::endl;//TODO
 	this->_path = copy._path;
 	this->_version = copy._version;
 	this->_strReceived = copy._strReceived;
@@ -48,6 +48,10 @@ std::string HttpRequest::getField(std::string key){
 		return trim(it->second); //added trim
 	}
 	return "";
+}
+
+std::string HttpRequest::getPath() const {
+	return _path;
 }
 
 std::string& HttpRequest::getStrReceived(){
@@ -86,7 +90,7 @@ void HttpRequest::readRequest(std::string request){
 			std::string value = line.substr(colon + 1);
 			value = trim(value);
 			setField(key, value);
-			std::cout << "key is: " << key << "       value is: " << value << std::endl;
+			// std::cout << "key is: " << key << "       value is: " << value << std::endl;
 		}
 	}
 }
@@ -122,7 +126,7 @@ std::string HttpRequest::trim(std::string& str) {
 int HttpRequest::findContentLength(std::string request){
 	this->readRequest(request);
 	std::string len = this->getField("Content-length");
-	std::cout << "Content length is " << len << std::endl;
+	// std::cout << "Content length is " << len << std::endl;
 	if (len != "")
 		return(std::stoi(len));
 	else
