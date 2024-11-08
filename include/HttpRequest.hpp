@@ -10,11 +10,6 @@ class HttpRequest {
 		std::map<std::string, std::string> 		_request;
 		std::string 							_strReceived;
 		bool 									_headerReceived = false;
-		std::string								_method; //dont need!
-		std::string 							_path;
-		std::string 							_version;
-		std::string 							_header; //? change also in copy constructor
-		std::string 							_body; //?
 
 	public:
 		HttpRequest();
@@ -25,8 +20,6 @@ class HttpRequest {
 
 		void setField(std::string key, std::string value);
 		std::string getField(std::string key);
-
-		std::string getPath() const;
 
 		// Getters and setters for _strReceived
     	std::string& getStrReceived();

@@ -22,26 +22,37 @@ void CGI::readInput(){
 
 // }
 
-void CGI::parseQueryString(HttpRequest& request){
-    _path = request.getPath();
-    std::size_t startPos = _path.find("GET ");
+void CGI::parseQueryString(HttpRequest& request) {
+
+    if (_method == "GET") {
+        _path = request.getField("path");
+        std::size_t startPos = _path.find("?");
+        if (startPos != std::string::npos) {
+            _queryParams = _path.substr(startPos + 1);  // Extract query string
+        } 
+        else {
+            _queryParams = "";
+        }
+    }
 }
 
-void CGI::initializeEnvVars(HttpRequest& request){
+void CGI::initializeEnvVars(HttpRequest& request) {
     // Add REQUEST_METHOD from HttpRequest
-    _envVars.push_back("REQUEST_METHOD=" + request.getField("method"));
+    _method = request.getField("method");
+    _envVars.push_back("REQUEST_METHOD=" + _method);
+    
     // Add QUERY_STRING from request path or headers
     parseQueryString(request);
     _envVars.push_back("QUERY_STRING=" + _queryParams);
+    
     // Add CONTENT_TYPE from HttpRequest headers, if it exists
     std::string contentType = request.getField("Content-Type");
     if (!contentType.empty()) {
         _envVars.push_back("CONTENT_TYPE=" + contentType);
     }
+    
     // add SCRIPT_NAME
     _envVars.push_back("SCRIPT_NAME=" + request.getField("script_name"));
-    std::cout << "PRINTING THISSS : " << request.getField("query_string") << std::endl;
-
 
     // Convert envVars to char* format for execve
     for (const auto& var : _envVars) {
@@ -88,7 +99,7 @@ void CGI::executeCgi(Server server) {
 // 2) pass it as body to response to be used
 // 3) (later need to add to poll struct) and read as fast another poll adds and read
 // 4) if error in child keep status code
-void CGI::handleCgiRequest(int client_socket, const std::string& path, Server server, HttpRequest request) {
+void CGI::handleCgiRequest(int client_socket, const std::string& path, Server server, HttpRequest &request) {
 
     // _path = "." + path;  // Assuming the cgi-bin folder is in the current directory
     (void)path;//TODO uncomment this
