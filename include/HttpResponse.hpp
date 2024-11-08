@@ -13,8 +13,8 @@ class HttpResponse {
 
 	public:
 
-		HttpResponse() : _statusCode(200), _statusMessage("OK") {}
-		~HttpResponse() {}
+		HttpResponse();
+		~HttpResponse();
 
 		void setStatus(int code, const std::string& message);
 		void setHeader(const std::string& key, const std::string& value);

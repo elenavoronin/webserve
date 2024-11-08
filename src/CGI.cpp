@@ -21,6 +21,8 @@ void::CGI::readInput(){
 //executable checkt argv[1] but have to pass the executable as first argument
 void CGI::executeCgi(Server server) {
 
+    (void)server;//TODO uncomment
+
 	const char* cgi_program = "./www/html/cgi-bin/hello.py";
     const char* argv[] = {"/usr/bin/python3", cgi_program, nullptr};
 
@@ -49,6 +51,9 @@ void CGI::handleCgiRequest(int client_socket, const std::string& path, Server se
     // _path = "." + path;  // Assuming the cgi-bin folder is in the current directory
     //for GET Method
     // create pipe for interprocess comunnication
+
+    (void)path;//TODO uncomment this
+
     if (pipe(_responsePipe) == -1) {
         perror("pipe failed");
         return ;
