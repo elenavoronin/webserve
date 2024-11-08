@@ -4,7 +4,7 @@ TESTNAME 	= test_cgi  # Name of the test executable
 
 #compiler + flags
 CC			= c++
-CPPFLAGS	= -std=c++11 -Wall -Werror -Wextra -g -fsanitize=address -I $(HEADERDIR)
+CPPFLAGS	= -std=c++11 -Wall -Wextra -Werror -g -fsanitize=address -I $(HEADERDIR)
 
 #sources
 SRC 		= 	./src/request.cpp			\
@@ -16,7 +16,8 @@ SRC 		= 	./src/request.cpp			\
 				./src/Server.cpp			\
 				./src/Location.cpp			\
 				./src/Config.cpp \
-				./src/utils.cpp
+				./src/utils.cpp			\
+				./src/HttpResponse.cpp
 TESTSRC		= 	./tests/testsCGI.cpp  # Test source file	
 				
 #object files

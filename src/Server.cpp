@@ -174,6 +174,9 @@ void Server::addClient(std::vector<struct pollfd> &pfds, int clientSocket, int i
 - i: Index of the pollfd to remove
 - clientSocket: The client socket that needs to be closed*/
 void Server::removeClient(std::vector<struct pollfd> &pfds, int i, int clientSocket){
+	
+	(void)clientSocket;//unvoid
+	
 	del_from_pfds(pfds, i);
 	// for (auto it = clients.begin(); it != clients.end(); ++it) {
 	// 	if (it->getSocket() == clientSocket) {
@@ -242,7 +245,9 @@ void Server::handle_new_connection(int listener, std::vector<struct pollfd> &pfd
 // - i: Index of the pollfd that has client data ready
 // - listener: File descriptor for the listener socket (used to avoid sending data back to it)
 void Server::handle_client_data(std::vector<struct pollfd> &pfds, int i, int listener){
-	int contentLength = 0;
+
+	(void)listener;//unvoid
+	unsigned long contentLength = 0;//changed from int to unsigned long because of flags
 	char buf[20] = {0};
 	int sender_fd = pfds[i].fd;
 	Client* client;

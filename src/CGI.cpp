@@ -1,14 +1,10 @@
 #include "../include/CGI.hpp"
 
 //constructor
-CGI::CGI(){
-	std::cout<< "CGI constructor called" << std::endl;
-}
+CGI::CGI(){}
 
 //destructor
-CGI::~CGI(){
-	std::cout<< "CGI destructor called" << std::endl;
-}
+CGI::~CGI(){}
 
 // Method to read input (e.g., from POST requests)
 void::CGI::readInput(){
@@ -24,6 +20,8 @@ void::CGI::readInput(){
 
 //executable checkt argv[1] but have to pass the executable as first argument
 void CGI::executeCgi(Server server) {
+
+    (void)server;//TODO uncomment
 
 	const char* cgi_program = "./www/html/cgi-bin/hello.py";
     const char* argv[] = {"/usr/bin/python3", cgi_program, nullptr};
@@ -53,10 +51,14 @@ void CGI::handleCgiRequest(int client_socket, const std::string& path, Server se
     // _path = "." + path;  // Assuming the cgi-bin folder is in the current directory
     //for GET Method
     // create pipe for interprocess comunnication
+
+    (void)path;//TODO uncomment this
+
     if (pipe(_responsePipe) == -1) {
         perror("pipe failed");
         return ;
     } 
+
     //if POST method
     //create both GET and POST
     this->_pid = fork();
@@ -76,11 +78,6 @@ void CGI::handleCgiRequest(int client_socket, const std::string& path, Server se
         close(_responsePipe[WRITE]);
         // wait for the child process to finish
         waitpid(this->_pid, nullptr, 0);
-        // std::ofstream file("_responsePipe.txt");
-        // if (!file.is_open()) {
-        //     std::cerr << "Error: unable to open file for writing" << std::endl;
-        //     return;
-        // }
 
         //read this in chunks
         char buffer[1024];
@@ -93,25 +90,29 @@ void CGI::handleCgiRequest(int client_socket, const std::string& path, Server se
                 return;
             }
             cgi_output.append(buffer, bytes_read);
-            // Write the read data to the file
-            // file.write(buffer, bytes_read);
             close(_responsePipe[READ]);
 
-            // TODO Djoyke: append to map instead
-            // Send headers and the CGI response to the client
-            std::string response = "HTTP/1.1 200 OK\r\n";
-            response += "Content-Type: text/html\r\n";
-            response += "Content-Length: " + std::to_string(cgi_output.size()) + "\r\n";
-            response += "\r\n";
-            response += cgi_output;  // Append the CGI output as the response body
+            HttpResponse response;
+            response.setStatus(200, "OK");
+            response.setHeader("Content-Type", "text/html");  // Set appropriate content type
+            response.setBody(cgi_output);  // Set the CGI output as the response body
 
-            // Check if the write operation was successful
-            // if (!file.good()) {
-            //     std::cerr << "Error: write to file failed" << std::endl;
-            //     return;
-            // }
+            // Send response to client
+            std::string response_str = response.buildResponse();
+            ssize_t bytes_written = write(client_socket, response_str.c_str(), response_str.size());
+            if (bytes_written == -1) {
+                std::cerr << "Error: failed to write response to client socket" << std::endl;
+            }
+            
+            // // TODO Djoyke: append to map instead
+            // // Send headers and the CGI response to the client
+            // std::string response = "HTTP/1.1 200 OK\r\n";
+            // response += "Content-Type: text/html\r\n";
+            // response += "Content-Length: " + std::to_string(cgi_output.size()) + "\r\n";
+            // response += "\r\n";
+            // response += cgi_output;  // Append the CGI output as the response body
 
-            write(client_socket, response.c_str(), response.size());
+            write(client_socket, response_str.c_str(), response_str.size());
             close(client_socket);
         }
         // Check if the read operation failed
@@ -119,13 +120,11 @@ void CGI::handleCgiRequest(int client_socket, const std::string& path, Server se
             std::cerr << "Error: read from pipe failed" << std::endl;
             return;
         }
-        // file.close();
         // Close the pipe file descriptor
         if (close(_responsePipe[READ]) == -1) {
             std::cerr << "Error: unable to close pipe file descriptor" << std::endl;
             return ;
         }
-        
         // 2) pass it as body to response to be used
         // 3)(later need to add to poll struct) and read as fast asother poll adds and read
         // 4) if error in child keep status code

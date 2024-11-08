@@ -76,6 +76,9 @@ void sendFileResponse(int clientSocket, const std::string& filepath, int statusC
 }
 
 int Server::handleGetRequest(int clientSocket, const std::string& path, HttpRequest* Http) {
+	
+	(void)Http;
+	
 	std::string filepath = this->getRoot() + '/' + path;
 	if (path == "/") {
 		filepath = this->getRoot() + '/' + this->getIndex();
@@ -96,6 +99,11 @@ int Server::handleGetRequest(int clientSocket, const std::string& path, HttpRequ
 }
 
 int Server::handlePostRequest(int clientSocket, const std::string& path, HttpRequest* Http) {
+	
+	(void)clientSocket;
+	(void)path;
+	(void)Http;
+
 	// if (!Http->findContentLength(Http->_strReceived) || Http->findContentLength(Http->_strReceived) <= 0) //Can be equal to 0?
 	// 	return 400;
 	// // if (Http->findContentLength(Http->_strReceived) > this->getMaxlength()) //add after parsing
@@ -143,7 +151,12 @@ If there was an issue, return a corresponding error code:
 It’s often useful to log the deletion operation for auditing purposes, especially if your server manages important data.
 As with the POST request, decide whether to close the connection or keep it alive based on the HTTP version or the Connection header.
 */
-return 0;
+
+	(void)clientSocket;
+	(void)path;
+	(void)Http;
+
+	return 0;
 }
 
 

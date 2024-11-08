@@ -78,7 +78,7 @@ void HttpRequest::readRequest(std::string request){
 	while(std::getline(request_stream, line)){
 		if (line.empty())
 			break;
-		int colon = line.find(':');
+		const unsigned long colon = line.find(':');//changed from int to const unsigned long because flags
 		if (colon != std::string::npos){
 			std::string key = line.substr(0, colon);
 			key = trim(key);
