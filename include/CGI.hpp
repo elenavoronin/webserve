@@ -3,8 +3,8 @@
 #include <iostream>
 #include <map>
 #include <string>
-#include <cstdlib> //for getenv
-#include <sstream> //for string stream manipulation
+#include <cstdlib>
+#include <sstream>
 #include <unistd.h>
 #include <sys/wait.h>
 #include "Server.hpp"
@@ -36,41 +36,20 @@
 class CGI {
 
 	private:
-		// Example: Storing key environment variables //should I make this const?
-    	// const char* 						_envVars[5] = { //make dynamic
-        // "REQUEST_METHOD=GET", 				//extract from map made from request
-        // "QUERY_STRING=name=Djoyke&age=33",	//need to check this from the request n CGI
-        // "CONTENT_TYPE=text/html",			//get from map
-        // "SCRIPT_NAME=/cgi-bin/hello.py",	//get from map
-        // nullptr  // Null-terminated array
-   		// };
-		std::vector<std::string>			_envVars; //store environment variables as strings
-		std::vector<char *> 				_env;// convert to char* format for execve
-
-		// const char* 						_envVars[7] = {
-        // "REQUEST_METHOD=POST", 								//extract from map made from request
-        // "QUERY_STRING=name=Djoyke&age=33",					//need to check this from the request n CGI
-        // "CONTENT_TYPE=text/html",							//get from map
-        // "SCRIPT_NAME=/cgi-bin/hello.py",						//get from map
-		// "BODY"="whatever this may be"/json/img/ whatever 	//get from map
-		// "CONTENT_LEnGHT"= "whatever that may be" 			//get from map
-        // nullptr  // Null-terminated array
-   		// };
-
-		// Internal storage for CGI parameters (like parsed query strings)
+		std::vector<std::string>			_envVars; 			//store environment variables as strings
+		std::vector<char *> 				_env;				// convert to char* format for execve
 		std::string							_queryParams;
-		// const HttpRequest& 					_hhtpRequest; //reference to existing request
-		// Internal storage for input data (POST request body)
 		std::string 						_inputData;
+		std::string							_method;
 		std::string							_path;
 		pid_t								_pid;
 		int									_responsePipe[2];
 		int									_requestPipe[2];
+		
 		// Internal method to decode URL-encoded strings
-		std::string _urlDecode(const std::string& str);
+		std::string _urlDecode(const std::string& str); //need this?
 		
 	public:
-		// CGI(const HttpRequest& httpRequest) : _hhtpRequest(httpRequest) {};
 		CGI();
 		~CGI();
 
@@ -91,7 +70,7 @@ class CGI {
     	void executeCgi(Server server);
 		// // Method to send a complete HTTP response (status, headers, body)
 		void sendResponse(const std::string& status, const std::map<std::string, std::string>& headers, const std::string& body);
-		void handleCgiRequest(int client_socket, const std::string& path, Server server, HttpRequest request);
+		void handleCgiRequest(int client_socket, const std::string& path, Server server, HttpRequest &request);
 };
 
 
@@ -111,3 +90,22 @@ class CGI {
 // Sec-Fetch-Dest: document
 // Accept-Encoding: gzip, deflate, br, zstd
 // Accept-Language: en-US,en;q=0.9
+
+// const char* 						_envVars[7] = {
+// "REQUEST_METHOD=POST", 								//extract from map made from request
+// "QUERY_STRING=name=Djoyke&age=33",					//need to check this from the request n CGI
+// "CONTENT_TYPE=text/html",							//get from map
+// "SCRIPT_NAME=/cgi-bin/hello.py",						//get from map
+// "BODY"="whatever this may be"/json/img/ whatever 	//get from map
+// "CONTENT_LEnGHT"= "whatever that may be" 			//get from map
+// nullptr  // Null-terminated array
+// };
+
+// Example: Storing key environment variables //should I make this const?
+// const char* 						_envVars[5] = { //make dynamic
+// "REQUEST_METHOD=GET", 				//extract from map made from request
+// "QUERY_STRING=name=Djoyke&age=33",	//need to check this from the request n CGI
+// "CONTENT_TYPE=text/html",			//get from map
+// "SCRIPT_NAME=/cgi-bin/hello.py",	//get from map
+// nullptr  // Null-terminated array
+// };
