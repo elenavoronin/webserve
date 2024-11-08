@@ -166,15 +166,24 @@ void mainLoop(std::vector<Server> _server){
         }
         for (size_t i = 0; i < pfds.size(); i++) 
         {
-            if (current_server.pfds[i].revents & POLLIN) 
-            { //Add loop for servers and clients inside, check if it s server - new connection, if its client inside a server - handle data
-                if (pfds[i].fd == current_server.listener) {
-                    current_server.handle_new_connection(current_server.listener, pfds, i);
-                } else {
-                    current_server.handle_client_data(pfds, i, current_server.listener);
+            //Add loop for servers and clients inside, check if it s server - new connection, if its client inside a server - handle data
+                if (pfds[i].revents & POLLIN)
+                {
+                    for(Server& current_server: _server) {
+                        if (pfds[i].fd == current_server.listener) {
+                            current_server.handle_new_connection(current_server.listener, pfds, i);
+                        }
+                        for(Client& current_client: current_server.clients){
+                            if (pfds[i].fd == current_client.getSocket())  {
+                                current_server.handle_client_data(pfds, i, current_server.listener);
+                            }
+                        }
+                    }
                 }
-            }fd from the poll equal to fd from the pipe from cgi
+                else if (pfds[i].revents & POLLOUT){}
+            //fd from the poll equal to fd from the pipe from cgi
         }
+        break;
     }
 }
 
