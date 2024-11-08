@@ -37,6 +37,7 @@ void CGI::parseQueryString(HttpRequest& request) {
 }
 
 void CGI::initializeEnvVars(HttpRequest& request) {
+    
     // Add REQUEST_METHOD from HttpRequest
     _method = request.getField("method");
     _envVars.push_back("REQUEST_METHOD=" + _method);
@@ -54,17 +55,25 @@ void CGI::initializeEnvVars(HttpRequest& request) {
     // add SCRIPT_NAME
     _envVars.push_back("SCRIPT_NAME=" + request.getField("script_name"));
 
+    // add BODY
+    _envVars.push_back("BODY=" + request.getField("body"));
+    // std::cout << "BODY ISSSS: " << request.getField("body") << std::endl;
+
+    // add CONTENT_LENGHT
+    _envVars.push_back("CONTENT_LENGHT=" + request.getField("content_lenght"));
+    // std::cout << "CONTENT_LENGHT: " << request.getField("content_lenght") << std::endl;
+
     // Convert envVars to char* format for execve
     for (const auto& var : _envVars) {
-        _env.push_back(const_cast<char*>(var.c_str())); // Convert strings to char* for execve
+        _env.push_back(const_cast<char*>(var.c_str()));     // Convert strings to char* for execve
     }
-    _env.push_back(nullptr);  // Null-terminate for execve
+    _env.push_back(nullptr);                                // Null-terminate for execve
 }
 
 //executable checkt argv[1] but have to pass the executable as first argument
 void CGI::executeCgi(Server server) {
 
-    (void)server;//TODO uncomment
+    (void)server;   // TODO uncomment
 
 	const char* cgi_program = "./www/html/cgi-bin/hello.py";
     const char* argv[] = {"/usr/bin/python3", cgi_program, nullptr};
@@ -83,10 +92,9 @@ void CGI::executeCgi(Server server) {
     close(_responsePipe[READ]);  // Close unused read end
     close(_responsePipe[WRITE]); // Close write end after dup2
 
-	// execve(argv[0], const_cast<char* const*>(argv), const_cast<char* const*>(_envVars));
-    execve(argv[0], const_cast<char* const*>(argv), _env.data());
-	
+    execve(argv[0], const_cast<char* const*>(argv), _env.data());	
 	perror("execve failed");
+
 	exit(EXIT_FAILURE);
 }
 
@@ -136,7 +144,7 @@ void CGI::handleCgiRequest(int client_socket, const std::string& path, Server se
             // Check if the read operation was successful
             if (bytes_read == -1) {
                 std::cerr << "Error: read from pipe failed" << std::endl;
-                return;
+                return ;
             }
             cgi_output.append(buffer, bytes_read);
             close(_responsePipe[READ]);
@@ -159,7 +167,7 @@ void CGI::handleCgiRequest(int client_socket, const std::string& path, Server se
         // Check if the read operation failed
         if (bytes_read == -1) {
             std::cerr << "Error: read from pipe failed" << std::endl;
-            return;
+            return ;
         }
         // Close the pipe file descriptor
         if (close(_responsePipe[READ]) == -1) {
