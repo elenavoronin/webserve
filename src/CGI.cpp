@@ -1,14 +1,10 @@
 #include "../include/CGI.hpp"
 
 //constructor
-CGI::CGI(){
-	std::cout<< "CGI constructor called" << std::endl;
-}
+CGI::CGI(){}
 
 //destructor
-CGI::~CGI(){
-	std::cout<< "CGI destructor called" << std::endl;
-}
+CGI::~CGI(){}
 
 // Method to read input (e.g., from POST requests)
 void::CGI::readInput(){
@@ -111,7 +107,7 @@ void CGI::handleCgiRequest(int client_socket, const std::string& path, Server se
             // response += "\r\n";
             // response += cgi_output;  // Append the CGI output as the response body
 
-            write(client_socket, response.c_str(), response.size());
+            write(client_socket, response_str.c_str(), response_str.size());
             close(client_socket);
         }
         // Check if the read operation failed
