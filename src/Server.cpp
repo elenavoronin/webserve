@@ -280,3 +280,6 @@ void Server::handle_client_data(std::vector<struct pollfd> &pfds, int i, int lis
 	}
 }
 
+void Server::sendResponse(int clientSocket, const std::string& response) {
+	 write(clientSocket, response.c_str(), response.size());
+}

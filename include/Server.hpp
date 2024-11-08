@@ -58,8 +58,7 @@ class Server {
 		int handleGetRequest(int clientSocket, const std::string& path, HttpRequest* Http);
 		int handlePostRequest(int clientSocket, const std::string& path, HttpRequest* Http);
 		int handleDeleteRequest(int clientSocket, const std::string& path, HttpRequest* Http);
-
-
+		void sendResponse(int clientSocket, const std::string& response);
 
 		//setters
      	void set_server_name(const std::string &server_name) { _server_name = server_name; }
@@ -102,6 +101,7 @@ class Server {
 		}
     
 		void set_location(const std::string& path, const Location& location) {
+			// std::cerr << path << std::endl;
 			this->_locations[path] = location;
 		}
 		std::map<std::string, Location> get_locations() const {
@@ -119,4 +119,3 @@ class Server {
 		std::string getHost() const {return this->_host;}
 		std::vector<std::string> getErrorPage() const {return this->_errorPage;}
 };
-

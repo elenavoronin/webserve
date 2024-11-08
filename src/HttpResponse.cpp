@@ -1,4 +1,8 @@
+#include "../include/HttpRequest.hpp"
 #include "../include/HttpResponse.hpp"
+#include "../include/utils.hpp"
+#include "../include/Server.hpp"
+#include <sstream>
 
 
 	HttpResponse::HttpResponse() : _statusCode(200), _statusMessage("OK") {}
@@ -16,6 +20,14 @@
 	std::string HttpResponse::getHeader(const std::string& key) const {
 		auto it = _headers.find(key);
 		return (it != _headers.end()) ? it->second : "";
+	}
+
+	std::string HttpResponse::getStatusMessage() const {
+		return _statusMessage;
+}
+
+	int HttpResponse::getStatusCode() const {
+		return _statusCode;
 	}
 
 	void HttpResponse::setBody(const std::string& content) {
@@ -41,17 +53,30 @@
 	 * @return A string containing the full HTTP response.
 	 * @todo fix this
 	 */
+
 	std::string HttpResponse::buildResponse() const {
 		std::string response;
 		// Build the HTTP status line
-		response = "HTTP/1.1 " + std::to_string(_statusCode) + " " + _statusMessage + "\r\n";
+		response += "HTTP/1.1 " + std::to_string(_statusCode) + " " + _statusMessage + "\r\n";
+		// Map status codes to reasons
+		response += std::to_string(_statusCode) += "\r\n";
 		// Build the headers
 		for (const auto& header : _headers) {
 			// The header name and value are separated by a colon and a space
 			response += header.first + ": " + header.second + "\r\n";
 		}
-		// Add the body
-		response += "\r\n";
-		response += _body;
+		// End headers section
+    	response += "\r\n";
+		// Add body if present
+   	 	if (!_body.empty()) {
+        	response += _body;
+   	 	}
+		std::cout << response << std::endl;
 		return response;
 	}
+
+	void HttpResponse::redirect(const std::string& location, int status_code, const std::string& message) {
+		setStatus(status_code, message);
+		setHeader("Location", location);
+		setBody(""); // Redirections typically have no body
+}

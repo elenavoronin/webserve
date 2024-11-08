@@ -57,6 +57,7 @@ std::vector<std::string> Config::tokenize(const std::string &line) {
             break;
         }
     }
+	// std::cout << "HERE" << std::endl;
     // print_tokens(tokens);
     return tokens;
 }
@@ -84,12 +85,12 @@ std::vector<Server> Config::parse_config(std::ifstream &file) {
         }
         if (inside_server_block && tokens[0] == "location" && tokens[2] == "{") {
             inside_location_block = true;   
+			current_server.set_location(tokens[1], new_location);
             continue;
         }
         if (inside_location_block && tokens[0] == "}") {
-            current_server.set_location(tokens[1], new_location);
-            new_location = Location();
             inside_location_block = false;
+			new_location = Location();
             continue;
         }
         if (inside_server_block && tokens[0] == "}") {

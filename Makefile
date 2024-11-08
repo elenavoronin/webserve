@@ -12,11 +12,12 @@ SRC 		= 	./src/request.cpp			\
 				./src/CGI.cpp				\
 				./src/Client.cpp			\
 				./src/HttpRequest.cpp 		\
+				./src/HttpResponse.cpp      \
 				./src/Server.cpp			\
 				./src/Location.cpp			\
-				./src/Config.cpp			\
-				./src/HttpResponse.cpp
-TESTSRC		= 	./tests/testsCGI.cpp  # Test source file	
+				./src/Config.cpp            \
+				./src/utils.cpp			    \
+# TESTSRC		= 	./tests/testsCGI.cpp  # Test source file	
 				
 #object files
 OBJDIR 		= obj
