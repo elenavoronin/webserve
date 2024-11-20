@@ -106,6 +106,9 @@ void CGI::initializeEnvVars(HttpRequest& request) {
  *              This function is meant to be called in the child process created by `fork`.
  * 
  * @todo        - Complete server configuration for CGI execution.
+ *              - Add error handling for `execve`.
+ *              - Implement dynamic script path generation based on server configuration??
+ *              - Use Server object to set up the environment variables when properly configured
  *              - Check if the script path should be dynamically generated based on the server configuration.
  */
 void CGI::executeCgi(Server server) {
@@ -133,22 +136,22 @@ void CGI::executeCgi(Server server) {
  * @brief Reads the output from the CGI process via the pipe and sends it to the client.
  * 
  * @param client_socket The socket through which the server communicates with the client.
+ * @todo                - Implement error handling if something goes wrong before sending the repsonse
  */
 void CGI::readCgiOutput(int client_socket) {
     char buffer[1024];
     ssize_t bytes_read;
-    std::string cgi_output;
 
     while ((bytes_read = read(_responsePipe[READ], buffer, sizeof(buffer))) > 0) {
         if (bytes_read == -1) {
             std::cerr << "Error: read from pipe failed" << std::endl;
             return;
         }
-        cgi_output.append(buffer, bytes_read);
+        _cgiOutput.append(buffer, bytes_read);
     }
 
     close(_responsePipe[READ]);  // Close read end after finishing
-    sendResponse(client_socket, cgi_output);
+    sendResponse(client_socket, _cgiOutput);
 }
 
 /**
@@ -196,7 +199,6 @@ void CGI::handleChildProcess(HttpRequest& request, Server server) {
     close(_responsePipe[READ]);  // Close unused read end
     initializeEnvVars(request);  // Set up environment variables for CGI
     executeCgi(server);          // Run CGI script
-    // No need for return since execve replaces the process image
 }
 
 /**
@@ -204,6 +206,7 @@ void CGI::handleChildProcess(HttpRequest& request, Server server) {
  *        to finish and reading the CGI output.
  * 
  * @param client_socket The socket to write the response to the client.
+ * @todo                - Implement reading from the pipe in chunks
  */
 void CGI::handleParentProcess(int client_socket) {
     close(_responsePipe[WRITE]);  // Close unused write end
@@ -215,8 +218,6 @@ void CGI::handleParentProcess(int client_socket) {
         std::cerr << "Child process exited with error status " << WEXITSTATUS(status) << std::endl;
         return;
     }
-
-    // Read from the pipe in chunks
     readCgiOutput(client_socket);
 }
 
