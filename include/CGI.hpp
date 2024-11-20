@@ -14,19 +14,20 @@
 # define READ 0
 # define WRITE 1
 
-
 class CGI {
 
 	private:
 		std::vector<std::string>			_envVars; 			//store environment variables as strings
-		std::vector<char *> 				_env;				// convert to char* format for execve
-		std::string							_queryParams;
-		std::string 						_inputData;
-		std::string							_method;
-		std::string							_path;
-		pid_t								_pid;
-		int									_responsePipe[2];
-		int									_requestPipe[2];
+		std::vector<char *> 				_env;				//convert to char* format for execve
+		std::string							_queryParams;		//store query parameters
+		std::string 						_inputData;			//store input data
+		std::string							_method;			//store request method
+		std::string							_path;				//store request path
+		pid_t								_pid;				//store process id
+		int									_status;			//store exit status
+		std::string							_cgiOutput;			//store CGI output
+		int									_responsePipe[2];	//store response pipe
+		int									_requestPipe[2]; 	//store request pipe
 		
 		// Internal method to decode URL-encoded strings
 		std::string _urlDecode(const std::string& str); //need this?
@@ -43,18 +44,25 @@ class CGI {
 		void initializeEnvVars(HttpRequest& request);
 		void readCgiOutput(int client_socket);
 		void sendResponse(int client_socket, const std::string& cgi_output);
+
 		// Method to get a specific environment variable
 		std::string getEnv(const std::string& var_name);
+
 		// Method to parse the query string (for GET requests)
 		void parseQueryString(HttpRequest& request);
+
 		// Method to get the value of a specific query parameter
 		std::string getQueryParam(const std::string& param_name);
+
 		// Method to send the HTTP content-type header (like "Content-Type: text/html")
 		void sendHeader(const std::string& content_type);
+
 		// Method to output HTML or other content
 		void output(const std::string& content);
+
 		// Method to run the CGI script with environment variables
     	void executeCgi(Server server);
+
 		// // Method to send a complete HTTP response (status, headers, body)
 		void sendResponse(const std::string& status, const std::map<std::string, std::string>& headers, const std::string& body);
 		void handleCgiRequest(int client_socket, const std::string& path, Server server, HttpRequest &request);
