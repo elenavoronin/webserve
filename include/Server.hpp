@@ -17,18 +17,18 @@ class Client;
 class HttpRequest; 
 class Server{
 	private:
-		std::string						_port_string;
-		// const char* 					_port;
-		std::string 					_server_name;
-		std::string                 	_root;
-		std::string						_index;
-        std::vector<std::string>    	_allowed_methods;
-		bool                        	_autoindex;
-        std::string                 	_upload_store;
-        std::string                 	_default_file;
-		std::string						_host;			   
-		std::vector<std::string>		_errorPage;
-		std::map<std::string, Location> _locations;
+		std::string										_port_string;
+		// const char* 									_port;
+		std::string 									_server_name;
+		std::string                 					_root;
+		std::string										_index;
+        std::vector<std::string>    					_allowed_methods;
+		bool                        					_autoindex;
+        std::string                 					_upload_store;
+        std::string                 					_default_file;
+		std::string										_host;			   
+		std::vector<std::string>						_errorPage;
+		std::map<std::string, std::vector<Location>>	_locations;
 
 	public:
 		std::vector<Client> clients; //do i need it?
@@ -66,18 +66,9 @@ class Server{
 	//	void set_port_char(std::string &value) {_port = value.c_str(); std::cout << "PORT inside setter " << _port << std::endl;}
         void set_root(const std::string &root) { _root = root; }
         void set_autoindex(bool autoindex) { _autoindex = autoindex; }
-        // void set_cgi_pass(const std::string &cgi_pass) { set_cgi_pass = cgi_pass; }
-		// void set_cgi_path(const std::string &cgi_path) { set_cgi_path = cgi_path; }
-        // void set_cgi_pass(const std::string &cgi_pass) { set_cgi_pass = cgi_pass; }
-		// void set_cgi_path(const std::string &cgi_path) { set_cgi_path = cgi_path; }
         void set_upload_store(const std::string &upload_store) { _upload_store = upload_store; }
         void set_allowed_methods(const std::vector<std::string> &allowed_methods) { _allowed_methods = allowed_methods; }
         void set_default_file(const std::string &default_file) { _default_file = default_file; }
-
-		//getter
-		// std::string getCgiPass() { return set_cgi_pass; }
-		// std::string getCgiPath() { return set_cgi_path; }
-
         void set_index(const std::string &index) { _index = index; }
 		void set_error_page(const std::vector<std::string>& errorPages) {
     		_errorPage = errorPages; }
@@ -95,15 +86,15 @@ class Server{
         std::cout << std::endl;
 		std::cout << "Error Pages: ";
     	for (std::vector<std::string>::const_iterator it = _errorPage.begin(); it != _errorPage.end(); ++it) {
-    	std::cout << *it << " ";
+    		std::cout << *it << " ";
     	}
     	std::cout << std::endl;
 		}
     
 		void set_location(const std::string& path, const Location& location) {
-			this->_locations[path] = location;
+			_locations[path].push_back(location);
 		}
-		std::map<std::string, Location> get_locations() const {
+		std::map<std::string, std::vector<Location>> get_locations() const {
 			return _locations;
 		}
 

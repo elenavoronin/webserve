@@ -16,7 +16,8 @@ int main(int argc, char **argv) {
         config.check_config("configs/default.conf");
     else
         config.check_config(argv[1]);
-	return 0;
+	
+    return 0;
 }
 
 /*

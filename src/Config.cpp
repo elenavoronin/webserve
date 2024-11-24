@@ -14,6 +14,22 @@ Config::~Config() {
     // std::cout << "Config destructor called" << std::endl;
 }
 
+void Config::print_config_parse() const {
+std::vector<Server> servers = get_servers();
+for (std::vector<Server>::const_iterator serverIt = servers.begin(); serverIt != servers.end(); ++serverIt) {
+    serverIt->print_info();
+    std::map<std::string, std::vector<Location>> locations = serverIt->get_locations();
+    for (std::map<std::string, std::vector<Location>>::const_iterator locIt = locations.begin(); locIt != locations.end(); ++locIt) {
+        std::cout << "Location Path: " << locIt->first << std::endl; // Print the path
+        const std::vector<Location>& locationVector = locIt->second;
+            for (std::vector<Location>::const_iterator vecIt = locationVector.begin(); vecIt != locationVector.end(); ++vecIt) {
+                vecIt->print_info(); // Print information about the location
+            }
+}
+}
+std::cout << "---------------------------" << std::endl;
+}
+
 // Function to remove comments and trim leading/trailing spaces
 std::string remove_comments_and_trim(const std::string& line) {
     std::size_t comment_pos = line.find('#');
@@ -85,11 +101,11 @@ std::vector<Server> Config::parse_config(std::ifstream &file) {
         }
         if (inside_server_block && tokens[0] == "location" && tokens[2] == "{") {
             inside_location_block = true;   
-			current_server.set_location(tokens[1], new_location);
             continue;
         }
         if (inside_location_block && tokens[0] == "}") {
             inside_location_block = false;
+            current_server.set_location(tokens[1], new_location); // Reset for next location
 			new_location = Location();
             continue;
         }
@@ -130,7 +146,7 @@ std::vector<Server> Config::parse_config(std::ifstream &file) {
                 }
             }
         }
-         if (inside_location_block) {
+        if (inside_location_block) {
             if (tokens.size() >= 2) {
                 std::string key = tokens[0];
                 std::string value = tokens[1];
