@@ -4,27 +4,28 @@
 #include <map>
 
 class HttpResponse {
-	
+
 	private:
-		int _statusCode;
-		std::string _statusMessage;
-		std::map<std::string, std::string> _headers;
-		std::string _body;
+		int _statusCode;                                   // HTTP status code (e.g., 200, 404)
+		std::string _statusMessage;                       // Corresponding status message (e.g., "OK", "Not Found")
+		std::map<std::string, std::string> _headers;      // HTTP headers (key-value pairs)
+		std::string _body;                                // Response body content
 
 	public:
+		HttpResponse();                                   // Constructor to initialize default response
+		~HttpResponse();                                  // Destructor
 
-		HttpResponse();
-		~HttpResponse();
+		// Setters for status, headers, and body
+		void setStatus(int code, const std::string& message);   // Set HTTP status code and message
+		void setHeader(const std::string& key, const std::string& value); // Add/modify a header
+		void setBody(const std::string& content);               // Set the response body
 
-		void setStatus(int code, const std::string& message);
-		void setHeader(const std::string& key, const std::string& value);
-		void setBody(const std::string& content);
-		
-		std::string getHeader(const std::string& key) const;
-		std::string getStatusMessage() const;
-		int getStatusCode() const;
+		// Getters for status, headers, and body
+		std::string getHeader(const std::string& key) const;    // Retrieve a header value
+		std::string getStatusMessage() const;                   // Get the status message
+		int getStatusCode() const;                              // Get the status code
 
-		std::string buildResponse() const;
-		// Redirection helper
-    	void redirect(const std::string& location, int status_code, const std::string& message);
+		// Build and manage response
+		std::string buildResponse() const;                      // Construct full HTTP response
+		void redirect(const std::string& location, int status_code, const std::string& message); // Set up redirection
 };

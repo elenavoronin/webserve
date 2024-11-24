@@ -83,6 +83,9 @@
 		"locale": "cpp",
 		"mutex": "cpp",
 		"queue": "cpp",
-		"stack": "cpp"
+		"stack": "cpp",
+		"__verbose_abort": "cpp",
+		"charconv": "cpp",
+		"variant": "cpp"
 	}
 }

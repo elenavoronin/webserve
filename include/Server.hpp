@@ -15,7 +15,7 @@
 class Client; 
 // class Location;
 class HttpRequest; 
-class Server{
+class Server {
 	private:
 		std::string										_port_string;
 		// const char* 									_port;

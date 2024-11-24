@@ -85,7 +85,7 @@ int Server::handleGetRequest(int clientSocket, const std::string& path, HttpRequ
 	}
 	if (path.rfind("/cgi-bin/", 0) == 0) { //change to config
 		CGI cgi;
-		cgi.handleCgiRequest(clientSocket, path, *this);
+		cgi.handleCgiRequest(clientSocket, path, *this, *Http);
 		return 0;
 	}
 	std::ifstream file(filepath);
