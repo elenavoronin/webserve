@@ -31,9 +31,9 @@ public:
     void print_info() const;
 
     //getters
-    void get_root(std::string& root) const { root = _root; }
-    void get_allowed_methods(std::vector<std::string>& methods) const { methods = _allowed_methods; }
-    void get_autoindex(bool& autoindex) const { autoindex = _autoindex; }
-    void get_cgi_pass(std::string& cgi_pass) const { cgi_pass = _cgi_pass; }
-    void get_cgi_path(std::string& cgi_path) const { cgi_path = _cgi_path; }
+    const std::string& get_root() const { return _root; }
+    const std::vector<std::string>& get_allowed_methods() const { return _allowed_methods; }
+    bool  get_autoindex() const { return _autoindex; }
+    const std::string& get_cgi_pass() const { return _cgi_pass; }
+    const std::string& get_cgi_path() const { return _cgi_path; }
 };
