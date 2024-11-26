@@ -49,37 +49,71 @@ void CGI::parseQueryString(HttpRequest& request) {
  */
 void CGI::initializeEnvVars(HttpRequest& request) {
     
-    // Add REQUEST_METHOD from HttpRequest
+    // // Add REQUEST_METHOD from HttpRequest
+    // _method = request.getField("method");
+    // _envVars.push_back("REQUEST_METHOD=" + _method);
+    
+    // // Add QUERY_STRING from request path or headers
+    // parseQueryString(request);
+    // _envVars.push_back("QUERY_STRING=" + _queryParams);
+    
+    // // Add CONTENT_TYPE from HttpRequest headers, if it exists
+    // std::string contentType = request.getField("Content-Type");
+    // if (!contentType.empty()) {
+    //     _envVars.push_back("CONTENT_TYPE=" + contentType);
+    // }
+    
+    // // add SCRIPT_NAME
+    // _envVars.push_back("SCRIPT_NAME=" + request.getField("script_name"));
+
+    // // add BODY
+    // _envVars.push_back("BODY=" + request.getField("body"));
+    // // std::cout << "BODY ISSSS: " << request.getField("body") << std::endl;
+
+    // // add CONTENT_LENGHT
+    // _envVars.push_back("CONTENT_LENGHT=" + request.getField("content_lenght"));
+    // // std::cout << "CONTENT_LENGHT: " << request.getField("content_lenght") << std::endl;
+
+    // // Convert _envVars to char* format for execve
+    // for (const auto& var : _envVars) {
+    //     _env.push_back(const_cast<char*>(var.c_str()));     // Convert strings to char* for execve
+    // }
+    // _env.push_back(nullptr);                                // Null-terminate for execve
+
+
     _method = request.getField("method");
     _envVars.push_back("REQUEST_METHOD=" + _method);
-    
-    // Add QUERY_STRING from request path or headers
-    parseQueryString(request);
-    _envVars.push_back("QUERY_STRING=" + _queryParams);
-    
-    // Add CONTENT_TYPE from HttpRequest headers, if it exists
-    std::string contentType = request.getField("Content-Type");
-    if (!contentType.empty()) {
-        _envVars.push_back("CONTENT_TYPE=" + contentType);
+
+    if (_method == "GET") {
+        parseQueryString(request);
+        _envVars.push_back("QUERY_STRING=" + _queryParams);
+    } else if (_method == "POST") {
+        std::string contentLength = request.getField("Content-Length");
+        if (!contentLength.empty()) {
+            _envVars.push_back("CONTENT_LENGTH=" + contentLength);
+        }
+        std::string body = request.getField("body");
+        if (!body.empty()) {
+            _envVars.push_back("BODY=" + body);
+        }
+    } else if (_method == "DELETE") {
+        parseQueryString(request);
+        _envVars.push_back("QUERY_STRING=" + _queryParams);
+    } else {
+        std::cerr << "Unsupported HTTP method: " << _method << std::endl;
+        return;  // Or send an HTTP 405 response
     }
-    
-    // add SCRIPT_NAME
+
+    // Add other common environment variables, such as SCRIPT_NAME
     _envVars.push_back("SCRIPT_NAME=" + request.getField("script_name"));
 
-    // add BODY
-    _envVars.push_back("BODY=" + request.getField("body"));
-    // std::cout << "BODY ISSSS: " << request.getField("body") << std::endl;
-
-    // add CONTENT_LENGHT
-    _envVars.push_back("CONTENT_LENGHT=" + request.getField("content_lenght"));
-    // std::cout << "CONTENT_LENGHT: " << request.getField("content_lenght") << std::endl;
-
-    // Convert _envVars to char* format for execve
+    // Convert to char* for execve
     for (const auto& var : _envVars) {
         _env.push_back(const_cast<char*>(var.c_str()));     // Convert strings to char* for execve
     }
     _env.push_back(nullptr);                                // Null-terminate for execve
 }
+
 
 /**
  * @brief       Executes the CGI script with the specified environment variables.
