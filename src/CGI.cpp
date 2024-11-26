@@ -112,7 +112,7 @@ void CGI::executeCgi(Server server) {
     close(_responsePipe[WRITE]); // Close write end after dup2
 
     execve(argv[0], const_cast<char* const*>(argv), _env.data());	
-	perror("execve failed");
+	perror("execve failed"); // save status code somewhere
 
 	exit(EXIT_FAILURE);
 }
