@@ -37,7 +37,6 @@ class CGI {
 		~CGI();                                     // Destructor
 
 		// Methods for managing input and communication
-		void readInput();                           // Read input data for the CGI process
 		bool setupPipes();                          // Set up pipes for communication with CGI
 		void handleChildProcess(HttpRequest& request, Server server); // Handle CGI process logic for the child
 		void handleParentProcess(int client_socket); // Handle parent process communication with the CGI

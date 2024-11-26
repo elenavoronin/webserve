@@ -11,21 +11,6 @@ CGI::CGI(){}
 CGI::~CGI(){}
 
 /**
- * @brief       Method to read input data from HTTP requests, particularly for handling POST requests.
- * 
- * @details     Reads data from stdin for POST requests to get the request body.
- *              Sets up the environment variables and input data needed for CGI execution.
- * 
- * @todo        - Implement reading body content.
- *              - Determine and differentiate between POST, GET, and DELETE methods.
- *              - Set up environment variables for the CGI script based on the request content.
- *              - For POST requests, feed missing information into the CGI script's environment.
- */
-void CGI::readInput(){
-
-}
-
-/**
  * @brief       Parses the query string from the HTTP request path if the request method is GET.
  * 
  * @param       request    The HttpRequest object containing details of the HTTP request.
