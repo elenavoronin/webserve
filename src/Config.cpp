@@ -14,6 +14,22 @@ Config::~Config() {
     // std::cout << "Config destructor called" << std::endl;
 }
 
+void Config::print_config_parse() const {
+std::vector<Server> servers = get_servers();
+for (std::vector<Server>::const_iterator serverIt = servers.begin(); serverIt != servers.end(); ++serverIt) {
+    serverIt->print_info();
+    std::map<std::string, std::vector<Location>> locations = serverIt->get_locations();
+    for (std::map<std::string, std::vector<Location>>::const_iterator locIt = locations.begin(); locIt != locations.end(); ++locIt) {
+        std::cout << "Location Path: " << locIt->first << std::endl; // Print the path
+        const std::vector<Location>& locationVector = locIt->second;
+            for (std::vector<Location>::const_iterator vecIt = locationVector.begin(); vecIt != locationVector.end(); ++vecIt) {
+                vecIt->print_info(); // Print information about the location
+            }
+}
+}
+std::cout << "---------------------------" << std::endl;
+}
+
 // Function to remove comments and trim leading/trailing spaces
 std::string remove_comments_and_trim(const std::string& line) {
     std::size_t comment_pos = line.find('#');
@@ -37,9 +53,9 @@ void print_tokens(const std::vector<std::string>& tokens) {
     std::cout << std::endl;  // End with a newline
 }
 
+    
 std::vector<std::string> Config::tokenize(const std::string &line) {
     std::vector<std::string> tokens;
-    
     std::string clean_line = remove_comments_and_trim(line);
     
     if (clean_line.empty()) {
@@ -85,11 +101,11 @@ std::vector<Server> Config::parse_config(std::ifstream &file) {
         }
         if (inside_server_block && tokens[0] == "location" && tokens[2] == "{") {
             inside_location_block = true;   
-			current_server.set_location(tokens[1], new_location);
             continue;
         }
         if (inside_location_block && tokens[0] == "}") {
             inside_location_block = false;
+            current_server.set_location(tokens[1], new_location); // Reset for next location
 			new_location = Location();
             continue;
         }
@@ -115,12 +131,10 @@ std::vector<Server> Config::parse_config(std::ifstream &file) {
                 } else if (key == "index") {
                     current_server.set_index(value);
                 } else if (key == "methods") {
-                    std::vector<std::string> methods;
-                    std::istringstream method_stream(value);
-                    std::string method;
-                    while (std::getline(method_stream, method, ' ')) {
-                        methods.push_back(method);
-                    }
+					std::vector<std::string> methods;
+					for (size_t i = 1; i < tokens.size(); i++) {
+						methods.push_back(tokens[i]);
+					}
                     current_server.set_allowed_methods(methods);
                 }
                 if (key == "error_page") {
@@ -130,11 +144,9 @@ std::vector<Server> Config::parse_config(std::ifstream &file) {
                     }
                     current_server.set_error_page(errorPages);
                 }
-            
             }
-                
         }
-         if (inside_location_block) {
+        if (inside_location_block) {
             if (tokens.size() >= 2) {
                 std::string key = tokens[0];
                 std::string value = tokens[1];
@@ -146,6 +158,13 @@ std::vector<Server> Config::parse_config(std::ifstream &file) {
                 } else if (key == "cgi_pass") {
                     new_location.set_cgi_pass(value);
                 }
+				else if (key == "methods") {
+					std::vector<std::string> methods;
+					for (size_t i = 1; i < tokens.size(); i++) {
+						methods.push_back(tokens[i]);
+					}
+					new_location.set_allowed_methods(methods);
+				}
             }
         }
     }
@@ -163,6 +182,10 @@ int Config::check_config(const std::string &config_file) {
         return -1;
     }
     _servers = parse_config(file); //TODO this needs to be connected to Anna's part
+	std::cout << "Parsing completed. Calling print_config_parse()." << std::endl;
+	// Print server information
+	print_config_parse();
+
 	for(Server& current_server: _servers){
 		// std::cout << "PORT " << current_server.getPort() << std::endl;
 		// std::cout << "PORT " << current_server.getPortStr() << std::endl;
@@ -171,29 +194,3 @@ int Config::check_config(const std::string &config_file) {
     file.close();
     return 0;
 }
-
-
-// int main(int argc, char **argv) {
-//     Config config;
-
-//     if (argc == 1)
-//         config.check_config("../configs/default.conf");
-//     else
-//         config.check_config(argv[1]);
-//     // Print server information
-//      std::vector<Server> servers = config.get_servers(); // Assuming get_servers() returns a vector of Server
-//     for (std::vector<Server>::const_iterator serverIt = servers.begin(); serverIt != servers.end(); ++serverIt) {
-//         serverIt->print_info(); // Assuming print_info prints server details
-
-//         // Print associated locations
-//         std::map<std::string, Location> locations = serverIt->get_locations(); // Assuming get_locations() returns a map
-//         for (std::map<std::string, Location>::const_iterator locIt = locations.begin(); locIt != locations.end(); ++locIt) {
-//             std::cout << "Location Path: " << locIt->first << std::endl; // Print the path
-//             locIt->second.print_info(); // Print information of the location
-//         }
-
-//         std::cout << "---------------------------" << std::endl;
-//     }
-
-//     return 0;
-// }

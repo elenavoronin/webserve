@@ -1,12 +1,14 @@
 #pragma once
 
-class Server;
 // class Client;
 
 #include <sstream>
 #include <fstream>
 #include <vector>
 #include <iostream>
+#include "../include/Location.hpp"
+
+class Server;
 
 class Config {
     private:
@@ -23,6 +25,5 @@ class Config {
         const std::vector<Server>& get_servers() const {
             return _servers;
         }
-
+		void print_config_parse() const;
 };
-

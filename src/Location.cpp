@@ -34,9 +34,9 @@ void Location::print_info() const {
     std::cout << "    Autoindex: " << (_autoindex ? "on" : "off") << std::endl;
 
     std::cout << "    Allowed methods: ";
-    for (const std::string& method : _allowed_methods) {
-        std::cout << method << " ";
-    }
+	for (std::vector<std::string>::const_iterator it = _allowed_methods.begin(); it != _allowed_methods.end(); ++it) {
+			std::cout << *it << " ";
+		}
     std::cout << std::endl;
 
     std::cout << "    CGI pass: " << _cgi_pass << std::endl;

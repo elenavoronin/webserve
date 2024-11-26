@@ -29,4 +29,11 @@ public:
     void set_cgi_pass(const std::string& cgi_pass);
     void set_cgi_path(const std::string& cgi_path);
     void print_info() const;
+
+    //getters
+    const std::string& get_root() const { return _root; }
+    const std::vector<std::string>& get_allowed_methods() const { return _allowed_methods; }
+    bool  get_autoindex() const { return _autoindex; }
+    const std::string& get_cgi_pass() const { return _cgi_pass; }
+    const std::string& get_cgi_path() const { return _cgi_path; }
 };
