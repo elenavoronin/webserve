@@ -216,6 +216,7 @@ void CGI::handleParentProcess(int client_socket) {
     waitpid(_pid, &status, 0);
     if (WIFEXITED(status) && WEXITSTATUS(status) != 0) {
         std::cerr << "Child process exited with error status " << WEXITSTATUS(status) << std::endl;
+        //link error status it to http response status
         return;
     }
     readCgiOutput(client_socket);
