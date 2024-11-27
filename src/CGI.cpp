@@ -132,10 +132,29 @@ void CGI::initializeEnvVars(HttpRequest& request) {
  */
 void CGI::executeCgi(Server server) {
 
-    (void)server;   // TODO uncomment
+    (void)server;
+    
+    // std::cout << "!!!!!!!!!!!!!!!!!!!Path is " << _path << std::endl;
 
-	const char* cgi_program = "./www/html/cgi-bin/hello.py";
-    const char* argv[] = {"/usr/bin/python3", cgi_program, nullptr};
+	std::string cgiProgramString = "./www/html" + _path;
+    const char* cgiProgram = cgiProgramString.c_str();
+    // const std::string &cgiPass = server._location.get_cgi_pass();
+    const char* argv[] = {"/usr/bin/python3", cgiProgram, nullptr};
+
+    // const char* cgi_program = "./www/html/cgi-bin/hello.py";
+    // const char* argv[] = {"/usr/bin/python3", cgi_program, nullptr};
+
+    // std::map<std::string, std::vector<Location>> locationMap = server.get_locations();
+
+    
+    // for (auto& element : locationMap) {
+    //     if (element.first == "/cgi-bin") {
+    //         location = element.second[1];
+    //         const std::string &cgiPass = server._location.get_cgi_pass();
+    //         // std::cout << "location key : " << element.first << "location value : " << location.get_root() << std::endl;}
+    //     }
+    // }
+
 
     // std::string cgi_pass = server.getCgiPass();
     // std::string cgi_path = server.getCgiPath();
