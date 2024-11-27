@@ -152,18 +152,18 @@ std::vector<Server> Config::parse_config(std::ifstream &file) {
                 std::string value = tokens[1];
 
                 if (key == "root") {
-                    new_location.set_root(value);
+                    new_location.setRoot(value);
                 } else if (key == "autoindex") {
-                    new_location.set_autoindex(value == "on");
+                    new_location.setAutoindex(value == "on");
                 } else if (key == "cgi_pass") {
-                    new_location.set_cgi_pass(value);
+                    new_location.setCgiPass(value);
                 }
 				else if (key == "methods") {
 					std::vector<std::string> methods;
 					for (size_t i = 1; i < tokens.size(); i++) {
 						methods.push_back(tokens[i]);
 					}
-					new_location.set_allowed_methods(methods);
+					new_location.setAllowedMethods(methods);
 				}
             }
         }
@@ -189,7 +189,7 @@ int Config::check_config(const std::string &config_file) {
 	for(Server& current_server: _servers){
 		// std::cout << "PORT " << current_server.getPort() << std::endl;
 		// std::cout << "PORT " << current_server.getPortStr() << std::endl;
-		current_server.run();
+		current_server.run(); //TODO pass the _servers information to save the default settings for later
 	}
     file.close();
     return 0;

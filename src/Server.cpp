@@ -283,3 +283,18 @@ void Server::handle_client_data(std::vector<struct pollfd> &pfds, int i, int lis
 void Server::sendResponse(int clientSocket, const std::string& response) {
 	 write(clientSocket, response.c_str(), response.size());
 }
+
+
+
+void Server::checkLocations(HttpRequest* HttpRequest, std::string path) {
+    if (path == this->getIndex()) {
+		return;
+	}
+
+
+	for (std::map<std::string, std::vector<Location>>::iterator it = this->getLocations().begin(); it != this->getLocations().end(); it++) {
+		if (path.find(it->first) == 0) {
+			
+		}
+	}
+}

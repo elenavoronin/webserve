@@ -24,6 +24,7 @@ class Server {
 		std::string										_index;
         std::vector<std::string>    					_allowed_methods;
 		bool                        					_autoindex;
+		size_t											_maxBodySize; //TODO to parse in config
         std::string                 					_upload_store;
         std::string                 					_default_file;
 		std::string										_host;			   
@@ -60,6 +61,8 @@ class Server {
 		int handleDeleteRequest(int clientSocket, const std::string& path, HttpRequest* Http);
 		void sendResponse(int clientSocket, const std::string& response);
 
+    	void checkLocations(HttpRequest* HttpRequest, std::string path);
+
 		//setters
      	void set_server_name(const std::string &server_name) { _server_name = server_name; }
         void set_port_string(const std::string &port) { _port_string = port; }
@@ -90,11 +93,11 @@ class Server {
     	}
     	std::cout << std::endl;
 		}
-    
+
 		void set_location(const std::string& path, const Location& location) {
 			_locations[path].push_back(location);
 		}
-		std::map<std::string, std::vector<Location>> get_locations() const {
+		std::map<std::string, std::vector<Location>> getLocations() const {
 			return _locations;
 		}
 
