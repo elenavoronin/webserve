@@ -166,6 +166,7 @@ int Server::processClientRequest(int clientSocket, const std::string& request, H
 	HttpResponse response;
 	requestStream >> method >> path >> version;
 	Http->readRequest(request);
+	//!!!!CHECK LOCATION() TODO Lena
 	int status = validateRequest(method, version);
 	// std::cout << "Content-type: " << Http->getField("Content-type") << std::endl;
 	if (status != 200) {
@@ -173,10 +174,13 @@ int Server::processClientRequest(int clientSocket, const std::string& request, H
 		return status;
 	}
 	if (method == "GET")
+		//check with this endpoint am I allowed to use get?
 		return handleGetRequest(clientSocket, path, Http); //?? what locations should be passed
 	if (method == "POST")
+	//check with this endpoint am I allowed to use post?
 		return handlePostRequest(clientSocket, path, Http);
 	if (method == "DELETE")
+	//check with this endpoint am I allowed to use delete?
 		return handleDeleteRequest(clientSocket, path, Http);
 	sendResponse(clientSocket, response.buildResponse());
 	return 0;

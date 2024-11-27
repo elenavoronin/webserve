@@ -13,6 +13,7 @@
 class Location {
   private:
     std::string _root;
+    std::string _index; //TODO
     std::vector<std::string> _allowed_methods;
     bool _autoindex;
     std::string _cgi_pass;

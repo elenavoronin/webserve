@@ -11,21 +11,6 @@ CGI::CGI(){}
 CGI::~CGI(){}
 
 /**
- * @brief       Method to read input data from HTTP requests, particularly for handling POST requests.
- * 
- * @details     Reads data from stdin for POST requests to get the request body.
- *              Sets up the environment variables and input data needed for CGI execution.
- * 
- * @todo        - Implement reading body content.
- *              - Determine and differentiate between POST, GET, and DELETE methods.
- *              - Set up environment variables for the CGI script based on the request content.
- *              - For POST requests, feed missing information into the CGI script's environment.
- */
-void CGI::readInput(){
-
-}
-
-/**
  * @brief       Parses the query string from the HTTP request path if the request method is GET.
  * 
  * @param       request    The HttpRequest object containing details of the HTTP request.
@@ -64,37 +49,71 @@ void CGI::parseQueryString(HttpRequest& request) {
  */
 void CGI::initializeEnvVars(HttpRequest& request) {
     
-    // Add REQUEST_METHOD from HttpRequest
+    // // Add REQUEST_METHOD from HttpRequest
+    // _method = request.getField("method");
+    // _envVars.push_back("REQUEST_METHOD=" + _method);
+    
+    // // Add QUERY_STRING from request path or headers
+    // parseQueryString(request);
+    // _envVars.push_back("QUERY_STRING=" + _queryParams);
+    
+    // // Add CONTENT_TYPE from HttpRequest headers, if it exists
+    // std::string contentType = request.getField("Content-Type");
+    // if (!contentType.empty()) {
+    //     _envVars.push_back("CONTENT_TYPE=" + contentType);
+    // }
+    
+    // // add SCRIPT_NAME
+    // _envVars.push_back("SCRIPT_NAME=" + request.getField("script_name"));
+
+    // // add BODY
+    // _envVars.push_back("BODY=" + request.getField("body"));
+    // // std::cout << "BODY ISSSS: " << request.getField("body") << std::endl;
+
+    // // add CONTENT_LENGHT
+    // _envVars.push_back("CONTENT_LENGHT=" + request.getField("content_lenght"));
+    // // std::cout << "CONTENT_LENGHT: " << request.getField("content_lenght") << std::endl;
+
+    // // Convert _envVars to char* format for execve
+    // for (const auto& var : _envVars) {
+    //     _env.push_back(const_cast<char*>(var.c_str()));     // Convert strings to char* for execve
+    // }
+    // _env.push_back(nullptr);                                // Null-terminate for execve
+
+
     _method = request.getField("method");
     _envVars.push_back("REQUEST_METHOD=" + _method);
-    
-    // Add QUERY_STRING from request path or headers
-    parseQueryString(request);
-    _envVars.push_back("QUERY_STRING=" + _queryParams);
-    
-    // Add CONTENT_TYPE from HttpRequest headers, if it exists
-    std::string contentType = request.getField("Content-Type");
-    if (!contentType.empty()) {
-        _envVars.push_back("CONTENT_TYPE=" + contentType);
+
+    if (_method == "GET") {
+        parseQueryString(request);
+        _envVars.push_back("QUERY_STRING=" + _queryParams);
+    } else if (_method == "POST") {
+        std::string contentLength = request.getField("Content-Length");
+        if (!contentLength.empty()) {
+            _envVars.push_back("CONTENT_LENGTH=" + contentLength);
+        }
+        std::string body = request.getField("body");
+        if (!body.empty()) {
+            _envVars.push_back("BODY=" + body);
+        }
+    } else if (_method == "DELETE") {
+        parseQueryString(request);
+        _envVars.push_back("QUERY_STRING=" + _queryParams);
+    } else {
+        std::cerr << "Unsupported HTTP method: " << _method << std::endl;
+        return;  // Or send an HTTP 405 response
     }
-    
-    // add SCRIPT_NAME
+
+    // Add other common environment variables, such as SCRIPT_NAME
     _envVars.push_back("SCRIPT_NAME=" + request.getField("script_name"));
 
-    // add BODY
-    _envVars.push_back("BODY=" + request.getField("body"));
-    // std::cout << "BODY ISSSS: " << request.getField("body") << std::endl;
-
-    // add CONTENT_LENGHT
-    _envVars.push_back("CONTENT_LENGHT=" + request.getField("content_lenght"));
-    // std::cout << "CONTENT_LENGHT: " << request.getField("content_lenght") << std::endl;
-
-    // Convert _envVars to char* format for execve
+    // Convert to char* for execve
     for (const auto& var : _envVars) {
         _env.push_back(const_cast<char*>(var.c_str()));     // Convert strings to char* for execve
     }
     _env.push_back(nullptr);                                // Null-terminate for execve
 }
+
 
 /**
  * @brief       Executes the CGI script with the specified environment variables.
@@ -113,10 +132,29 @@ void CGI::initializeEnvVars(HttpRequest& request) {
  */
 void CGI::executeCgi(Server server) {
 
-    (void)server;   // TODO uncomment
+    (void)server;
+    
+    // std::cout << "!!!!!!!!!!!!!!!!!!!Path is " << _path << std::endl;
 
-	const char* cgi_program = "./www/html/cgi-bin/hello.py";
-    const char* argv[] = {"/usr/bin/python3", cgi_program, nullptr};
+	std::string cgiProgramString = "./www/html" + _path;
+    const char* cgiProgram = cgiProgramString.c_str();
+    // const std::string &cgiPass = server._location.get_cgi_pass();
+    const char* argv[] = {"/usr/bin/python3", cgiProgram, nullptr};
+
+    // const char* cgi_program = "./www/html/cgi-bin/hello.py";
+    // const char* argv[] = {"/usr/bin/python3", cgi_program, nullptr};
+
+    // std::map<std::string, std::vector<Location>> locationMap = server.get_locations();
+
+    
+    // for (auto& element : locationMap) {
+    //     if (element.first == "/cgi-bin") {
+    //         location = element.second[1];
+    //         const std::string &cgiPass = server._location.get_cgi_pass();
+    //         // std::cout << "location key : " << element.first << "location value : " << location.get_root() << std::endl;}
+    //     }
+    // }
+
 
     // std::string cgi_pass = server.getCgiPass();
     // std::string cgi_path = server.getCgiPath();
@@ -127,7 +165,7 @@ void CGI::executeCgi(Server server) {
     close(_responsePipe[WRITE]); // Close write end after dup2
 
     execve(argv[0], const_cast<char* const*>(argv), _env.data());	
-	perror("execve failed");
+	perror("execve failed"); // save status code somewhere
 
 	exit(EXIT_FAILURE);
 }
@@ -216,6 +254,7 @@ void CGI::handleParentProcess(int client_socket) {
     waitpid(_pid, &status, 0);
     if (WIFEXITED(status) && WEXITSTATUS(status) != 0) {
         std::cerr << "Child process exited with error status " << WEXITSTATUS(status) << std::endl;
+        //link error status it to http response status
         return;
     }
     readCgiOutput(client_socket);
