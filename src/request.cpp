@@ -2,6 +2,7 @@
 #include "../include/Client.hpp"
 #include "../include/HttpRequest.hpp"
 #include "../include/HttpResponse.hpp"
+#include "../include/Location.hpp"
 #include "../include/utils.hpp"
 #include "../include/CGI.hpp"
 #include <stdio.h>
@@ -160,28 +161,28 @@ As with the POST request, decide whether to close the connection or keep it aliv
 }
 
 
-int Server::processClientRequest(int clientSocket, const std::string& request, HttpRequest* Http) {
+int Server::processClientRequest(int clientSocket, const std::string& request, HttpRequest* HttpRequest) {
 	std::istringstream requestStream(request);
 	std::string method, path, version;
 	HttpResponse response;
 	requestStream >> method >> path >> version;
-	Http->readRequest(request);
-	//!!!!CHECK LOCATION() TODO Lena
+	HttpRequest->readRequest(request);
+	checkLocations(path);
 	int status = validateRequest(method, version);
 	// std::cout << "Content-type: " << Http->getField("Content-type") << std::endl;
 	if (status != 200) {
 		sendFileResponse(clientSocket, "www/html/error.html", status);  //change to a config ones?
 		return status;
 	}
-	if (method == "GET")
+	if (method == "GET" && std::find(this->_allowed_methods.begin(), this->_allowed_methods.end(), "GET") != this->_allowed_methods.end())
 		//check with this endpoint am I allowed to use get?
-		return handleGetRequest(clientSocket, path, Http); //?? what locations should be passed
-	if (method == "POST")
+		return handleGetRequest(clientSocket, path, HttpRequest); //?? what locations should be passed
+	if (method == "POST" && std::find(this->_allowed_methods.begin(), this->_allowed_methods.end(), "POST") != this->_allowed_methods.end())
 	//check with this endpoint am I allowed to use post?
-		return handlePostRequest(clientSocket, path, Http);
-	if (method == "DELETE")
+		return handlePostRequest(clientSocket, path, HttpRequest);
+	if (method == "DELETE" && std::find(this->_allowed_methods.begin(), this->_allowed_methods.end(), "DELETE") != this->_allowed_methods.end())
 	//check with this endpoint am I allowed to use delete?
-		return handleDeleteRequest(clientSocket, path, Http);
+		return handleDeleteRequest(clientSocket, path, HttpRequest);
 	sendResponse(clientSocket, response.buildResponse());
 	return 0;
-	}
+}
