@@ -286,15 +286,17 @@ void Server::sendResponse(int clientSocket, const std::string& response) {
 
 
 
-void Server::checkLocations(HttpRequest* HttpRequest, std::string path) {
+void Server::checkLocations(std::string path) {
     if (path == this->getIndex()) {
 		return;
-	}
-
-
-	for (std::map<std::string, std::vector<Location>>::iterator it = this->getLocations().begin(); it != this->getLocations().end(); it++) {
-		if (path.find(it->first) == 0) {
-			
+	}//TODO figure out when to reset server information to default
+	for (const auto& location : this->getLocations()) {
+		if (path == location.first) {
+			if (!location.second.empty()) {
+				Location loc = location.second[0];
+				if (!loc.getRoot().empty())
+					this->set_root(loc.getRoot());
+			}
 		}
 	}
 }

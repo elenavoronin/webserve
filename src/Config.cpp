@@ -18,12 +18,12 @@ void Config::print_config_parse() const {
 std::vector<Server> servers = get_servers();
 for (std::vector<Server>::const_iterator serverIt = servers.begin(); serverIt != servers.end(); ++serverIt) {
     serverIt->print_info();
-    std::map<std::string, std::vector<Location>> locations = serverIt->get_locations();
+    std::map<std::string, std::vector<Location>> locations = serverIt->getLocations();
     for (std::map<std::string, std::vector<Location>>::const_iterator locIt = locations.begin(); locIt != locations.end(); ++locIt) {
         std::cout << "Location Path: " << locIt->first << std::endl; // Print the path
         const std::vector<Location>& locationVector = locIt->second;
             for (std::vector<Location>::const_iterator vecIt = locationVector.begin(); vecIt != locationVector.end(); ++vecIt) {
-                vecIt->print_info(); // Print information about the location
+                vecIt->printInfo(); // Print information about the location
             }
 }
 }
@@ -182,14 +182,16 @@ int Config::check_config(const std::string &config_file) {
         return -1;
     }
     _servers = parse_config(file); //TODO this needs to be connected to Anna's part
-	std::cout << "Parsing completed. Calling print_config_parse()." << std::endl;
+    this->_servers_default = _servers;
+	// std::cout << "Parsing completed. Calling print_config_parse()." << std::endl;
 	// Print server information
-	print_config_parse();
+	// print_config_parse();
 
 	for(Server& current_server: _servers){
 		// std::cout << "PORT " << current_server.getPort() << std::endl;
 		// std::cout << "PORT " << current_server.getPortStr() << std::endl;
-		current_server.run(); //TODO pass the _servers information to save the default settings for later
+		
+        current_server.run(); //TODO pass the _servers information to save the default settings for later
 	}
     file.close();
     return 0;

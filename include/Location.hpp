@@ -20,7 +20,7 @@ class Location {
     bool                      _autoindex;
     std::string               _cgiPass;
     std::string               _cgiPath;
-    size_t											_maxBodySize; //TODO to parse in config 
+    // size_t											_maxBodySize; //TODO to parse in config 
 
 public:
     Location();

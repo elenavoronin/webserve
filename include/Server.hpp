@@ -10,6 +10,7 @@
 #include <map>
 #include "Config.hpp"
 #include "Location.hpp"
+#include <algorithm>
 
 
 class Client; 
@@ -61,7 +62,7 @@ class Server {
 		int handleDeleteRequest(int clientSocket, const std::string& path, HttpRequest* Http);
 		void sendResponse(int clientSocket, const std::string& response);
 
-    	void checkLocations(HttpRequest* HttpRequest, std::string path);
+    	void checkLocations(std::string path);
 
 		//setters
      	void set_server_name(const std::string &server_name) { _server_name = server_name; }

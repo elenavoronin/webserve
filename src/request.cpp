@@ -167,22 +167,22 @@ int Server::processClientRequest(int clientSocket, const std::string& request, H
 	HttpResponse response;
 	requestStream >> method >> path >> version;
 	HttpRequest->readRequest(request);
-	checkLocations(HttpRequest, path);
+	checkLocations(path);
 	int status = validateRequest(method, version);
 	// std::cout << "Content-type: " << Http->getField("Content-type") << std::endl;
 	if (status != 200) {
 		sendFileResponse(clientSocket, "www/html/error.html", status);  //change to a config ones?
 		return status;
 	}
-	if (method == "GET")
+	if (method == "GET" && std::find(this->_allowed_methods.begin(), this->_allowed_methods.end(), "GET") != this->_allowed_methods.end())
 		//check with this endpoint am I allowed to use get?
 		return handleGetRequest(clientSocket, path, HttpRequest); //?? what locations should be passed
-	if (method == "POST")
+	if (method == "POST" && std::find(this->_allowed_methods.begin(), this->_allowed_methods.end(), "POST") != this->_allowed_methods.end())
 	//check with this endpoint am I allowed to use post?
 		return handlePostRequest(clientSocket, path, HttpRequest);
-	if (method == "DELETE")
+	if (method == "DELETE" && std::find(this->_allowed_methods.begin(), this->_allowed_methods.end(), "DELETE") != this->_allowed_methods.end())
 	//check with this endpoint am I allowed to use delete?
 		return handleDeleteRequest(clientSocket, path, HttpRequest);
 	sendResponse(clientSocket, response.buildResponse());
 	return 0;
-	}
+}
