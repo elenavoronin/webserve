@@ -36,7 +36,7 @@ class Server  {
 	public:
 		int listener_fd;
 		std::vector<struct pollfd> pfds;
-		std::vector<Client> clients; //do i need it?
+		std::vector<Client> clients;
 		Server();
 		Server(const Server& copy) = default;
 		Server& operator=(const Server& copy) = default;
@@ -53,7 +53,7 @@ class Server  {
 		/*Main loop*/
 		void 	handle_new_connection(int listener, std::vector<struct pollfd> &pfds, int i);
 		void 	handle_client_data(std::vector<struct pollfd> &pfds, int i, int listener);
-		void 	broadcast_message(int sender_fd, char *buf, int received, std::vector<struct pollfd> &pfds, int listener);
+		// void 	broadcast_message(int sender_fd, char *buf, int received, std::vector<struct pollfd> &pfds, int listener);
 
 		void 	addClient(std::vector<struct pollfd> &pfds, int clientSocket, int i);
 		void 	removeClient(std::vector<struct pollfd> &pfds, int i, int clientSocket);
@@ -118,5 +118,4 @@ class Server  {
 		std::string getHost() const {return this->_host;}
 		std::vector<std::string> getErrorPage() const {return this->_errorPage;}
 
-		void add_poll_fds(std::vector<struct pollfd> &pfds, std::map<int, Server*> &fd_to_server_map);
 };

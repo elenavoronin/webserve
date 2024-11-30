@@ -47,46 +47,6 @@ Server::~Server(){}
 // 	return *this;
 // }
 
-
-/*Function to run the server and handle incoming connections and data
-- pfds: Vector to hold poll file descriptors
-- listener: File descriptor for the server listening socket
-- poll_test: Result of poll() function to check file descriptors*/
-void Server::run() {
-	std::vector<struct pollfd> pfds;
-	std::cout << "check in Server::run" << std::endl;
-	int listener = report_ready(pfds);
-	int poll_test;
-	
-/*
-TODO Create the vector of vectors, iterate like 2d array vector<vector<Client>>
-TODO StrReceived will be only for body, separate it from head
-TODO handleGet check extension (img. html ..) instead cgi-bin
-send fileto SendFile instead of filepath, cause i open it twice
-TODO in SEndFile Respond why 404? Don't I check it twice before use
-TODO Send should be done in chunks like read and go to poll, change events to POLLOUT somewhere
-*/
-
-//Creating a function mainLoop in Config.cpp
-	while (true) {
-		poll_test = poll(pfds.data(), pfds.size(), -1);
-		if (poll_test == -1) {
-			std::cout << "Poll error" << std::endl;
-			return;
-		}
-		
-		for (size_t i = 0; i < pfds.size(); i++) {
-			if (pfds[i].revents & POLLIN) {
-				if (pfds[i].fd == listener) {
-					handle_new_connection(listener, pfds, i);
-				} else {
-					handle_client_data(pfds, i, listener);
-				}
-			}
-		}
-	}
-}
-
 /*Function to create and return a listener socket
 - status: Result of getaddrinfo(), checks if address info is valid
 - hints: addrinfo structure with settings for creating socket
@@ -214,46 +174,6 @@ void Server::handle_new_connection(int listener, std::vector<struct pollfd> &pfd
 		addClient(pfds, newfd, i);
 }
 
-/*Function to broadcast a message to all clients except the sender
-- sender_fd: File descriptor of the client sending the message
-- buf: Buffer containing the message to broadcast
-- received: Number of bytes received in the message
-- pfds: Vector of pollfd structures to send the message to
-- listener: The listener file descriptor (to avoid sending to it)*/
-// void Server::broadcast_message(int sender_fd, char *buf, int received, std::vector<struct pollfd> &pfds, int listener){
-//     for (size_t j = 0; j < pfds.size(); j++) {
-//         int dest_fd = pfds[j].fd;
-//         if (dest_fd != listener && dest_fd != sender_fd) {
-//             if (sendall(dest_fd, buf, &received) == -1) {
-//                 std::cout << "Can't send" << std::endl;
-//             }
-//         }
-//     }
-// }
-
-
-// Function to send all data in the buffer to the specified socket
-// - s: The socket to send data to
-// - buf: The buffer containing the data to send
-// - len: Pointer to the length of data to send (will be updated with the amount actually sent)
-// int Server::sendall(int s, char *buf, int *len){
-// 	int total = 0;
-// 	int bytesleft = *len;
-// 	int n;
-
-// 	while(total < *len){
-// 		n = send(s, buf + total, bytesleft, 0);
-// 		if (n == -1)
-// 			break;
-// 		total += n;
-// 		bytesleft -= n;
-// 	}
-// 	*len = total;
-// 	return (n == -1) ? -1 : 0; 
-// }
-
-
-
 // Function to handle data received from a connected client
 // - pfds: Vector of pollfd structures
 // - i: Index of the pollfd that has client data ready
@@ -270,7 +190,6 @@ void Server::handle_client_data(std::vector<struct pollfd> &pfds, int i, int lis
 		if (c.getSocket() == sender_fd)
 			client = &c;
 	}
-
 	int received = recv(sender_fd, buf, sizeof(buf), 0);
 	if (received > 0){ //The only difference between recv() and read(2) is the presence of flags. 
 		HttpRequest* request = client->getHttpRequest();

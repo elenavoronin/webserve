@@ -185,56 +185,51 @@ std::vector<Server> Config::parse_config(std::ifstream &file) {
     return servers;
 }
 
-// void Config::epoll_loop(){
-// 	int event_count, i;
-// 	int epoll_fd = epoll_create(1);
-// 	char read_buffer[11];
-// 	if (epoll_fd == -1){
-// 		std::cerr << "Error in creating epoll" << std::endl;
-// 		return ; //exit?
-// 	}
-// 	struct epoll_event ev, events[5];
-//     ev.events = EPOLLIN;  // Event to monitor for input (readable)
-//     ev.data.fd = 0;  // File descriptor for stdin (fd = 0)
-// /*returns a file descriptor that can be used for monitoring multiple I/O events, 
-// does not accept any flags and its size parameter is ignored.*/
-// 	if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, 0, &ev)){ //&ev - lets us know that we are
-// 	//looking only for input events
-// 		std::cout << "Error in adding fd 0 to epoll" << std::endl;
-// 		close(epoll_fd);
-// 		exit(1); //return ?
-// 	}
-// 	while(1){
-// 		event_count = epoll_wait(epoll_fd, events, 5, 30000); //30000 - every 30 sec
-// 		for (i = 0; i < event_count; i++) {
-// 			size_t bytes_read = read(events[i].data.fd, read_buffer, 10);
-// 			read_buffer[bytes_read] = '\0';
-// 			if(!strncmp(read_buffer, "stop\n", 5))
-// 				break;
-// 		}
-// 	}
-// 	close(epoll_fd);
+/*Function to run the server and handle incoming connections and data
+- pfds: Vector to hold poll file descriptors
+- listener: File descriptor for the server listening socket
+- poll_test: Result of poll() function to check file descriptors*/
 
-// }
-
-void Server::add_poll_fds(std::vector<struct pollfd> &pfds, std::map<int, Server*> &fd_to_server_map) {
-    listener_fd = report_ready(pfds);
-    // struct pollfd pfd;
-    // pfd.fd = listener_fd;
-    // pfd.events = POLLIN;
-    // pfds.push_back(pfd);
-    fd_to_server_map[listener_fd] = this;
-
-    // for (size_t i = 0; i < clients.size(); i++) {
-    //     struct pollfd client_pfd;
-    //     client_pfd.fd = clients[i].getSocket();
-    //     client_pfd.events = POLLIN;
-    //     pfds.push_back(client_pfd);
-    //     fd_to_server_map[clients[i].getSocket()] = this;
-    // }
-
-    std::cout << "Listener FD: " << listener_fd << " for server added." << std::endl;
+int Config::add_poll_fds() {
+    std::vector<struct pollfd> pfds;
+    std::map<int, Server*> fd_to_server_map;
+    for (Server& current_server : _servers) {
+        current_server.listener_fd = current_server.report_ready(pfds);
+		fd_to_server_map[current_server.listener_fd] = &current_server;
+    }
+    while (true) {
+        int poll_test = poll(pfds.data(), pfds.size(), -1);
+        if (poll_test == -1) {
+            std::cerr << "Poll error" << std::endl;
+            return -1;
+        }
+        for (size_t i = 0; i < pfds.size(); i++) {
+            if (pfds[i].revents & POLLIN) {
+                int fd = pfds[i].fd;
+				for (Server& current_server : _servers) {
+//					std::cout << fd << " " << current_server.listener_fd << std::endl;
+					if (fd == current_server.listener_fd) {
+						current_server.handle_new_connection(fd, pfds, i);
+					} 
+					else {
+						current_server.handle_client_data(pfds, i, fd);
+					}
+				}
+            }
+        }
+    }
+	 // file.close();
 }
+
+
+/*
+TODO Create the vector of vectors, iterate like 2d array vector<vector<Client>>
+TODO StrReceived will be only for body, separate it from head
+TODO handleGet check extension (img. html ..) instead cgi-bin
+send fileto SendFile instead of filepath, cause i open it twice
+TODO in SEndFile Respond why 404? Don't I check it twice before use
+TODO Send should be done in chunks like read and go to poll, change events to POLLOUT somewhere
+*/
 
 int Config::check_config(const std::string &config_file) {
     std::ifstream file(config_file.c_str());
@@ -247,52 +242,9 @@ int Config::check_config(const std::string &config_file) {
         return -1;
     }
     _servers = parse_config(file);
-
-
-    std::vector<struct pollfd> pfds;
-    std::map<int, Server*> fd_to_server_map;
-    for (Server& current_server : _servers) {
-        current_server.add_poll_fds(pfds, fd_to_server_map);
-    }
-    while (true) {
-        int poll_test = poll(pfds.data(), pfds.size(), -1);
-        if (poll_test == -1) {
-            std::cerr << "Poll error" << std::endl;
-            return -1;
-        }
-        for (size_t i = 0; i < pfds.size(); i++) {
-            if (pfds[i].revents & POLLIN) {
-                int fd = pfds[i].fd;
-				for (Server& current_server : _servers) {
-					std::cout << fd << " " << current_server.listener_fd << std::endl;
-					if (fd == current_server.listener_fd) {
-						current_server.handle_new_connection(fd, pfds, i);
-					} 
-					else {
-						current_server.handle_client_data(pfds, i, fd);
-					}
-				}
-            }
-        }
-    }
-
-    _servers = parse_config(file); //TODO this needs to be connected to Anna's part
     this->_servers_default = _servers;
-	// std::cout << "Parsing completed. Calling print_config_parse()." << std::endl;
-	// Print server information
-	// print_config_parse();
-
-	for(Server& current_server: _servers){
-		// std::cout << "PORT " << current_server.getPort() << std::endl;
-		// std::cout << "PORT " << current_server.getPortStr() << std::endl;
-		
-        current_server.run(); //TODO pass the _servers information to save the default settings for later
-	}
-    file.close();
+	add_poll_fds();
     return 0;
 }
-//	epoll_loop();
-	// for(Server& current_server: _servers){
-	// 	current_server.run();
-	// }
+
 
