@@ -15,14 +15,14 @@ Client::~Client(){
 	// if (clientSocket != -1)
 	// 	close(clientSocket);
 	// std::cout << "~Client() 1 " << std::endl;
-	if (_HttpRequest != nullptr){
-		delete _HttpRequest;
-		_HttpRequest = nullptr;
-	}
-		if (_HttpResponse != nullptr){
-		delete _HttpResponse;
-		_HttpResponse = nullptr;
-	}
+	// if (_HttpRequest != nullptr){
+	// 	delete _HttpRequest;
+	// 	_HttpRequest = nullptr;
+	// }
+	// 	if (_HttpResponse != nullptr){
+	// 	delete _HttpResponse;
+	// 	_HttpResponse = nullptr;
+	// }
 	// std::cout << "~Client() 2 " << std::endl;
 }
 

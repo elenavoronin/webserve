@@ -23,6 +23,7 @@ class Config {
         const std::vector<Server>& get_servers() const {
             return _servers;
         }
+		void epoll_loop();
 
 };
 

@@ -175,7 +175,7 @@ void Server::addClient(std::vector<struct pollfd> &pfds, int clientSocket, int i
 	newClient.setSocket(clientSocket);
 	clients.push_back(newClient);
 	add_to_pfds(pfds, clientSocket);
-	// std::cout << "Add client" << std::endl;
+	std::cout << "Add client" << std::endl;
 }
 
 /*Function to remove a client connection from the server
@@ -203,6 +203,11 @@ void Server::handle_new_connection(int listener, std::vector<struct pollfd> &pfd
 	struct sockaddr_storage clientsAddr;
     socklen_t clientsAddrSize = sizeof(clientsAddr);
     int newfd = accept(listener, (struct sockaddr *)&clientsAddr, &clientsAddrSize);
+	if (!newfd){
+		std::cerr << "Can't accept a new connection" << std::endl;
+		exit(0);
+	}
+	//std::cout << "Adding Client" << newfd << "    " << i << std::endl;
     if (newfd == -1) {
         perror("accept");
     } else 

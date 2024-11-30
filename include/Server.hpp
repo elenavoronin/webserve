@@ -11,6 +11,7 @@
 #include "Config.hpp"
 #include "Location.hpp"
 #include <poll.h>
+#include <poll.h>
 
 class Client; 
 // class Location;
@@ -33,12 +34,9 @@ class Server {
 		
 
 	public:
-		int listener; //do i need it?
-		int poll_test; //do i need it?
-		std::vector<struct pollfd> pfds; //do i need it?
-
-
-		std::vector<Client> clients;
+		int listener_fd;
+		std::vector<struct pollfd> pfds;
+		std::vector<Client> clients; //do i need it?
 		Server();
 		Server(const Server& copy) = default;
 		Server& operator=(const Server& copy) = default;
@@ -119,4 +117,6 @@ class Server {
 		std::string getDefault_file() const {return this->_default_file;}
 		std::string getHost() const {return this->_host;}
 		std::vector<std::string> getErrorPage() const {return this->_errorPage;}
+
+		void add_poll_fds(std::vector<struct pollfd> &pfds, std::map<int, Server*> &fd_to_server_map);
 };

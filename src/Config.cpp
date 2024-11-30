@@ -5,6 +5,16 @@
 #include <fstream>
 #include <vector>
 #include <iostream>
+#include <vector>      // for std::vector
+#include <sys/types.h> // for basic types
+#include <sys/socket.h> // for socket-related functions and structures
+#include <netinet/in.h> // for sockaddr_in, sockaddr_storage
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <arpa/inet.h>
+#include <netdb.h>
 #include <poll.h>
 
 
@@ -154,38 +164,55 @@ std::vector<Server> Config::parse_config(std::ifstream &file) {
     return servers;
 }
 
-void mainLoop(std::vector<Server> _server){
-	std::vector<struct pollfd> pfds;
-    int poll_test;
-    for(Server& current_server: _server)
-        current_server.listener = current_server.report_ready(pfds);		
-    while (true) {
-        poll_test = poll(pfds.data(),pfds.size(), -1);
-        if (poll_test == -1) {
-            std::cout << "Poll error" << std::endl;
-            return;
-        }
-        for (size_t i = 0; i < pfds.size(); i++) 
-        {
-            //Add loop for servers and clients inside, check if it s server - new connection, if its client inside a server - handle data
-                if (pfds[i].revents & POLLIN)
-                {
-                    for(Server& current_server: _server) {
-                        if (pfds[i].fd == current_server.listener) {
-                            current_server.handle_new_connection(current_server.listener, pfds, i);
-                        }
-                        for(Client& current_client: current_server.clients){
-                            if (pfds[i].fd == current_client.getSocket())  {
-                                current_server.handle_client_data(pfds, i, current_server.listener);
-                            }
-                        }
-                    }
-                }
-                else if (pfds[i].revents & POLLOUT){}
-            //fd from the poll equal to fd from the pipe from cgi
-        }
-        break;
-    }
+// void Config::epoll_loop(){
+// 	int event_count, i;
+// 	int epoll_fd = epoll_create(1);
+// 	char read_buffer[11];
+// 	if (epoll_fd == -1){
+// 		std::cerr << "Error in creating epoll" << std::endl;
+// 		return ; //exit?
+// 	}
+// 	struct epoll_event ev, events[5];
+//     ev.events = EPOLLIN;  // Event to monitor for input (readable)
+//     ev.data.fd = 0;  // File descriptor for stdin (fd = 0)
+// /*returns a file descriptor that can be used for monitoring multiple I/O events, 
+// does not accept any flags and its size parameter is ignored.*/
+// 	if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, 0, &ev)){ //&ev - lets us know that we are
+// 	//looking only for input events
+// 		std::cout << "Error in adding fd 0 to epoll" << std::endl;
+// 		close(epoll_fd);
+// 		exit(1); //return ?
+// 	}
+// 	while(1){
+// 		event_count = epoll_wait(epoll_fd, events, 5, 30000); //30000 - every 30 sec
+// 		for (i = 0; i < event_count; i++) {
+// 			size_t bytes_read = read(events[i].data.fd, read_buffer, 10);
+// 			read_buffer[bytes_read] = '\0';
+// 			if(!strncmp(read_buffer, "stop\n", 5))
+// 				break;
+// 		}
+// 	}
+// 	close(epoll_fd);
+
+// }
+
+void Server::add_poll_fds(std::vector<struct pollfd> &pfds, std::map<int, Server*> &fd_to_server_map) {
+    listener_fd = report_ready(pfds);
+    // struct pollfd pfd;
+    // pfd.fd = listener_fd;
+    // pfd.events = POLLIN;
+    // pfds.push_back(pfd);
+    fd_to_server_map[listener_fd] = this;
+
+    // for (size_t i = 0; i < clients.size(); i++) {
+    //     struct pollfd client_pfd;
+    //     client_pfd.fd = clients[i].getSocket();
+    //     client_pfd.events = POLLIN;
+    //     pfds.push_back(client_pfd);
+    //     fd_to_server_map[clients[i].getSocket()] = this;
+    // }
+
+    std::cout << "Listener FD: " << listener_fd << " for server added." << std::endl;
 }
 
 int Config::check_config(const std::string &config_file) {
@@ -199,13 +226,42 @@ int Config::check_config(const std::string &config_file) {
         return -1;
     }
     _servers = parse_config(file);
-    mainLoop(_servers);
-	// for(Server& current_server: _servers){
-	// 	current_server.run();
-	// }
+
+
+    std::vector<struct pollfd> pfds;
+    std::map<int, Server*> fd_to_server_map;
+    for (Server& current_server : _servers) {
+        current_server.add_poll_fds(pfds, fd_to_server_map);
+    }
+    while (true) {
+        int poll_test = poll(pfds.data(), pfds.size(), -1);
+        if (poll_test == -1) {
+            std::cerr << "Poll error" << std::endl;
+            return -1;
+        }
+        for (size_t i = 0; i < pfds.size(); i++) {
+            if (pfds[i].revents & POLLIN) {
+                int fd = pfds[i].fd;
+				for (Server& current_server : _servers) {
+					std::cout << fd << " " << current_server.listener_fd << std::endl;
+					if (fd == current_server.listener_fd) {
+						current_server.handle_new_connection(fd, pfds, i);
+					} 
+					else {
+						current_server.handle_client_data(pfds, i, fd);
+					}
+				}
+            }
+        }
+    }
+
     file.close();
     return 0;
 }
+//	epoll_loop();
+	// for(Server& current_server: _servers){
+	// 	current_server.run();
+	// }
 
 
 // int main(int argc, char **argv) {
