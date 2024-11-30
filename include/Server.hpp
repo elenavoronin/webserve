@@ -11,7 +11,7 @@
 #include "Config.hpp"
 #include "Location.hpp"
 #include <poll.h>
-#include <poll.h>#include <algorithm>
+#include <algorithm>
 
 
 class Client; 
@@ -64,7 +64,7 @@ class Server  {
 		int handlePostRequest(int clientSocket, const std::string& path, HttpRequest* Http);
 		int handleDeleteRequest(int clientSocket, const std::string& path, HttpRequest* Http);
 		void sendResponse(int clientSocket, const std::string& response);
-		void sendResponse(int clientSocket, const std::string& response);    	void checkLocations(std::string path);
+		void checkLocations(std::string path);
 
 		//setters
      	void set_server_name(const std::string &server_name) { _server_name = server_name; }

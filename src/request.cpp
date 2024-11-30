@@ -190,5 +190,3 @@ int Server::processClientRequest(int clientSocket, const std::string& request, H
 	sendResponse(clientSocket, response.buildResponse());
 	return 0;
 }
-
-	}
