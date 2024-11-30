@@ -32,6 +32,7 @@ void CGI::parseQueryString(HttpRequest& request) {
         else {
             _queryParams = "";
         }
+        std::cout << "Extracted query string: " << _queryParams << std::endl;  // Debug
     }
 }
 
@@ -99,6 +100,7 @@ void CGI::initializeEnvVars(HttpRequest& request) {
     } else if (_method == "DELETE") {
         parseQueryString(request);
         _envVars.push_back("QUERY_STRING=" + _queryParams);
+        std::cout << "QUERY_STRING: " << _queryParams << std::endl;
     } else {
         std::cerr << "Unsupported HTTP method: " << _method << std::endl;
         return;  // Or send an HTTP 405 response
@@ -133,6 +135,17 @@ void CGI::initializeEnvVars(HttpRequest& request) {
 void CGI::executeCgi(Server server) {
 
     (void)server;
+
+    // std::cout << "Environment Variables for CGI:" << std::endl;
+    // for (const auto& var : _envVars) {
+    //     std::cout << var << std::endl;
+    // }
+
+    // Remove query string from _path
+    std::size_t queryPos = _path.find("?");
+    if (queryPos != std::string::npos) {
+        _path = _path.substr(0, queryPos);  // Extract only the script path
+    }
     
     // std::cout << "!!!!!!!!!!!!!!!!!!!Path is " << _path << std::endl;
 
