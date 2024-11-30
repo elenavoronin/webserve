@@ -11,27 +11,27 @@
 #include "Config.hpp"
 #include "Location.hpp"
 #include <poll.h>
-#include <poll.h>
+#include <poll.h>#include <algorithm>
+
 
 class Client; 
 // class Location;
 class HttpRequest; 
-class Server {
+class Server  {
 	private:
-		std::string						_port_string;
-		// const char* 					_port;
-		std::string 					_server_name;
-		std::string                 	_root;
-		std::string						_index;
-        std::vector<std::string>    	_allowed_methods;
-		bool                        	_autoindex;
-        std::string                 	_upload_store;
-        std::string                 	_default_file;
-		std::string						_host;			   
-		std::vector<std::string>		_errorPage;
-		std::map<std::string, Location> _locations;
-		
-		
+		std::string										_port_string;
+		// const char* 									_port;
+		std::string 									_server_name;
+		std::string                 					_root;
+		std::string										_index;
+        std::vector<std::string>    					_allowed_methods;
+		bool                        					_autoindex;
+		size_t											_maxBodySize; //TODO to parse in config
+        std::string                 					_upload_store;
+        std::string                 					_default_file;
+		std::string										_host;			   
+		std::vector<std::string>						_errorPage;
+		std::map<std::string, std::vector<Location>>	_locations;
 
 	public:
 		int listener_fd;
@@ -64,6 +64,7 @@ class Server {
 		int handlePostRequest(int clientSocket, const std::string& path, HttpRequest* Http);
 		int handleDeleteRequest(int clientSocket, const std::string& path, HttpRequest* Http);
 		void sendResponse(int clientSocket, const std::string& response);
+		void sendResponse(int clientSocket, const std::string& response);    	void checkLocations(std::string path);
 
 		//setters
      	void set_server_name(const std::string &server_name) { _server_name = server_name; }
@@ -94,16 +95,15 @@ class Server {
         std::cout << std::endl;
 		std::cout << "Error Pages: ";
     	for (std::vector<std::string>::const_iterator it = _errorPage.begin(); it != _errorPage.end(); ++it) {
-        std::cout << *it << " ";
+    		std::cout << *it << " ";
     	}
     	std::cout << std::endl;
 		}
-    
+
 		void set_location(const std::string& path, const Location& location) {
-			// std::cerr << path << std::endl;
-			this->_locations[path] = location;
+			_locations[path].push_back(location);
 		}
-		std::map<std::string, Location> get_locations() const {
+		std::map<std::string, std::vector<Location>> getLocations() const {
 			return _locations;
 		}
 

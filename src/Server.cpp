@@ -297,3 +297,20 @@ void Server::handle_client_data(std::vector<struct pollfd> &pfds, int i, int lis
 void Server::sendResponse(int clientSocket, const std::string& response) {
 	 write(clientSocket, response.c_str(), response.size());
 }
+
+
+
+void Server::checkLocations(std::string path) {
+    if (path == this->getIndex()) {
+		return;
+	}//TODO figure out when to reset server information to default
+	for (const auto& location : this->getLocations()) {
+		if (path == location.first) {
+			if (!location.second.empty()) {
+				Location loc = location.second[0];
+				if (!loc.getRoot().empty())
+					this->set_root(loc.getRoot());
+			}
+		}
+	}
+}

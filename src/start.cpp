@@ -15,22 +15,9 @@ int main(int argc, char **argv) {
     if (argc == 1)
         config.check_config("configs/default.conf");
     else
-       { config.check_config(argv[1]);}
-
+        config.check_config(argv[1]);
 	
-	std::vector<Server> servers = config.get_servers(); // Assuming get_servers() returns a vector of Server
-	for (std::vector<Server>::const_iterator serverIt = servers.begin(); serverIt != servers.end(); ++serverIt) {
-		serverIt->print_info(); // Assuming print_info prints server details
-
-		// Print associated locations
-		std::map<std::string, Location> locations = serverIt->get_locations(); // Assuming get_locations() returns a map
-		for (std::map<std::string, Location>::const_iterator locIt = locations.begin(); locIt != locations.end(); ++locIt) {
-			std::cout << "Location Path: " << locIt->first << std::endl; // Print the path
-			locIt->second.print_info(); // Print information of the location
-		}
-	}
-		std::cout << "---------------------------" << std::endl;
-	return 0;
+    return 0;
 }
 
 /*
