@@ -44,6 +44,8 @@ class CGI {
         "SCRIPT_NAME=/cgi-bin/hello.py",	//get from map
         nullptr  // Null-terminated array
    		};
+		std::vector<std::string>			_envVars; //store environment variables as strings
+		std::vector<char *> 				_env;// convert to char* format for execve
 
 		// const char* 						_envVars[7] = {
         // "REQUEST_METHOD=POST", 								//extract from map made from request
@@ -74,6 +76,7 @@ class CGI {
 
 		// Method to read input (e.g., from POST requests)
 		void readInput();
+		void initializeEnvVars(HttpRequest& request);
 		// Method to get a specific environment variable
 		std::string getEnv(const std::string& var_name);
 		// Method to parse the query string (for GET requests)
@@ -82,15 +85,13 @@ class CGI {
 		std::string getQueryParam(const std::string& param_name);
 		// Method to send the HTTP content-type header (like "Content-Type: text/html")
 		void sendHeader(const std::string& content_type);
-		// // Method to send a complete HTTP response (status, headers, body)
-		// void sendResponse(const std::string& status, const std::map<std::string, std::string>& headers, const std::string& body);
 		// Method to output HTML or other content
 		void output(const std::string& content);
 		// Method to run the CGI script with environment variables
     	void executeCgi(Server server);
-
-		void handleCgiRequest(int client_socket, const std::string& path, Server server);
-
+		// // Method to send a complete HTTP response (status, headers, body)
+		void sendResponse(const std::string& status, const std::map<std::string, std::string>& headers, const std::string& body);
+		void handleCgiRequest(int client_socket, const std::string& path, Server server, HttpRequest request);
 };
 
 
