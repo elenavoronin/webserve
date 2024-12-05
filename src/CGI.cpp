@@ -60,6 +60,7 @@ void CGI::initializeEnvVars(HttpRequest& request) {
         std::string contentLength = request.getField("Content-Length");
         if (!contentLength.empty()) {
             _envVars.push_back("CONTENT_LENGTH=" + contentLength);
+            //needs body?
         }
         std::string body = request.getField("body");
         if (!body.empty()) {
@@ -156,9 +157,14 @@ void CGI::executeCgi(Server server) {
  * 
  * @param client_socket The socket through which the server communicates with the client.
  * @todo                - Implement error handling if something goes wrong before sending the repsonse
+ *                      - put buffer to 10 and have a read loop. after buffer is read return to poll and pass that 
+ *                      - go back to the server and then continue reading
+ *                      - handle 
+ * 
  */
 void CGI::readCgiOutput(int client_socket) {
     char buffer[1024];
+    // char buffer[10];
     ssize_t bytes_read;
 
     while ((bytes_read = read(_responsePipe[READ], buffer, sizeof(buffer))) > 0) {
@@ -248,6 +254,7 @@ void CGI::handleParentProcess(int client_socket) {
  * @param path The path to the CGI script.
  * @param server The Server object that provides server configuration and utilities.
  * @param request The HttpRequest object containing HTTP request details (headers, body, etc.).
+ * @todo read in chunks? how
  */
 void CGI::handleCgiRequest(int client_socket, const std::string& path, Server server, HttpRequest& request) {
     
