@@ -129,13 +129,12 @@ int Server::report_ready(std::vector<struct pollfd> &pfds){
 /*Function to add a client connection to the server
 - pfds: Vector of pollfd structures
 - clientSocket: The file descriptor for the client socket to add*/
-void Server::addClient(std::vector<struct pollfd> &pfds, int clientSocket, int i){
+void Server::addClient(std::vector<struct pollfd> &pfds, int clientSocket){
 	Client newClient;
-	newClient.setI(i);
 	newClient.setSocket(clientSocket);
 	clients.push_back(newClient);
 	add_to_pfds(pfds, clientSocket);
-	std::cout << "Add client" << std::endl;
+	//std::cout << "Add client" << getPortStr() << " I " << i << " clientSocket " << clientSocket << std::endl;
 }
 
 /*Function to remove a client connection from the server
@@ -159,58 +158,79 @@ void Server::removeClient(std::vector<struct pollfd> &pfds, int i, int clientSoc
 /*Function to handle new incoming connections
 - listener: The file descriptor for the listener socket
 - pfds: Vector of pollfd structures where the new connection will be added*/
-void Server::handle_new_connection(int listener, std::vector<struct pollfd> &pfds, int i){
+void Server::handle_new_connection(std::vector<struct pollfd> &pfds){
 	struct sockaddr_storage clientsAddr;
     socklen_t clientsAddrSize = sizeof(clientsAddr);
-    int newfd = accept(listener, (struct sockaddr *)&clientsAddr, &clientsAddrSize);
+    int newfd = accept(listener_fd, (struct sockaddr *)&clientsAddr, &clientsAddrSize);
 	if (!newfd){
 		std::cerr << "Can't accept a new connection" << std::endl;
-		exit(0);
+		return;
 	}
-	//std::cout << "Adding Client" << newfd << "    " << i << std::endl;
-    if (newfd == -1) {
-        perror("accept");
-    } else 
-		addClient(pfds, newfd, i);
+	std::cout << "New connection accepted: " << newfd << std::endl;
+	addClient(pfds, newfd);
 }
 
 // Function to handle data received from a connected client
 // - pfds: Vector of pollfd structures
 // - i: Index of the pollfd that has client data ready
 // - listener: File descriptor for the listener socket (used to avoid sending data back to it)
-void Server::handle_client_data(std::vector<struct pollfd> &pfds, int i, int listener){
+void Server::handle_client_data(std::vector<struct pollfd> &pfds, int i){
 /*Add POLLOUT when I reached the length, don't close cause I still need to connect to client*/
-	(void)listener;//unvoid
-	unsigned long contentLength = 0;//changed from int to unsigned long because of flags
-	char buf[20] = {0};
-	int sender_fd = pfds[i].fd;
-	Client* client;
-
+	// unsigned long contentLength = 0;//changed from int to unsigned long because of flags
+	char buf[100] = {0};
+	int client_fd = pfds[i].fd;
+	Client* client = nullptr;
+	int contentLength;
 	for (auto& c : clients){ //find the Client
-		if (c.getSocket() == sender_fd)
+		if (c.getSocket() == client_fd){ //TODO add file fd and/or pipe fd to client to read in chunks
 			client = &c;
+			break;
+		}
 	}
-	int received = recv(sender_fd, buf, sizeof(buf), 0);
+	if (!client) {
+		// std::cerr << "Client not found!" << std::endl; //TODO remove later
+		return;
+	}
+	int received = recv(client_fd, buf, sizeof(buf), 0);
 	if (received > 0){ //The only difference between recv() and read(2) is the presence of flags. 
 		HttpRequest* request = client->getHttpRequest();
 		request->getStrReceived().append(buf, received); //save the request in _strReceived
-		if (request->getStrReceived().find("\r\n\r\n") != std::string::npos && !request->isHeaderReceived()){
-			request->setHeaderReceived(true);
-			contentLength = request->findContentLength(request->getStrReceived());
-			processClientRequest(sender_fd, request->getStrReceived(), request);
-			// broadcast_message(sender_fd, buf, received, pfds, listener);
-			request->clearStrReceived();
-			return;
-		}
-		if (request->isHeaderReceived() && request->getStrReceived().length() >= contentLength) //fix it
-			return ;
+			if (!request->isHeaderReceived()) {
+				if (request->getStrReceived().find("\r\n\r\n") != std::string::npos) {
+					contentLength = request->findContentLength(request->getStrReceived());
+					// processClientRequest(client_fd, request->getStrReceived(), request);
+					// size_t bodyStart = request->getStrReceived().find("\r\n\r\n") + 4;
+					// std::cout << &request << " content length " << contentLength  << "bodystart" << bodyStart << " last thing" <<  request->getStrReceived().find("\r\n\r\n") + 4 << std::endl;
+					// std::cout << "hi "<<request->getStrReceived().substr(bodyStart) << std::endl;
+					// request->_bodyReceived = request->getStrReceived().substr(bodyStart);
+					if (static_cast<int>(request->getStrReceived().length() - request->getStrReceived().find("\r\n\r\n") - 4) >= contentLength)
+						request->setHeaderReceived(true);
+				}
+			}
+			if (request->isHeaderReceived()) { //reading the file
+					std::cout << "first" << std::endl;
+					processClientRequest(client_fd, request->getStrReceived(), request);
+					std::cout << "second" << std::endl;
+					request->_readyToSendBack = true;
+					std::cout << "third" << std::endl;
+
+					request->clearStrReceived();
+					//pfds[i].events |= POLLOUT;  //TODO add it right after finishing reading, before sending respond
+			}
+			// if (request->_readyToSendBack == true){
+			// 	//sendRespond();
+			// }
 	}
-	if (received <= 0) {
-		if (received == 0)
-			std::cout << "pollserver: socket" << sender_fd << "hung up\n";
-		close(sender_fd);
-		removeClient(pfds, i, sender_fd);
-	}
+	else if (received == 0) {
+        // std::cout << "Client closed connection: " << client_fd << std::endl;
+        // close(client_fd);
+        // removeClient(pfds, i, client_fd);
+    } else {
+        // An error occurred with recv
+        perror("ppp");
+        close(client_fd);
+        removeClient(pfds, i, client_fd);
+    }
 }
 
 void Server::sendResponse(int clientSocket, const std::string& response) {

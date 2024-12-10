@@ -4,8 +4,6 @@
 #include "../include/HttpResponse.hpp"
 #include "../include/Location.hpp"
 #include "../include/utils.hpp"
-#include "../include/HttpResponse.hpp"
-#include "../include/utils.hpp"
 #include "../include/CGI.hpp"
 #include <stdio.h>
 #include <stdlib.h>
@@ -25,7 +23,6 @@
 
 
 
-
 std::string readFileContent(const std::string& filepath) {
     std::ifstream file(filepath);
     if (!file) {
@@ -34,6 +31,7 @@ std::string readFileContent(const std::string& filepath) {
     }
     std::stringstream buffer;
     buffer << file.rdbuf(); //read file by bytes, go back to poll, check if finished reading
+	//request->_readyToSendBack = true;
     return buffer.str();
 }
 
@@ -89,7 +87,6 @@ int Server::handleGetRequest(int clientSocket, const std::string& path, HttpRequ
 	}
 	if (path.rfind("/cgi-bin/", 0) == 0) { //change to config
 		CGI cgi;
-		cgi.handleCgiRequest(clientSocket, path, *this, *Http);
 		cgi.handleCgiRequest(clientSocket, path, *this, *Http);
 		return 0;
 	}
@@ -173,9 +170,10 @@ int Server::processClientRequest(int clientSocket, const std::string& request, H
 	HttpRequest->readRequest(request);
 	checkLocations(path);
 	int status = validateRequest(method, version);
+	std::cout << status << std::endl;
 	// std::cout << "Content-type: " << Http->getField("Content-type") << std::endl;
 	if (status != 200) {
-		sendFileResponse(clientSocket, "www/html/error.html", status);  //change to a config ones?
+		sendFileResponse(clientSocket, "www/html/500.html", status);  //change to a config ones?
 		return status;
 	}
 	if (method == "GET" && std::find(this->_allowed_methods.begin(), this->_allowed_methods.end(), "GET") != this->_allowed_methods.end())
