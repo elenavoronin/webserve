@@ -3,7 +3,7 @@
 #include <unistd.h>
 
 
-Client::Client() : _clientSocket(0), _HttpRequest(new HttpRequest()), _HttpResponse(new HttpResponse()), _i(0) {}
+Client::Client() : _clientSocket(-1), _HttpRequest(new HttpRequest()), _HttpResponse(new HttpResponse()) {}
 /*
 1. Shadowing Issue in Client Constructor
 
@@ -12,8 +12,8 @@ Fix:
 
 In the constructor, remove the local declaration and directly initialize the class member Http.*/
 Client::~Client(){
-	// if (clientSocket != -1)
-	// 	close(clientSocket);
+	// if (_clientSocket != -1)
+	// 	close(_clientSocket);
 	// std::cout << "~Client() 1 " << std::endl;
 	// if (_HttpRequest != nullptr){
 	// 	delete _HttpRequest;
@@ -49,8 +49,8 @@ Client::Client(const Client& copy){
 	// std::cout << "Client(const Client& copy 2 " << std::endl;
 }
 
-void Client::setSocket(int i){
-	_clientSocket = i;
+void Client::setSocket(int clientSocket){
+	_clientSocket = clientSocket;
 	// std::cout << "Socket " << clientSocket << std::endl;
 }
 
@@ -58,13 +58,6 @@ int Client::getSocket(){
 	return _clientSocket;
 }
 
-void Client::setI(int i){
-	_i = i;
-}
-
-int Client::getI(){
-	return _i;
-}
 
 void Client::setHttpRequest(HttpRequest* httpRequest){
 	_HttpRequest = httpRequest;

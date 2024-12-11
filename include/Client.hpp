@@ -10,22 +10,15 @@ class Client {
 		int 			_clientSocket;
 		HttpRequest* 	_HttpRequest;
 		HttpResponse* 	_HttpResponse;
-		int 			_i;
 
 	public:
 		Client();// default to 0 if no parameter is provided
 		~Client();
 		Client& operator=(const Client& copy);
 		Client(const Client& copy);
-		void setSocket(int i);
+		void setSocket(int clientSocket);
 		int getSocket();
 		//sendRequest();
-
-		//Getter for _i
-		int getI();
-
-		//Setter for _i
-		void setI(int i);
 
 		//Getter for _HttpRequest
 		HttpRequest* getHttpRequest() const;

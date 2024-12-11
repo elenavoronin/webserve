@@ -208,3 +208,7 @@ int HttpRequest::findContentLength(std::string request){
 	else
 		return 0;
 }
+
+void HttpRequest::setStrReceived(std::string input) {
+	_strReceived = input;
+}

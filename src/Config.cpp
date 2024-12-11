@@ -192,10 +192,11 @@ std::vector<Server> Config::parse_config(std::ifstream &file) {
 
 int Config::add_poll_fds() {
     std::vector<struct pollfd> pfds;
-    std::map<int, Server*> fd_to_server_map;
+    // std::map<int, Server*> fd_to_server_map;
     for (Server& current_server : _servers) {
         current_server.listener_fd = current_server.report_ready(pfds);
-		fd_to_server_map[current_server.listener_fd] = &current_server;
+		std::cout << "Listener fd " << current_server.listener_fd << " for " << current_server.getPortStr() << std::endl; 
+		// fd_to_server_map[current_server.listener_fd] = &current_server;
     }
     while (true) {
         int poll_test = poll(pfds.data(), pfds.size(), -1);
@@ -207,12 +208,14 @@ int Config::add_poll_fds() {
             if (pfds[i].revents & POLLIN) {
                 int fd = pfds[i].fd;
 				for (Server& current_server : _servers) {
-//					std::cout << fd << " " << current_server.listener_fd << std::endl;
+					//std::cout << current_server.listener_fd << " " << current_server.getPortStr() << std::endl;
 					if (fd == current_server.listener_fd) {
-						current_server.handle_new_connection(fd, pfds, i);
+						current_server.handle_new_connection(pfds);
 					} 
 					else {
-						current_server.handle_client_data(pfds, i, fd);
+						//std::cout << current_server.listener_fd << " connection is " << current_server.connection << std::endl;
+						current_server.handle_client_data(pfds, i);
+						// current_server.connection = false;
 					}
 				}
             }
@@ -223,12 +226,21 @@ int Config::add_poll_fds() {
 
 
 /*
-TODO Create the vector of vectors, iterate like 2d array vector<vector<Client>>
-TODO StrReceived will be only for body, separate it from head
+
 TODO handleGet check extension (img. html ..) instead cgi-bin
-send fileto SendFile instead of filepath, cause i open it twice
-TODO in SEndFile Respond why 404? Don't I check it twice before use
 TODO Send should be done in chunks like read and go to poll, change events to POLLOUT somewhere
+TODO read in chunck cgi in void CGI::readCgiOutput(int client_socket) (djoyke)
+TODO create post and delete (djoyke, anna)
+TODO add CGI scripts for post and delete (djoyke)
+TODO finish locations (lena)
+TODO make ugly button not ugly in html (djoyke)
+TODO link error codes to http response, and display correct page (djoyke, anna)
+TODO validate data while parsing (lena)
+TODO eval sheet misery (jan)
+TODO unit test (all, jan)
+
+
+
 */
 
 int Config::check_config(const std::string &config_file) {

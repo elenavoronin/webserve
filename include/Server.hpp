@@ -35,6 +35,7 @@ class Server  {
 
 	public:
 		int listener_fd;
+		bool connection = false;
 		std::vector<struct pollfd> pfds;
 		std::vector<Client> clients;
 		Server();
@@ -51,11 +52,11 @@ class Server  {
 		void 	add_to_pfds(std::vector<struct pollfd> &pfds, int newfd);
 		void 	del_from_pfds(std::vector<struct pollfd> &pfds, int i);
 		/*Main loop*/
-		void 	handle_new_connection(int listener, std::vector<struct pollfd> &pfds, int i);
-		void 	handle_client_data(std::vector<struct pollfd> &pfds, int i, int listener);
+		void 	handle_new_connection( std::vector<struct pollfd> &pfds);
+		void 	handle_client_data(std::vector<struct pollfd> &pfds, int i);
 		// void 	broadcast_message(int sender_fd, char *buf, int received, std::vector<struct pollfd> &pfds, int listener);
 
-		void 	addClient(std::vector<struct pollfd> &pfds, int clientSocket, int i);
+		void 	addClient(std::vector<struct pollfd> &pfds, int clientSocket);
 		void 	removeClient(std::vector<struct pollfd> &pfds, int i, int clientSocket);
 		/*Handle requests*/
 //		int 	handleRequest(int clientSocket, std::string request, HttpRequest *Http);
