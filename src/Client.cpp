@@ -3,7 +3,7 @@
 #include <unistd.h>
 
 
-Client::Client() : _clientSocket(-1), _HttpRequest(new HttpRequest()), _HttpResponse(new HttpResponse()) {}
+Client::Client() : _clientSocket(-1), _HttpRequest(new HttpRequest()), _HttpResponse(new HttpResponse()), _CGI(new CGI()) {}
 /*
 1. Shadowing Issue in Client Constructor
 

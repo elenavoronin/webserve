@@ -5,14 +5,21 @@
 #include <string>
 #include <map>
 
+# define READ 0
+# define WRITE 1
+
+
+
 class HttpRequest {
 
 	private:
-		std::map<std::string, std::string> _request;      // Stores parsed HTTP request fields (key-value pairs)
-		std::string _strReceived;
-		bool _headerReceived = false;
+		int _requestPipe[2]; 								// Pipe for sending data to the CGI process
+		std::map<std::string, std::string> 	_request;      // Stores parsed HTTP request fields (key-value pairs)
+		std::string 						_strReceived;
+		bool 								_headerReceived = false;
 
 	public:
+		bool 								_checkCgiRead = false;
 		//std::string _bodyReceived;                     // Raw HTTP request string
 		bool _readyToSendBack = false;                   // Indicates if headers are fully received
 		HttpRequest();                                   // Constructor to initialize request object
@@ -37,4 +44,7 @@ class HttpRequest {
 		void readRequest(std::string request);               // Parse the raw HTTP request string
 		std::string trim(std::string& str);                  // Trim whitespace from a string
 		int findContentLength(std::string request);          // Get the Content-Length from the request
+
+		int getRequestPipeFd(); // Return the read end of the request pipe
+		void setRequestPipeFd(int fd);
 };

@@ -2,6 +2,9 @@
 
 #include "HttpRequest.hpp"
 #include "HttpResponse.hpp"
+#include "CGI.hpp"
+
+class CGI;
 class HttpRequest;
 class HttpResponse;
 
@@ -10,6 +13,7 @@ class Client {
 		int 			_clientSocket;
 		HttpRequest* 	_HttpRequest;
 		HttpResponse* 	_HttpResponse;
+		CGI*			_CGI;
 
 	public:
 		Client();// default to 0 if no parameter is provided

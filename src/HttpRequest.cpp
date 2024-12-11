@@ -212,3 +212,11 @@ int HttpRequest::findContentLength(std::string request){
 void HttpRequest::setStrReceived(std::string input) {
 	_strReceived = input;
 }
+
+int HttpRequest::getRequestPipeFd() { 
+	return _requestPipe[READ]; 
+} 
+		
+void HttpRequest::setRequestPipeFd(int fd) { 
+	_requestPipe[READ] = fd;
+}

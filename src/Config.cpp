@@ -211,7 +211,10 @@ int Config::add_poll_fds() {
 					//std::cout << current_server.listener_fd << " " << current_server.getPortStr() << std::endl;
 					if (fd == current_server.listener_fd) {
 						current_server.handle_new_connection(pfds);
-					} 
+					}
+                    // if (pfds[i].fd == _responsePipe[READ]) {
+                    //     readCgiOutput(client_socket, request);
+                    // }
 					else {
 						//std::cout << current_server.listener_fd << " connection is " << current_server.connection << std::endl;
 						current_server.handle_client_data(pfds, i);

@@ -3,9 +3,14 @@
 #include <string>
 #include <map>
 
+# define READ 0
+# define WRITE 1
+
 class HttpResponse {
 
 	private:
+
+		int _responsePipe[2]; // Pipe for receiving data from the CGI process
 		int _statusCode;                                   // HTTP status code (e.g., 200, 404)
 		std::string _statusMessage;                       // Corresponding status message (e.g., "OK", "Not Found")
 		std::map<std::string, std::string> _headers;      // HTTP headers (key-value pairs)
@@ -19,6 +24,9 @@ class HttpResponse {
 		void setStatus(int code, const std::string& message);   // Set HTTP status code and message
 		void setHeader(const std::string& key, const std::string& value); // Add/modify a header
 		void setBody(const std::string& content);               // Set the response body
+
+		int getResponsePipeFd() { return _responsePipe[1]; } // Return the write end of the response pipe
+		void setResponsePipeFd(int fd) { _responsePipe[1] = fd; }
 
 		// Getters for status, headers, and body
 		std::string getHeader(const std::string& key) const;    // Retrieve a header value

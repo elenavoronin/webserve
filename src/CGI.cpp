@@ -8,7 +8,9 @@ CGI::CGI(){}
 /**
  * @brief       Destructor for the CGI class.
  */
-CGI::~CGI(){}
+CGI::~CGI(){
+    //close pipes
+}
 
 /**
  * @brief       Parses the query string from the HTTP request path if the request method is GET.
@@ -47,6 +49,7 @@ void CGI::parseQueryString(HttpRequest& request) {
  * @todo        - Verify if other environment variables are needed.
  *              - Handle cases where environment variables might be missing or malformed.
  *              - Ensure proper memory management for `_env` in case of re-initialization.
+ *              - why contentlenght string wth?
  */
 void CGI::initializeEnvVars(HttpRequest& request) {
 
@@ -57,9 +60,9 @@ void CGI::initializeEnvVars(HttpRequest& request) {
         parseQueryString(request);
         _envVars.push_back("QUERY_STRING=" + _queryParams);
     } else if (_method == "POST") {
-        std::string contentLength = request.getField("Content-Length");
-        if (!contentLength.empty()) {
-            _envVars.push_back("CONTENT_LENGTH=" + contentLength);
+        std::string _contentLength = request.getField("Content-Length");
+        if (!_contentLength.empty()) {
+            _envVars.push_back("CONTENT_LENGTH=" + _contentLength);
             //needs body?
         }
         std::string body = request.getField("body");
@@ -84,7 +87,6 @@ void CGI::initializeEnvVars(HttpRequest& request) {
     }
     _env.push_back(nullptr);                                // Null-terminate for execve
 }
-
 
 /**
  * @brief       Executes the CGI script with the specified environment variables.
@@ -159,42 +161,44 @@ void CGI::executeCgi(Server server) {
  * @todo                - Implement error handling if something goes wrong before sending the repsonse
  *                      - put buffer to 10 and have a read loop. after buffer is read return to poll and pass that 
  *                      - go back to the server and then continue reading
- *                      - handle 
+ *                      - handle destruction of read bytes
  * 
  */
-void CGI::readCgiOutput(int client_socket) {
-    // char buffer[1024];
+void CGI::readCgiOutput(int client_socket, HttpRequest &request) {
     char buffer[10];
-    // ssize_t bytes_read;
+    // Read data from the pipe into the buffer
+    ssize_t bytes_read = read(_responsePipe[READ], buffer, sizeof(buffer));
 
-    // Loop to read data from the pipe until there is no more data to read
-    while (true) {
-        // Read data from the pipe into the buffer
-        ssize_t bytes_read = read(_responsePipe[READ], buffer, sizeof(buffer));
-
-        // Check if the read operation encountered an error
-        if (bytes_read == -1) {
-            // Log an error message to the standard error stream
-            std::cerr << "Error: read from pipe failed" << std::endl;
-
-            // Exit the function to handle the error case
-            return;
-        }
-
-        // If no more data is available to read, exit the loop
-        if (bytes_read == 0) {
-            break;
-        }
-
-        // Append the data read from the buffer to the _cgiOutput string
-        // Use the length of data read (bytes_read) to ensure only valid data is appended
-        // this will be accessed in the poll loop
-        _cgiOutput.append(buffer, bytes_read);
-
+    // Check if the read operation encountered an error
+    if (bytes_read < 0) {
+        // Log an error message to the standard error stream
+        std::cerr << "Error: read from pipe failed" << std::endl;
+        close(_responsePipe[READ]);
+        // Exit the function to handle the error case
+        return;
     }
-
-    close(_responsePipe[READ]);  // Close read end after finishing
-    sendResponse(client_socket, _cgiOutput);
+    // Append the data read from the buffer to the _cgiOutput string
+    // Use the length of data read (bytes_read) to ensure only valid data is appended
+    // std::cout << "CGIIII OUTPUT::: "<< _cgiOutput << std::endl;
+    // unsigned long length = _contentLength.length();
+    // std::cout << "CGGIII contentlenght" << _contentLength << std::endl;
+    else if (bytes_read == 0){
+        request._checkCgiRead = true;
+        close(_responsePipe[READ]);  // Close read end after finishing
+        sendResponse(client_socket, _cgiOutput);
+        _cgiOutput.clear();
+    }
+    _cgiOutput.append(buffer, bytes_read);
+    std::cout << "Read chunk of size: " << bytes_read << std::endl;
+    // if (client_fd == responsePipeFd) {
+    //     // Send the response directly to the client
+    //     send(client_fd, responseBuffer, responseBufferSize, 0);
+    // } 
+    // else {
+    //     // Read from the response pipe and then send to the client
+    //     int bytesRead = read(responsePipeFd, responseBuffer, responseBufferSize);
+    //     send(client_fd, responseBuffer, bytesRead, 0);
+    // }
 }
 
 /**
@@ -202,6 +206,8 @@ void CGI::readCgiOutput(int client_socket) {
  * 
  * @param client_socket The socket to write the response to.
  * @param cgi_output The content generated by the CGI script.
+ * @todo                - not hardcode response anymore
+ *                      - check to write in loop if needed???
  */
 void CGI::sendResponse(int client_socket, const std::string& cgi_output) {
     HttpResponse response;
@@ -211,6 +217,7 @@ void CGI::sendResponse(int client_socket, const std::string& cgi_output) {
 
     std::string response_str = response.buildResponse();
     ssize_t bytes_written = write(client_socket, response_str.c_str(), response_str.size());
+    std::cout << "CGIIIIIII bytes_written to client socket: " << bytes_written << std::endl;
     if (bytes_written == -1) {
         std::cerr << "Error: failed to write response to client socket" << std::endl;
     }
@@ -251,8 +258,9 @@ void CGI::handleChildProcess(HttpRequest& request, Server server) {
  * @param client_socket The socket to write the response to the client.
  * @todo                - Implement reading from the pipe in chunks
  */
-void CGI::handleParentProcess(int client_socket) {
+void CGI::handleParentProcess(int client_socket, HttpRequest &request) {
     close(_responsePipe[WRITE]);  // Close unused write end
+    request.setRequestPipeFd(_responsePipe[READ]);
 
     // Wait for child process to finish and check for errors
     int status;
@@ -262,7 +270,7 @@ void CGI::handleParentProcess(int client_socket) {
         //link error status it to http response status
         return;
     }
-    readCgiOutput(client_socket);
+    readCgiOutput(client_socket, request);
 }
 
 /**
@@ -288,6 +296,6 @@ void CGI::handleCgiRequest(int client_socket, const std::string& path, Server se
     else if (_pid == 0) {
         handleChildProcess(request, server);
     } else {
-        handleParentProcess(client_socket);
+        handleParentProcess(client_socket, request);
     }
 }

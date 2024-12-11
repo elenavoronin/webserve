@@ -89,7 +89,6 @@ int Server::handleGetRequest(int clientSocket, const std::string& path, HttpRequ
 	if (path.rfind("/cgi-bin/", 0) == 0) { //change to config
 		CGI cgi;
 		cgi.handleCgiRequest(clientSocket, path, *this, *Http);
-		// cgi.handleCgiRequest(clientSocket, path, *this, *Http);
 		return 0;
 	}
 	std::ifstream file(filepath);
@@ -166,7 +165,7 @@ As with the POST request, decide whether to close the connection or keep it aliv
 
 int Server::processClientRequest(int clientSocket, const std::string& request, HttpRequest* HttpRequest) {
 	std::istringstream requestStream(request);
-	std::cout <<" This is request "<< request << std::endl;
+	// std::cout <<" This is request "<< request << std::endl;
 	std::string method, path, version;
 	HttpResponse response;
 	requestStream >> method >> path >> version;
@@ -190,7 +189,8 @@ int Server::processClientRequest(int clientSocket, const std::string& request, H
 	if (method == "DELETE" && std::find(this->_allowed_methods.begin(), this->_allowed_methods.end(), "DELETE") != this->_allowed_methods.end())
 	//check with this endpoint am I allowed to use delete?
 		return handleDeleteRequest(clientSocket, path, HttpRequest);
-	sendResponse(clientSocket, response.buildResponse());
+	else
+		sendResponse(clientSocket, response.buildResponse());
 	// close(clientSocket);
 	return 0;
 }

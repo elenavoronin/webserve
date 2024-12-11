@@ -185,6 +185,7 @@ void Server::handle_client_data(std::vector<struct pollfd> &pfds, int i){
 	for (auto& c : clients){ //find the Client
 		if (c.getSocket() == client_fd){ //TODO add file fd and/or pipe fd to client to read in chunks
 			client = &c;
+			std::cout << "client fd " << client_fd << " " << c.getSocket() << std::endl;
 			break;
 		}
 	}
@@ -192,9 +193,13 @@ void Server::handle_client_data(std::vector<struct pollfd> &pfds, int i){
 		// std::cerr << "Client not found!" << std::endl; //TODO remove later
 		return;
 	}
+	HttpRequest* request = client->getHttpRequest();
+	// if (client_fd == request->getRequestPipeFd()) {
+	// 	readCgiOutput(client_fd, request); //check if client fd equeals to cgi readpipe
+	// }
 	int received = recv(client_fd, buf, sizeof(buf), 0);
 	if (received > 0){ //The only difference between recv() and read(2) is the presence of flags. 
-		HttpRequest* request = client->getHttpRequest();
+		//HttpRequest* request = client->getHttpRequest();
 		request->getStrReceived().append(buf, received); //save the request in _strReceived
 			if (!request->isHeaderReceived()) {
 				if (request->getStrReceived().find("\r\n\r\n") != std::string::npos) {
@@ -214,12 +219,14 @@ void Server::handle_client_data(std::vector<struct pollfd> &pfds, int i){
 					// std::cout << "second" << std::endl;
 					// request->_readyToSendBack = true;
 					// std::cout << "third" << std::endl;
-					request->setHeaderReceived(false);
-					request->clearStrReceived();
+						// processClientRequest(client_fd, request->getStrReceived(), request);
+						request->setHeaderReceived(false);
+						request->clearStrReceived();
 					//close(client_fd);
 					//removeClient(pfds, i, client_fd);
 					//pfds[i].events |= POLLOUT;  //TODO add it right after finishing reading, before sending respond
 			}
+				// processClientRequest(client_fd, request->getStrReceived(), request);
 			// if (request->_readyToSendBack == true){
 			// 	//sendRespond();
 			// }
