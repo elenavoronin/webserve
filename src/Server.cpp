@@ -178,6 +178,7 @@ void Server::handle_client_data(std::vector<struct pollfd> &pfds, int i){
 /*Add POLLOUT when I reached the length, don't close cause I still need to connect to client*/
 	// unsigned long contentLength = 0;//changed from int to unsigned long because of flags
 	char buf[100] = {0};
+	// djoykeeeeee
 	int client_fd = pfds[i].fd;
 	Client* client = nullptr;
 	int contentLength;
