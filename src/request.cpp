@@ -29,9 +29,10 @@ std::string readFileContent(const std::string& filepath) {
         std::cerr << "Error: File not found: " << filepath << std::endl;
         return "";
     }
-    std::stringstream buffer;
+    std::ostringstream buffer;
     buffer << file.rdbuf(); //read file by bytes, go back to poll, check if finished reading
 	//request->_readyToSendBack = true;
+	std::cout.flush();
     return buffer.str();
 }
 
@@ -164,13 +165,16 @@ As with the POST request, decide whether to close the connection or keep it aliv
 
 int Server::processClientRequest(int clientSocket, const std::string& request, HttpRequest* HttpRequest) {
 	std::istringstream requestStream(request);
+	std::cout <<" This is request "<< request << std::endl;
 	std::string method, path, version;
 	HttpResponse response;
 	requestStream >> method >> path >> version;
+	// (void)clientSocket;
+	// (void)HttpRequest;
 	HttpRequest->readRequest(request);
 	checkLocations(path);
 	int status = validateRequest(method, version);
-	std::cout << status << std::endl;
+	// std::cout << status << std::endl;
 	// std::cout << "Content-type: " << Http->getField("Content-type") << std::endl;
 	if (status != 200) {
 		sendFileResponse(clientSocket, "www/html/500.html", status);  //change to a config ones?
@@ -186,5 +190,6 @@ int Server::processClientRequest(int clientSocket, const std::string& request, H
 	//check with this endpoint am I allowed to use delete?
 		return handleDeleteRequest(clientSocket, path, HttpRequest);
 	sendResponse(clientSocket, response.buildResponse());
+	// close(clientSocket);
 	return 0;
 }

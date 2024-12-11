@@ -201,20 +201,22 @@ void Server::handle_client_data(std::vector<struct pollfd> &pfds, int i){
 					// processClientRequest(client_fd, request->getStrReceived(), request);
 					// size_t bodyStart = request->getStrReceived().find("\r\n\r\n") + 4;
 					// std::cout << &request << " content length " << contentLength  << "bodystart" << bodyStart << " last thing" <<  request->getStrReceived().find("\r\n\r\n") + 4 << std::endl;
-					// std::cout << "hi "<<request->getStrReceived().substr(bodyStart) << std::endl;
+					 std::cout << "hi "<<request->getStrReceived().length()<< " " << contentLength << std::endl;
 					// request->_bodyReceived = request->getStrReceived().substr(bodyStart);
 					if (static_cast<int>(request->getStrReceived().length() - request->getStrReceived().find("\r\n\r\n") - 4) >= contentLength)
 						request->setHeaderReceived(true);
 				}
 			}
 			if (request->isHeaderReceived()) { //reading the file
-					std::cout << "first" << std::endl;
+					// std::cout << "first" << std::endl;
 					processClientRequest(client_fd, request->getStrReceived(), request);
-					std::cout << "second" << std::endl;
-					request->_readyToSendBack = true;
-					std::cout << "third" << std::endl;
-
+					// std::cout << "second" << std::endl;
+					// request->_readyToSendBack = true;
+					// std::cout << "third" << std::endl;
+					request->setHeaderReceived(false);
 					request->clearStrReceived();
+					//close(client_fd);
+					//removeClient(pfds, i, client_fd);
 					//pfds[i].events |= POLLOUT;  //TODO add it right after finishing reading, before sending respond
 			}
 			// if (request->_readyToSendBack == true){

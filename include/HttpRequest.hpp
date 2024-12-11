@@ -13,7 +13,7 @@ class HttpRequest {
 		bool _headerReceived = false;
 
 	public:
-		std::string _bodyReceived;                     // Raw HTTP request string
+		//std::string _bodyReceived;                     // Raw HTTP request string
 		bool _readyToSendBack = false;                   // Indicates if headers are fully received
 		HttpRequest();                                   // Constructor to initialize request object
 		~HttpRequest();                                  // Destructor
