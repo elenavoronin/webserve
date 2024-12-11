@@ -163,16 +163,34 @@ void CGI::executeCgi(Server server) {
  * 
  */
 void CGI::readCgiOutput(int client_socket) {
-    char buffer[1024];
-    // char buffer[10];
-    ssize_t bytes_read;
+    // char buffer[1024];
+    char buffer[10];
+    // ssize_t bytes_read;
 
-    while ((bytes_read = read(_responsePipe[READ], buffer, sizeof(buffer))) > 0) {
+    // Loop to read data from the pipe until there is no more data to read
+    while (true) {
+        // Read data from the pipe into the buffer
+        ssize_t bytes_read = read(_responsePipe[READ], buffer, sizeof(buffer));
+
+        // Check if the read operation encountered an error
         if (bytes_read == -1) {
+            // Log an error message to the standard error stream
             std::cerr << "Error: read from pipe failed" << std::endl;
+
+            // Exit the function to handle the error case
             return;
         }
+
+        // If no more data is available to read, exit the loop
+        if (bytes_read == 0) {
+            break;
+        }
+
+        // Append the data read from the buffer to the _cgiOutput string
+        // Use the length of data read (bytes_read) to ensure only valid data is appended
+        // this will be accessed in the poll loop
         _cgiOutput.append(buffer, bytes_read);
+
     }
 
     close(_responsePipe[READ]);  // Close read end after finishing
