@@ -1,4 +1,4 @@
-
+1. create poll class, fill in gaps of handlePollEvent() https://github.dev/rvan-mee/webserv
 2. create post and delete (djoyke, anna)
 3. add CGI scripts for post and delete (djoyke)
 4. finish locations (lena)
