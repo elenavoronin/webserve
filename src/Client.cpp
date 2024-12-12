@@ -124,4 +124,25 @@ void Client::readFromSocket(Server *server) {
 		_HttpRequest->setHeaderReceived(false);
 		_HttpRequest->clearStrReceived();
 	}
+	else if (received == 0) {
+        // std::cout << "Client closed connection: " << client_fd << std::endl;
+        // close(client_fd);
+        // removeClient(pfds, i, client_fd);
+    } else {
+        // An error occurred with recv
+        close(client_fd);
+        removeClient(pfds, i, client_fd);
+    }
+}
+
+void Client::writeToSocket(Server *server) {
+	int bytesToWrite = WRITE_SIZE;
+    int bytesWritten = 0;
+
+    if (bytesToWrite > _HttpResponse->getFullResponse().size() - _responseIndex) {
+        bytesToWrite = _HttpResponse->getFullResponse().size() - _responseIndex;
+    }
+	//data + offset inputindex 
+    bytesWritten = write(_clientSocket, _HttpResponse->getFullResponse().data() + _responseIndex, bytesToWrite);
+    _responseIndex += bytesWritten;
 }

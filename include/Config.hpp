@@ -29,5 +29,8 @@ class Config {
             return _servers;
         }
 		void print_config_parse() const;
+
+        //TODO create Poll class
 		int add_poll_fds();
+        void pollLoop(std::vector<struct pollfd> &pfds);
 };

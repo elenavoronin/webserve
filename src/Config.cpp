@@ -198,32 +198,36 @@ int Config::add_poll_fds() {
 		std::cout << "Listener fd " << current_server.listener_fd << " for " << current_server.getPortStr() << std::endl; 
 		// fd_to_server_map[current_server.listener_fd] = &current_server;
     }
+    //make poll class
+    pollLoop(pfds);
+	// file.close();
+}
+
+//needs to be poll class
+void Config::pollLoop(std::vector<struct pollfd> &pfds) {
     while (true) {
         int poll_test = poll(pfds.data(), pfds.size(), -1);
         if (poll_test == -1) {
-            std::cerr << "Poll error" << std::endl;
-            return -1;
+            throw std::runtime_error("Poll failed!");
         }
         for (size_t i = 0; i < pfds.size(); i++) {
             if (pfds[i].revents & POLLIN) {
                 int fd = pfds[i].fd;
-				for (Server& current_server : _servers) {
-					//std::cout << current_server.listener_fd << " " << current_server.getPortStr() << std::endl;
-					if (fd == current_server.listener_fd) {
-						current_server.handle_new_connection(pfds);
-					} 
-					else {
-						//std::cout << current_server.listener_fd << " connection is " << current_server.connection << std::endl;
-						current_server.handle_client_data(pfds, i);
-						// current_server.connection = false;
-					}
-				}
+                for (Server& current_server : _servers) {
+                    //std::cout << current_server.listener_fd << " " << current_server.getPortStr() << std::endl;
+                    if (fd == current_server.listener_fd) {
+                        current_server.handle_new_connection(pfds);
+                    } 
+                    else {
+                        //std::cout << current_server.listener_fd << " connection is " << current_server.connection << std::endl;
+                        current_server.handlePollEvent(pfds, i);
+                        // current_server.connection = false;
+                    }
+                }
             }
         }
     }
-	 // file.close();
 }
-
 
 /*
 

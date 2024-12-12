@@ -53,7 +53,7 @@ class Server  {
 		void 	del_from_pfds(std::vector<struct pollfd> &pfds, int i);
 		/*Main loop*/
 		void 	handle_new_connection( std::vector<struct pollfd> &pfds);
-		void 	handle_client_data(std::vector<struct pollfd> &pfds, int i);
+		void 	handlePollEvent(std::vector<struct pollfd> &pfds, int i);
 		// void 	broadcast_message(int sender_fd, char *buf, int received, std::vector<struct pollfd> &pfds, int listener);
 
 		void 	addClient(std::vector<struct pollfd> &pfds, int clientSocket);

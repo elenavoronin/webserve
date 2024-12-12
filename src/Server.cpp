@@ -128,7 +128,8 @@ int Server::report_ready(std::vector<struct pollfd> &pfds){
 
 /*Function to add a client connection to the server
 - pfds: Vector of pollfd structures
-- clientSocket: The file descriptor for the client socket to add*/
+- clientSocket: The file descriptor for the client socket to add
+- TODO could go wrong we're looping while pusing back so it wont be at end and we could loose other clients*/
 void Server::addClient(std::vector<struct pollfd> &pfds, int clientSocket){
 	Client newClient;
 	newClient.setSocket(clientSocket);
@@ -178,7 +179,7 @@ void Server::handle_new_connection(std::vector<struct pollfd> &pfds){
 // 	unsigned long contentLength = 0;
 //	changed from int to unsigned long because of flags
 /*	Add POLLOUT when I reached the length, don't close cause I still need to connect to client*/
-void Server::handle_client_data(std::vector<struct pollfd> &pfds, int i){
+void Server::handlePollEvent(std::vector<struct pollfd> &pfds, int i){
 	Client* client = nullptr;
 	int event_fd = pfds[i].fd;
 	// find the Client
@@ -188,37 +189,34 @@ void Server::handle_client_data(std::vector<struct pollfd> &pfds, int i){
 			break;
 		}
 	}
+	//do we read prepare
 	if (pfds[i].revents == POLLIN) {
 		if (event_fd != client->getSocket()) {
 			client->readFromCgi();
+			// done reading check
 		}
 		else {
 			client->readFromSocket(this);
+			// done reading check
 		}
 	}
-	//do we read?
-	//do we write?
-	//do we close?
+	//do we write prepare
+	if (pfds[i].revents == POLLOUT) {
+		if (event_fd != client->getSocket()) {
+			client->writeToCgi();
+			// done writing check
+		}
+		else {
+			client->writeToSocket(this);
+			// done writing check
+		}
+	}
+	//do we close
 	if (!client) {
 		// std::cerr << "Client not found!" << std::endl; //TODO remove later
 		return;
 	}
-	else if (received == 0) {
-        // std::cout << "Client closed connection: " << client_fd << std::endl;
-        // close(client_fd);
-        // removeClient(pfds, i, client_fd);
-    } else {
-        // An error occurred with recv
-        perror("ppp");
-        close(client_fd);
-        removeClient(pfds, i, client_fd);
-    }
 }
-
-void Server::sendResponse(int clientSocket, const std::string& response) {
-	 write(clientSocket, response.c_str(), response.size());
-}
-
 
 /**
  * @todo figure out when to reset server information to default

@@ -66,6 +66,7 @@ int validateRequest(const std::string& method, const std::string& version) {
 	return 200;
 }
 
+//needs to be removed
 void sendFileResponse(int clientSocket, const std::string& filepath, int statusCode) {
 	std::string fileContent = readFileContent(filepath);
 	if (fileContent.empty()) {
@@ -185,7 +186,7 @@ int Server::processClientRequest(Client &client, const std::string& request, Htt
 	if (method == "DELETE" && std::find(this->_allowed_methods.begin(), this->_allowed_methods.end(), "DELETE") != this->_allowed_methods.end())
 	//check with this endpoint am I allowed to use delete?
 		return handleDeleteRequest(client, path, HttpRequest);
-	sendResponse(client.getSocket(), response.buildResponse());
-	// close(clientSocket);
+	response.buildResponse();
+	// check poll if I can write?
 	return 0;
 }

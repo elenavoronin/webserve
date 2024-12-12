@@ -4,7 +4,11 @@
  * @brief       Constructor for the CGI class.
  */
 CGI::CGI(HttpRequest *request) {
-    if (!setupPipes()) return;
+    _cgiInput = request->getField("body"); //can we just put this as a variable
+    _inputIndex = 0;
+
+    if (!setupPipes()) 
+        return;
 
     _pid = fork();
     if (_pid == -1) {
@@ -157,7 +161,7 @@ void CGI::executeCgi() {
  * 
  */
 void CGI::readCgiOutput() {
-    char buffer[10];
+    char buffer[READ_SIZE];
 
     // Read data from the pipe into the buffer
     ssize_t bytes_read = read(_fromCgiPipe[READ], buffer, sizeof(buffer));
@@ -169,6 +173,18 @@ void CGI::readCgiOutput() {
     }
     //maybe use vector of characters to have less trouble with images
     _cgiOutput.append(buffer, bytes_read);
+}
+
+void CGI::writeCgiInput() {
+    int bytesToWrite = WRITE_SIZE;
+    int bytesWritten = 0;
+
+    if (bytesToWrite > _cgiInput.size() - _inputIndex) {
+        bytesToWrite = _cgiInput.size() - _inputIndex;
+    }
+    //data + offset inputindex 
+    bytesWritten = write(_toCgiPipe[WRITE], _cgiInput.data() + _inputIndex, bytesToWrite);
+    _cgiInput += bytesWritten;
 }
 
 /**

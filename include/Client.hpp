@@ -3,6 +3,9 @@
 #include "HttpRequest.hpp"
 #include "HttpResponse.hpp"
 #include "CGI.hpp"
+#include <arpa/inet.h>
+#include <netdb.h>
+#include "utils.hpp"
 
 class HttpRequest;
 class HttpResponse;
@@ -14,6 +17,7 @@ class Client {
 		HttpRequest* 	_HttpRequest;
 		HttpResponse* 	_HttpResponse;
 		CGI*			_CGI;
+		int				_responseIndex;
 
 	public:
 		Client();// default to 0 if no parameter is provided
@@ -36,12 +40,15 @@ class Client {
 		//Setter for _HttpResponse
 		void setHttpResponse(HttpResponse* httpResponse);
 
-		// int processClientRequest(const std::string& request, HttpRequest* Http); ????
+		void writeToSocket(Server *server);
 
+		// int processClientRequest(const std::string& request, HttpRequest* Http); ????
+		void readFromSocket(Server *server);
+		
+		//CGI calling methods
 		int getCgiRead();
 		int getCgiWrite();
-
 		void startCgi(HttpRequest *request);
 		void readFromCgi();
-		void readFromSocket(Server *server);
+		void writeToCgi();
 };

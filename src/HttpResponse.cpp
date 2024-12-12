@@ -105,25 +105,25 @@ void HttpResponse::setBody(const std::string& content) {
  * @todo        - Fix redundant status code addition in response.
  *              - Handle edge cases for invalid headers or body content.
  */
-std::string HttpResponse::buildResponse() const {
-	std::string response;
+std::string HttpResponse::buildResponse() {
+	
 	// Build the HTTP status line
-	response += "HTTP/1.1 " + std::to_string(_statusCode) + " " + _statusMessage + "\r\n";
+	std::string statusCodeString = std::to_string(_statusCode);
+	_fullResponse += "HTTP/1.1 " + statusCodeString + " " + _statusMessage + "\r\n";
 	// Map status codes to reasons
-	response += std::to_string(_statusCode) += "\r\n";
+	_fullResponse += statusCodeString += "\r\n";
 	// Build the headers
 	for (const auto& header : _headers) {
 		// The header name and value are separated by a colon and a space
-		response += header.first + ": " + header.second + "\r\n";
+		_fullResponse += header.first + ": " + header.second + "\r\n";
 	}
 	// End headers section
-	response += "\r\n";
+	_fullResponse += "\r\n";
 	// Add body if present
 	if (!_body.empty()) {
-		response += _body;
+		_fullResponse += _body;
 	}
-	std::cout << response << std::endl;
-	return response;
+	std::cout << _fullResponse << std::endl;
 }
 
 /**
@@ -140,4 +140,8 @@ void HttpResponse::redirect(const std::string& location, int status_code, const 
 	setStatus(status_code, message);
 	setHeader("Location", location);
 	setBody(""); // Redirections typically have no body
+}
+
+std::string &HttpResponse::getFullResponse(){
+	return _fullResponse;
 }
