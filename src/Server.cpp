@@ -170,59 +170,38 @@ void Server::handle_new_connection(std::vector<struct pollfd> &pfds){
 	addClient(pfds, newfd);
 }
 
-// Function to handle data received from a connected client
+// 	Function to handle data received from a connected client
 // - pfds: Vector of pollfd structures
 // - i: Index of the pollfd that has client data ready
 // - listener: File descriptor for the listener socket (used to avoid sending data back to it)
+//	TODO add file fd and/or pipe fd to client to read in chunks
+// 	unsigned long contentLength = 0;
+//	changed from int to unsigned long because of flags
+/*	Add POLLOUT when I reached the length, don't close cause I still need to connect to client*/
 void Server::handle_client_data(std::vector<struct pollfd> &pfds, int i){
-/*Add POLLOUT when I reached the length, don't close cause I still need to connect to client*/
-	// unsigned long contentLength = 0;//changed from int to unsigned long because of flags
-	char buf[100] = {0};
-	// djoykeeeeee
-	int client_fd = pfds[i].fd;
 	Client* client = nullptr;
-	int contentLength;
-	for (auto& c : clients){ //find the Client
-		if (c.getSocket() == client_fd){ //TODO add file fd and/or pipe fd to client to read in chunks
+	int event_fd = pfds[i].fd;
+	// find the Client
+	for (auto& c : clients){
+		if (c.getSocket() == event_fd || client->getCgiRead() == event_fd || client->getCgiWrite() == event_fd){
 			client = &c;
 			break;
 		}
 	}
+	if (pfds[i].revents == POLLIN) {
+		if (event_fd != client->getSocket()) {
+			client->readFromCgi();
+		}
+		else {
+			client->readFromSocket(this);
+		}
+	}
+	//do we read?
+	//do we write?
+	//do we close?
 	if (!client) {
 		// std::cerr << "Client not found!" << std::endl; //TODO remove later
 		return;
-	}
-	int received = recv(client_fd, buf, sizeof(buf), 0);
-	if (received > 0){ //The only difference between recv() and read(2) is the presence of flags. 
-		HttpRequest* request = client->getHttpRequest();
-		request->getStrReceived().append(buf, received); //save the request in _strReceived
-			if (!request->isHeaderReceived()) {
-				if (request->getStrReceived().find("\r\n\r\n") != std::string::npos) {
-					contentLength = request->findContentLength(request->getStrReceived());
-					// processClientRequest(client_fd, request->getStrReceived(), request);
-					// size_t bodyStart = request->getStrReceived().find("\r\n\r\n") + 4;
-					// std::cout << &request << " content length " << contentLength  << "bodystart" << bodyStart << " last thing" <<  request->getStrReceived().find("\r\n\r\n") + 4 << std::endl;
-					 std::cout << "hi "<<request->getStrReceived().length()<< " " << contentLength << std::endl;
-					// request->_bodyReceived = request->getStrReceived().substr(bodyStart);
-					if (static_cast<int>(request->getStrReceived().length() - request->getStrReceived().find("\r\n\r\n") - 4) >= contentLength)
-						request->setHeaderReceived(true);
-				}
-			}
-			if (request->isHeaderReceived()) { //reading the file
-					// std::cout << "first" << std::endl;
-					processClientRequest(client_fd, request->getStrReceived(), request);
-					// std::cout << "second" << std::endl;
-					// request->_readyToSendBack = true;
-					// std::cout << "third" << std::endl;
-					request->setHeaderReceived(false);
-					request->clearStrReceived();
-					//close(client_fd);
-					//removeClient(pfds, i, client_fd);
-					//pfds[i].events |= POLLOUT;  //TODO add it right after finishing reading, before sending respond
-			}
-			// if (request->_readyToSendBack == true){
-			// 	//sendRespond();
-			// }
 	}
 	else if (received == 0) {
         // std::cout << "Client closed connection: " << client_fd << std::endl;
@@ -241,11 +220,13 @@ void Server::sendResponse(int clientSocket, const std::string& response) {
 }
 
 
-
+/**
+ * @todo figure out when to reset server information to default
+ */
 void Server::checkLocations(std::string path) {
     if (path == this->getIndex()) {
 		return;
-	}//TODO figure out when to reset server information to default
+	}
 	for (const auto& location : this->getLocations()) {
 		if (path == location.first) {
 			if (!location.second.empty()) {

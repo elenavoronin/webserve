@@ -60,10 +60,10 @@ class Server  {
 		void 	removeClient(std::vector<struct pollfd> &pfds, int i, int clientSocket);
 		/*Handle requests*/
 //		int 	handleRequest(int clientSocket, std::string request, HttpRequest *Http);
-		int processClientRequest(int clientSocket, const std::string& request, HttpRequest* Http);
-		int handleGetRequest(int clientSocket, const std::string& path, HttpRequest* Http);
-		int handlePostRequest(int clientSocket, const std::string& path, HttpRequest* Http);
-		int handleDeleteRequest(int clientSocket, const std::string& path, HttpRequest* Http);
+		int processClientRequest(Client &client, const std::string& request, HttpRequest* Http);
+		int handleGetRequest(Client &client, const std::string& path, HttpRequest* request);
+		int handlePostRequest(Client &client, const std::string& path, HttpRequest* Http);
+		int handleDeleteRequest(Client &client, const std::string& path, HttpRequest* Http);
 		void sendResponse(int clientSocket, const std::string& response);
 		void checkLocations(std::string path);
 

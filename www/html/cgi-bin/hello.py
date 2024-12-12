@@ -2,6 +2,7 @@
 
 import cgi
 import os
+import time
 
 # The header for an HTTP response (Content-type is required)
 print("Content-type: text/html")
@@ -36,6 +37,14 @@ print(f"<p>Your age is {age}.</p>")
 # for key, value in os.environ.items():
 #     print(f"{key}: {value}")
 # print("</pre>")
+
+
+# test if we use poll loop for cgi, should not get stuck
+# vcreate cg request then try to open another localhost
+# if stuck not good
+# while True:
+# 	time.sleep(5)
+
 
 # Add a "Return to Homepage" button
 print("<p>")

@@ -78,33 +78,33 @@ void sendFileResponse(int clientSocket, const std::string& filepath, int statusC
 	close(clientSocket);
 }
 
-int Server::handleGetRequest(int clientSocket, const std::string& path, HttpRequest* Http) {
-	
-	(void)Http;
+/**
+ * @todo writing needs to go through the poll loop
+ */
+int Server::handleGetRequest(Client &client, const std::string& path, HttpRequest* request) {
 	
 	std::string filepath = this->getRoot() + '/' + path;
 	if (path == "/") {
 		filepath = this->getRoot() + '/' + this->getIndex();
 	}
 	if (path.rfind("/cgi-bin/", 0) == 0) { //change to config
-		CGI cgi;
-		cgi.handleCgiRequest(clientSocket, path, *this, *Http);
-		// cgi.handleCgiRequest(clientSocket, path, *this, *Http);
+		client.startCgi(request);
 		return 0;
 	}
 	std::ifstream file(filepath);
 	if (!file) {
 		std::cerr << "Error: File not found for path " << filepath << std::endl;
-		sendFileResponse(clientSocket, "www/html/404.html", 404);
+		sendFileResponse(client.getSocket(), "www/html/404.html", 404);
 		return 404;
 	}
-	sendFileResponse(clientSocket, filepath, 200);
+	// setFileResponse()
+	sendFileResponse(client.getSocket(), filepath, 200);//needs to be set respionse because need to go back to poll loop
 	return 200;
 }
 
-int Server::handlePostRequest(int clientSocket, const std::string& path, HttpRequest* Http) {
+int Server::handlePostRequest(Client &client, const std::string& path, HttpRequest* Http) {
 	
-	(void)clientSocket;
+	(void)client;
 	(void)path;
 	(void)Http;
 
@@ -135,7 +135,7 @@ Decide whether to close the connection or keep it alive (based on HTTP version o
 	return 0;
 }
 
-int Server::handleDeleteRequest(int clientSocket, const std::string& path, HttpRequest* Http) {
+int Server::handleDeleteRequest(Client &client, const std::string& path, HttpRequest* Http) {
 /*
 Extract the path from the request (usually the file or resource to be deleted).
 Check if the requested resource exists. If not, return a 404 Not Found response.
@@ -155,8 +155,7 @@ If there was an issue, return a corresponding error code:
 It’s often useful to log the deletion operation for auditing purposes, especially if your server manages important data.
 As with the POST request, decide whether to close the connection or keep it alive based on the HTTP version or the Connection header.
 */
-
-	(void)clientSocket;
+	(void)client;
 	(void)path;
 	(void)Http;
 
@@ -164,33 +163,29 @@ As with the POST request, decide whether to close the connection or keep it aliv
 }
 
 
-int Server::processClientRequest(int clientSocket, const std::string& request, HttpRequest* HttpRequest) {
+int Server::processClientRequest(Client &client, const std::string& request, HttpRequest* HttpRequest) {
 	std::istringstream requestStream(request);
 	std::cout <<" This is request "<< request << std::endl;
 	std::string method, path, version;
 	HttpResponse response;
 	requestStream >> method >> path >> version;
-	// (void)clientSocket;
-	// (void)HttpRequest;
 	HttpRequest->readRequest(request);
 	checkLocations(path);
 	int status = validateRequest(method, version);
-	// std::cout << status << std::endl;
-	// std::cout << "Content-type: " << Http->getField("Content-type") << std::endl;
 	if (status != 200) {
-		sendFileResponse(clientSocket, "www/html/500.html", status);  //change to a config ones?
+		sendFileResponse(client.getSocket(), "www/html/500.html", status);  //change to a config ones?
 		return status;
 	}
 	if (method == "GET" && std::find(this->_allowed_methods.begin(), this->_allowed_methods.end(), "GET") != this->_allowed_methods.end())
 		//check with this endpoint am I allowed to use get?
-		return handleGetRequest(clientSocket, path, HttpRequest); //?? what locations should be passed
+		return handleGetRequest(client, path, HttpRequest); //?? what locations should be passed
 	if (method == "POST" && std::find(this->_allowed_methods.begin(), this->_allowed_methods.end(), "POST") != this->_allowed_methods.end())
 	//check with this endpoint am I allowed to use post?
-		return handlePostRequest(clientSocket, path, HttpRequest);
+		return handlePostRequest(client, path, HttpRequest);
 	if (method == "DELETE" && std::find(this->_allowed_methods.begin(), this->_allowed_methods.end(), "DELETE") != this->_allowed_methods.end())
 	//check with this endpoint am I allowed to use delete?
-		return handleDeleteRequest(clientSocket, path, HttpRequest);
-	sendResponse(clientSocket, response.buildResponse());
+		return handleDeleteRequest(client, path, HttpRequest);
+	sendResponse(client.getSocket(), response.buildResponse());
 	// close(clientSocket);
 	return 0;
 }

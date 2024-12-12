@@ -3,7 +3,7 @@
 #include <unistd.h>
 
 
-Client::Client() : _clientSocket(-1), _HttpRequest(new HttpRequest()), _HttpResponse(new HttpResponse()) {}
+Client::Client() : _clientSocket(-1), _HttpRequest(new HttpRequest()), _HttpResponse(new HttpResponse()), _CGI(NULL) {}
 /*
 1. Shadowing Issue in Client Constructor
 
@@ -58,7 +58,6 @@ int Client::getSocket(){
 	return _clientSocket;
 }
 
-
 void Client::setHttpRequest(HttpRequest* httpRequest){
 	_HttpRequest = httpRequest;
 }
@@ -73,4 +72,56 @@ HttpRequest* Client::getHttpRequest() const{
 
 HttpResponse* Client::getHttpResponse() const{
 	return _HttpResponse;
+}
+
+int Client::getCgiRead(){
+	if (this->_CGI == NULL)
+		return -1;
+	return this->_CGI->getReadFd();
+}
+
+int Client::getCgiWrite(){
+	if (this->_CGI == NULL)
+		return -1;
+	return this->_CGI->getWriteFd();
+}
+
+void Client::startCgi(HttpRequest *request) {
+	if (this->_CGI != NULL)
+		throw std::runtime_error("already initialized");
+	this->_CGI = new CGI(request);
+}
+
+void Client::readFromCgi() {
+	if (this->_CGI == NULL)
+		throw std::runtime_error("CGI not initialized");
+	//check bool if done reading
+		//decide continue reading
+		//or build response
+		//or error?
+	//signal kill if done ?
+}
+
+void Client::readFromSocket(Server *server) {
+	char buf[100] = {0};
+	int contentLength;
+
+	int received = recv(_clientSocket, buf, sizeof(buf), 0);
+	if (received <= 0) {
+		throw std::runtime_error("no bytes to be read");
+	}
+	//save the request in _strReceived
+	_HttpRequest->getStrReceived().append(buf, received);
+	if (!_HttpRequest->isHeaderReceived()) {
+		if (_HttpRequest->getStrReceived().find("\r\n\r\n") != std::string::npos) {
+			contentLength = _HttpRequest->findContentLength(_HttpRequest->getStrReceived());
+			if (static_cast<int>(_HttpRequest->getStrReceived().length() - _HttpRequest->getStrReceived().find("\r\n\r\n") - 4) >= contentLength)
+				_HttpRequest->setHeaderReceived(true);
+		}
+	}
+	if (_HttpRequest->isHeaderReceived()) {
+		server->processClientRequest(*this, _HttpRequest->getStrReceived(), _HttpRequest);
+		_HttpRequest->setHeaderReceived(false);
+		_HttpRequest->clearStrReceived();
+	}
 }

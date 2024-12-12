@@ -2,6 +2,9 @@
 NAME 		= webserv
 TESTNAME 	= test_cgi  # Name of the test executable
 
+# Header files
+HEADERDIR	= ./include	
+
 #compiler + flags
 CC			= c++
 CPPFLAGS	= -std=c++11 -Wall -Werror -Wextra -Wall -Wextra -Werror -g -fsanitize=address -I $(HEADERDIR)
@@ -26,9 +29,6 @@ OBJ			= $(SRC:./src/%.cpp=$(OBJDIR)/%.o)
 # Test object files
 OBJTESTDIR 	= obj_test
 OBJTEST 	=  $(TESTSRC:./tests/%.cpp=$(OBJTESTDIR)/%.o)
-
-# Header files
-HEADERDIR	= ./include	
 
 #colours
 DONE		:= \033[0m
