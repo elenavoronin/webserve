@@ -25,7 +25,7 @@ class HttpResponse {
 		std::string getHeader(const std::string& key) const;    // Retrieve a header value
 		std::string getStatusMessage() const;                   // Get the status message
 		int getStatusCode() const;                              // Get the status code
-		std::string getFullResponse();
+		std::string &getFullResponse();
 
 		// Build and manage response
 		std::string buildResponse();                      // Construct full HTTP response

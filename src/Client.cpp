@@ -130,8 +130,8 @@ void Client::readFromSocket(Server *server) {
         // removeClient(pfds, i, client_fd);
     } else {
         // An error occurred with recv
-        close(client_fd);
-        removeClient(pfds, i, client_fd);
+		throw std::runtime_error("400"); // TODO need to link to http response
+		//return proper http response
     }
 }
 
