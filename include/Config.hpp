@@ -1,6 +1,7 @@
 #pragma once
 
 // class Client;
+class Server;
 
 #include <sstream>
 #include <fstream>
@@ -8,7 +9,6 @@
 #include <iostream>
 #include "../include/Location.hpp"
 
-class Server;
 
 class Config {
     private:
