@@ -9,10 +9,12 @@ class HttpRequest {
 
 	private:
 		std::map<std::string, std::string> _request;      // Stores parsed HTTP request fields (key-value pairs)
-		std::string _strReceived;                        // Raw HTTP request string
-		bool _headerReceived = false;                    // Indicates if headers are fully received
+		std::string _strReceived;
+		bool _headerReceived = false;
 
 	public:
+		//std::string _bodyReceived;                     // Raw HTTP request string
+		bool _readyToSendBack = false;                   // Indicates if headers are fully received
 		HttpRequest();                                   // Constructor to initialize request object
 		~HttpRequest();                                  // Destructor
 		HttpRequest& operator=(const HttpRequest& copy); // Assignment operator for deep copy
@@ -24,6 +26,7 @@ class HttpRequest {
 
 		// Getters and setters for _strReceived
 		std::string& getStrReceived();                       // Access raw received request string
+		void setStrReceived(std::string input);
 		void clearStrReceived();                             // Clear the raw request string
 
 		// Getter and setter for _headerReceived

@@ -10,13 +10,14 @@
 #include <map>
 #include "Config.hpp"
 #include "Location.hpp"
+#include <poll.h>
 #include <algorithm>
 
 
 class Client; 
 // class Location;
 class HttpRequest; 
-class Server {
+class Server  {
 	private:
 		std::string										_port_string;
 		// const char* 									_port;
@@ -33,7 +34,10 @@ class Server {
 		std::map<std::string, std::vector<Location>>	_locations;
 
 	public:
-		std::vector<Client> clients; //do i need it?
+		int listener_fd;
+		bool connection = false;
+		std::vector<struct pollfd> pfds;
+		std::vector<Client> clients;
 		Server();
 		Server(const Server& copy) = default;
 		Server& operator=(const Server& copy) = default;
@@ -48,11 +52,11 @@ class Server {
 		void 	add_to_pfds(std::vector<struct pollfd> &pfds, int newfd);
 		void 	del_from_pfds(std::vector<struct pollfd> &pfds, int i);
 		/*Main loop*/
-		void 	handle_new_connection(int listener, std::vector<struct pollfd> &pfds, int i);
-		void 	handle_client_data(std::vector<struct pollfd> &pfds, int i, int listener);
-		void 	broadcast_message(int sender_fd, char *buf, int received, std::vector<struct pollfd> &pfds, int listener);
+		void 	handle_new_connection( std::vector<struct pollfd> &pfds);
+		void 	handle_client_data(std::vector<struct pollfd> &pfds, int i);
+		// void 	broadcast_message(int sender_fd, char *buf, int received, std::vector<struct pollfd> &pfds, int listener);
 
-		void 	addClient(std::vector<struct pollfd> &pfds, int clientSocket, int i);
+		void 	addClient(std::vector<struct pollfd> &pfds, int clientSocket);
 		void 	removeClient(std::vector<struct pollfd> &pfds, int i, int clientSocket);
 		/*Handle requests*/
 //		int 	handleRequest(int clientSocket, std::string request, HttpRequest *Http);
@@ -61,8 +65,7 @@ class Server {
 		int handlePostRequest(int clientSocket, const std::string& path, HttpRequest* Http);
 		int handleDeleteRequest(int clientSocket, const std::string& path, HttpRequest* Http);
 		void sendResponse(int clientSocket, const std::string& response);
-
-    	void checkLocations(std::string path);
+		void checkLocations(std::string path);
 
 		//setters
      	void set_server_name(const std::string &server_name) { _server_name = server_name; }
@@ -73,6 +76,9 @@ class Server {
         void set_upload_store(const std::string &upload_store) { _upload_store = upload_store; }
         void set_allowed_methods(const std::vector<std::string> &allowed_methods) { _allowed_methods = allowed_methods; }
         void set_default_file(const std::string &default_file) { _default_file = default_file; }
+
+		//getter
+
         void set_index(const std::string &index) { _index = index; }
 		void set_error_page(const std::vector<std::string>& errorPages) {
     		_errorPage = errorPages; }
@@ -112,4 +118,5 @@ class Server {
 		std::string getDefault_file() const {return this->_default_file;}
 		std::string getHost() const {return this->_host;}
 		std::vector<std::string> getErrorPage() const {return this->_errorPage;}
+
 };

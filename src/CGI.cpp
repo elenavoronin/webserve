@@ -32,6 +32,7 @@ void CGI::parseQueryString(HttpRequest& request) {
         else {
             _queryParams = "";
         }
+        std::cout << "Extracted query string: " << _queryParams << std::endl;  // Debug
     }
 }
 
@@ -48,38 +49,6 @@ void CGI::parseQueryString(HttpRequest& request) {
  *              - Ensure proper memory management for `_env` in case of re-initialization.
  */
 void CGI::initializeEnvVars(HttpRequest& request) {
-    
-    // // Add REQUEST_METHOD from HttpRequest
-    // _method = request.getField("method");
-    // _envVars.push_back("REQUEST_METHOD=" + _method);
-    
-    // // Add QUERY_STRING from request path or headers
-    // parseQueryString(request);
-    // _envVars.push_back("QUERY_STRING=" + _queryParams);
-    
-    // // Add CONTENT_TYPE from HttpRequest headers, if it exists
-    // std::string contentType = request.getField("Content-Type");
-    // if (!contentType.empty()) {
-    //     _envVars.push_back("CONTENT_TYPE=" + contentType);
-    // }
-    
-    // // add SCRIPT_NAME
-    // _envVars.push_back("SCRIPT_NAME=" + request.getField("script_name"));
-
-    // // add BODY
-    // _envVars.push_back("BODY=" + request.getField("body"));
-    // // std::cout << "BODY ISSSS: " << request.getField("body") << std::endl;
-
-    // // add CONTENT_LENGHT
-    // _envVars.push_back("CONTENT_LENGHT=" + request.getField("content_lenght"));
-    // // std::cout << "CONTENT_LENGHT: " << request.getField("content_lenght") << std::endl;
-
-    // // Convert _envVars to char* format for execve
-    // for (const auto& var : _envVars) {
-    //     _env.push_back(const_cast<char*>(var.c_str()));     // Convert strings to char* for execve
-    // }
-    // _env.push_back(nullptr);                                // Null-terminate for execve
-
 
     _method = request.getField("method");
     _envVars.push_back("REQUEST_METHOD=" + _method);
@@ -91,6 +60,7 @@ void CGI::initializeEnvVars(HttpRequest& request) {
         std::string contentLength = request.getField("Content-Length");
         if (!contentLength.empty()) {
             _envVars.push_back("CONTENT_LENGTH=" + contentLength);
+            //needs body?
         }
         std::string body = request.getField("body");
         if (!body.empty()) {
@@ -99,6 +69,7 @@ void CGI::initializeEnvVars(HttpRequest& request) {
     } else if (_method == "DELETE") {
         parseQueryString(request);
         _envVars.push_back("QUERY_STRING=" + _queryParams);
+        std::cout << "QUERY_STRING: " << _queryParams << std::endl;
     } else {
         std::cerr << "Unsupported HTTP method: " << _method << std::endl;
         return;  // Or send an HTTP 405 response
@@ -133,6 +104,17 @@ void CGI::initializeEnvVars(HttpRequest& request) {
 void CGI::executeCgi(Server server) {
 
     (void)server;
+
+    // std::cout << "Environment Variables for CGI:" << std::endl;
+    // for (const auto& var : _envVars) {
+    //     std::cout << var << std::endl;
+    // }
+
+    // Remove query string from _path
+    std::size_t queryPos = _path.find("?");
+    if (queryPos != std::string::npos) {
+        _path = _path.substr(0, queryPos);  // Extract only the script path
+    }
     
     // std::cout << "!!!!!!!!!!!!!!!!!!!Path is " << _path << std::endl;
 
@@ -175,17 +157,40 @@ void CGI::executeCgi(Server server) {
  * 
  * @param client_socket The socket through which the server communicates with the client.
  * @todo                - Implement error handling if something goes wrong before sending the repsonse
+ *                      - put buffer to 10 and have a read loop. after buffer is read return to poll and pass that 
+ *                      - go back to the server and then continue reading
+ *                      - handle 
+ * 
  */
 void CGI::readCgiOutput(int client_socket) {
-    char buffer[1024];
-    ssize_t bytes_read;
+    // char buffer[1024];
+    char buffer[10];
+    // ssize_t bytes_read;
 
-    while ((bytes_read = read(_responsePipe[READ], buffer, sizeof(buffer))) > 0) {
+    // Loop to read data from the pipe until there is no more data to read
+    while (true) {
+        // Read data from the pipe into the buffer
+        ssize_t bytes_read = read(_responsePipe[READ], buffer, sizeof(buffer));
+
+        // Check if the read operation encountered an error
         if (bytes_read == -1) {
+            // Log an error message to the standard error stream
             std::cerr << "Error: read from pipe failed" << std::endl;
+
+            // Exit the function to handle the error case
             return;
         }
+
+        // If no more data is available to read, exit the loop
+        if (bytes_read == 0) {
+            break;
+        }
+
+        // Append the data read from the buffer to the _cgiOutput string
+        // Use the length of data read (bytes_read) to ensure only valid data is appended
+        // this will be accessed in the poll loop
         _cgiOutput.append(buffer, bytes_read);
+
     }
 
     close(_responsePipe[READ]);  // Close read end after finishing
@@ -267,6 +272,7 @@ void CGI::handleParentProcess(int client_socket) {
  * @param path The path to the CGI script.
  * @param server The Server object that provides server configuration and utilities.
  * @param request The HttpRequest object containing HTTP request details (headers, body, etc.).
+ * @todo read in chunks? how
  */
 void CGI::handleCgiRequest(int client_socket, const std::string& path, Server server, HttpRequest& request) {
     

@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+# !/usr/bin/env python3
 
 import cgi
 import os
@@ -11,6 +11,11 @@ print()  # Blank line to indicate the end of the headers
 print("<html>")
 print("<head>")
 print("<title>Simple Python CGI</title>")
+print('<style>')
+print('body { background-color: black; color: white; font-family: Arial, sans-serif; }')
+print('button { padding: 10px 20px; font-size: 16px; color: white; background-color: black; border: none; border-radius: 5px; cursor: pointer; }')
+print('button:hover { background-color: gray; }')
+print('</style>')
 print("</head>")
 print("<body>")
 
@@ -26,11 +31,18 @@ print(f"<h1>Hello, {name}!</h1>")
 print(f"<p>Your age is {age}.</p>")
 
 # Display the environment variables (like REQUEST_METHOD, QUERY_STRING, etc.)
-print("<h2>Environment Variables</h2>")
-print("<pre>")
-for key, value in os.environ.items():
-    print(f"{key}: {value}")
-print("</pre>")
+# print("<h2>Environment Variables</h2>")
+# print("<pre>")
+# for key, value in os.environ.items():
+#     print(f"{key}: {value}")
+# print("</pre>")
+
+# Add a "Return to Homepage" button
+print("<p>")
+print('<a href="/index.html" style="text-decoration: none;">') # Replace with the actual URL
+print('<button style="padding: 10px 20px; font-size: 16px;">Return to Homepage</button>')
+print('</a>')
+print("</p>")
 
 # End the HTML output
 print("</body>")

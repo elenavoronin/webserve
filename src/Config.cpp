@@ -5,6 +5,18 @@
 #include <fstream>
 #include <vector>
 #include <iostream>
+#include <vector>      // for std::vector
+#include <sys/types.h> // for basic types
+#include <sys/socket.h> // for socket-related functions and structures
+#include <netinet/in.h> // for sockaddr_in, sockaddr_storage
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <arpa/inet.h>
+#include <netdb.h>
+#include <poll.h>
+
 
 Config::Config() {
     // std::cout << "Config constructor called" << std::endl;
@@ -74,6 +86,7 @@ std::vector<std::string> Config::tokenize(const std::string &line) {
         }
     }
 	// std::cout << "HERE" << std::endl;
+	// std::cout << "HERE" << std::endl;
     // print_tokens(tokens);
     return tokens;
 }
@@ -101,6 +114,7 @@ std::vector<Server> Config::parse_config(std::ifstream &file) {
         }
         if (inside_server_block && tokens[0] == "location" && tokens[2] == "{") {
             inside_location_block = true;   
+			current_server.set_location(tokens[1], new_location);
             continue;
         }
         if (inside_location_block && tokens[0] == "}") {
@@ -171,6 +185,64 @@ std::vector<Server> Config::parse_config(std::ifstream &file) {
     return servers;
 }
 
+/*Function to run the server and handle incoming connections and data
+- pfds: Vector to hold poll file descriptors
+- listener: File descriptor for the server listening socket
+- poll_test: Result of poll() function to check file descriptors*/
+
+int Config::add_poll_fds() {
+    std::vector<struct pollfd> pfds;
+    // std::map<int, Server*> fd_to_server_map;
+    for (Server& current_server : _servers) {
+        current_server.listener_fd = current_server.report_ready(pfds);
+		std::cout << "Listener fd " << current_server.listener_fd << " for " << current_server.getPortStr() << std::endl; 
+		// fd_to_server_map[current_server.listener_fd] = &current_server;
+    }
+    while (true) {
+        int poll_test = poll(pfds.data(), pfds.size(), -1);
+        if (poll_test == -1) {
+            std::cerr << "Poll error" << std::endl;
+            return -1;
+        }
+        for (size_t i = 0; i < pfds.size(); i++) {
+            if (pfds[i].revents & POLLIN) {
+                int fd = pfds[i].fd;
+				for (Server& current_server : _servers) {
+					//std::cout << current_server.listener_fd << " " << current_server.getPortStr() << std::endl;
+					if (fd == current_server.listener_fd) {
+						current_server.handle_new_connection(pfds);
+					} 
+					else {
+						//std::cout << current_server.listener_fd << " connection is " << current_server.connection << std::endl;
+						current_server.handle_client_data(pfds, i);
+						// current_server.connection = false;
+					}
+				}
+            }
+        }
+    }
+	 // file.close();
+}
+
+
+/*
+
+TODO handleGet check extension (img. html ..) instead cgi-bin
+TODO Send should be done in chunks like read and go to poll, change events to POLLOUT somewhere
+TODO read in chunck cgi in void CGI::readCgiOutput(int client_socket) (djoyke)
+TODO create post and delete (djoyke, anna)
+TODO add CGI scripts for post and delete (djoyke)
+TODO finish locations (lena)
+TODO make ugly button not ugly in html (djoyke)
+TODO link error codes to http response, and display correct page (djoyke, anna)
+TODO validate data while parsing (lena)
+TODO eval sheet misery (jan)
+TODO unit test (all, jan)
+
+
+
+*/
+
 int Config::check_config(const std::string &config_file) {
     std::ifstream file(config_file.c_str());
     if (!file) {
@@ -181,18 +253,10 @@ int Config::check_config(const std::string &config_file) {
         std::cerr << "Error: Cannot open config file." << std::endl;
         return -1;
     }
-    _servers = parse_config(file); //TODO this needs to be connected to Anna's part
+    _servers = parse_config(file);
     this->_servers_default = _servers;
-	// std::cout << "Parsing completed. Calling print_config_parse()." << std::endl;
-	// Print server information
-	// print_config_parse();
-
-	for(Server& current_server: _servers){
-		// std::cout << "PORT " << current_server.getPort() << std::endl;
-		// std::cout << "PORT " << current_server.getPortStr() << std::endl;
-		
-        current_server.run(); //TODO pass the _servers information to save the default settings for later
-	}
-    file.close();
+	add_poll_fds();
     return 0;
 }
+
+

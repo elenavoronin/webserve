@@ -29,4 +29,5 @@ class Config {
             return _servers;
         }
 		void print_config_parse() const;
+		int add_poll_fds();
 };
