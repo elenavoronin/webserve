@@ -1,17 +1,29 @@
 #pragma once
 
-// class Client;
-class Server;
-
 #include <sstream>
 #include <fstream>
 #include <vector>
 #include <iostream>
 #include "../include/Location.hpp"
+#include "EventPoll.hpp"
+#include "../include/Server.hpp"
+#include "../include/Location.hpp"
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <arpa/inet.h>
+#include <netdb.h>
+#include <poll.h>
 
+class Server;
 
 class Config {
     private:
+        EventPoll              _eventPoll;
         std::vector<Server>    _servers;
         std::vector<Server>    _servers_default;
 
@@ -20,7 +32,7 @@ class Config {
         Config(const Config& other) = default;
         Config& operator=(const Config& other) = default;
         ~Config();
-        int check_config(const std::string &config_file);
+        int checkConfig(const std::string &config_file);
 		std::vector<std::string> tokenize(const std::string &line);
 		bool isFileEmpty(const std::string& fileName);
 		std::vector<Server> parse_config(std::ifstream &file);
@@ -29,5 +41,8 @@ class Config {
             return _servers;
         }
 		void print_config_parse() const;
-		int add_poll_fds();
+
+        //TODO create Poll class
+		void addPollFds();
+        void pollLoop(EventPoll &eventPoll);
 };

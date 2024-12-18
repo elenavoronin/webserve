@@ -1,22 +1,4 @@
 #include "../include/Config.hpp"
-#include "../include/Server.hpp"
-#include "../include/Location.hpp"
-#include <sstream>
-#include <fstream>
-#include <vector>
-#include <iostream>
-#include <vector>      // for std::vector
-#include <sys/types.h> // for basic types
-#include <sys/socket.h> // for socket-related functions and structures
-#include <netinet/in.h> // for sockaddr_in, sockaddr_storage
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-#include <arpa/inet.h>
-#include <netdb.h>
-#include <poll.h>
-
 
 Config::Config() {
     // std::cout << "Config constructor called" << std::endl;
@@ -185,65 +167,79 @@ std::vector<Server> Config::parse_config(std::ifstream &file) {
     return servers;
 }
 
-/*Function to run the server and handle incoming connections and data
-- pfds: Vector to hold poll file descriptors
-- listener: File descriptor for the server listening socket
-- poll_test: Result of poll() function to check file descriptors*/
 
-int Config::add_poll_fds() {
-    std::vector<struct pollfd> pfds;
-    // std::map<int, Server*> fd_to_server_map;
+/**
+ * @brief Initializes and adds poll file descriptors for each server.
+ * 
+ * This function creates an EventPoll object and iterates over the list of servers, 
+ * calling each server's report_ready method to retrieve and set the listener file descriptor. 
+ * It then enters the poll loop to handle incoming events.
+ */
+void Config::addPollFds() {
+    EventPoll eventPoll;
     for (Server& current_server : _servers) {
-        current_server.listener_fd = current_server.report_ready(pfds);
-		std::cout << "Listener fd " << current_server.listener_fd << " for " << current_server.getPortStr() << std::endl; 
-		// fd_to_server_map[current_server.listener_fd] = &current_server;
+        current_server.listener_fd = current_server.reportReady(eventPoll);
     }
+    pollLoop(eventPoll);
+}
+
+/**
+ * @brief The main event loop for the web server.
+ * 
+ * This function creates a while loop that runs indefinitely, where it:
+ * 1. Updates the event list from the add/remove queues.
+ * 2. Calls poll() to block until there is an event.
+ * 3. Iterates over the pollfds returned by poll() to handle events.
+ * 
+ * Events are handled by calling the appropriate handler functions on the servers.
+ */
+void Config::pollLoop(EventPoll &eventPoll) {
     while (true) {
-        int poll_test = poll(pfds.data(), pfds.size(), -1);
-        if (poll_test == -1) {
-            std::cerr << "Poll error" << std::endl;
-            return -1;
+        // Update the event list from the add/remove queues
+        eventPoll.updateEventList();
+
+        std::vector<pollfd> &pfds = eventPoll.getPollEventFd();
+        int pollResult = poll(pfds.data(), pfds.size(), -1);
+
+        if (pollResult == -1) {
+            throw std::runtime_error("Poll failed!");
         }
+
+        // Iterate over the pollfds to handle events
         for (size_t i = 0; i < pfds.size(); i++) {
             if (pfds[i].revents & POLLIN) {
                 int fd = pfds[i].fd;
-				for (Server& current_server : _servers) {
-					//std::cout << current_server.listener_fd << " " << current_server.getPortStr() << std::endl;
-					if (fd == current_server.listener_fd) {
-						current_server.handle_new_connection(pfds);
-					} 
-					else {
-						//std::cout << current_server.listener_fd << " connection is " << current_server.connection << std::endl;
-						current_server.handle_client_data(pfds, i);
-						// current_server.connection = false;
-					}
-				}
+
+                for (Server &current_server : _servers) {
+                    if (fd == current_server.listener_fd) {
+                        // Handle new connection
+                        current_server.handleNewConnection(eventPoll);
+                    } else {
+                        // Handle events for existing connections
+                        current_server.handlePollEvent(eventPoll, i);
+                    }
+                }
             }
         }
     }
-	 // file.close();
 }
 
 
-/*
 
-TODO handleGet check extension (img. html ..) instead cgi-bin
-TODO Send should be done in chunks like read and go to poll, change events to POLLOUT somewhere
-TODO read in chunck cgi in void CGI::readCgiOutput(int client_socket) (djoyke)
-TODO create post and delete (djoyke, anna)
-TODO add CGI scripts for post and delete (djoyke)
-TODO finish locations (lena)
-TODO make ugly button not ugly in html (djoyke)
-TODO link error codes to http response, and display correct page (djoyke, anna)
-TODO validate data while parsing (lena)
-TODO eval sheet misery (jan)
-TODO unit test (all, jan)
-
-
-
-*/
-
-int Config::check_config(const std::string &config_file) {
+/**
+ * @brief Reads and parses a configuration file.
+ * 
+ * This function reads the configuration file specified by the parameter
+ * config_file and parses it into a list of Server objects. If the file
+ * cannot be opened or is empty, it prints an error message and returns -1.
+ * Otherwise, it sets the _servers member variable to the list of Server
+ * objects, sets the _servers_default member variable to the same list,
+ * and calls addPollFds() to set up the event loop.
+ * 
+ * @param config_file The path to the configuration file to read.
+ * @return 0 on success, -1 on error.
+ */
+int Config::checkConfig(const std::string &config_file) {
     std::ifstream file(config_file.c_str());
     if (!file) {
         std::cerr << "Error: Cannot open config file." << std::endl;
@@ -255,7 +251,7 @@ int Config::check_config(const std::string &config_file) {
     }
     _servers = parse_config(file);
     this->_servers_default = _servers;
-	add_poll_fds();
+	addPollFds();
     return 0;
 }
 

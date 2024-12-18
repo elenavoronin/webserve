@@ -12,7 +12,18 @@
 #include "Location.hpp"
 #include <poll.h>
 #include <algorithm>
-
+#include "utils.hpp"
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <arpa/inet.h>
+#include <netdb.h>
+#include "HttpResponse.hpp"
+#include "CGI.hpp"
 
 class Client; 
 // class Location;
@@ -36,7 +47,7 @@ class Server  {
 	public:
 		int listener_fd;
 		bool connection = false;
-		std::vector<struct pollfd> pfds;
+		std::vector<struct pollfd> pfds; // replace this with eventpoll?
 		std::vector<Client> clients;
 		Server();
 		Server(const Server& copy) = default;
@@ -45,27 +56,28 @@ class Server  {
 
 		void run();
 		/*listener socket*/
-		int 	report_ready(std::vector<struct pollfd> &pfds);
+		int 	reportReady(EventPoll &eventPoll);
 		int		get_listener_socket();
 		int 	sendall(int s, char *buf, int *len);
 		/*Fd management*/
-		void 	add_to_pfds(std::vector<struct pollfd> &pfds, int newfd);
 		void 	del_from_pfds(std::vector<struct pollfd> &pfds, int i);
 		/*Main loop*/
-		void 	handle_new_connection( std::vector<struct pollfd> &pfds);
-		void 	handle_client_data(std::vector<struct pollfd> &pfds, int i);
+		void 	handleNewConnection(EventPoll &eventPoll);
+		void 	handlePollEvent(EventPoll &eventPoll, int i);
 		// void 	broadcast_message(int sender_fd, char *buf, int received, std::vector<struct pollfd> &pfds, int listener);
-
-		void 	addClient(std::vector<struct pollfd> &pfds, int clientSocket);
-		void 	removeClient(std::vector<struct pollfd> &pfds, int i, int clientSocket);
 		/*Handle requests*/
 //		int 	handleRequest(int clientSocket, std::string request, HttpRequest *Http);
-		int processClientRequest(int clientSocket, const std::string& request, HttpRequest* Http);
-		int handleGetRequest(int clientSocket, const std::string& path, HttpRequest* Http);
-		int handlePostRequest(int clientSocket, const std::string& path, HttpRequest* Http);
-		int handleDeleteRequest(int clientSocket, const std::string& path, HttpRequest* Http);
+		int processClientRequest(Client &client, const std::string& request, HttpRequest* Http);
+		int handleGetRequest(Client &client, const std::string& path, HttpRequest* request);
+		int handlePostRequest(Client &client, const std::string& path, HttpRequest* Http);
+		int handleDeleteRequest(Client &client, const std::string& path, HttpRequest* Http);
 		void sendResponse(int clientSocket, const std::string& response);
 		void checkLocations(std::string path);
+		void sendFileResponse(int clientSocket, const std::string& filepath, int statusCode);
+		std::string readFileContent(const std::string& filepath);
+		void sendHeaders(int clientSocket, int statusCode, const std::string& contentType);
+		void sendBody(int clientSocket, const std::string& body);
+		int validateRequest(const std::string& method, const std::string& version);
 
 		//setters
      	void set_server_name(const std::string &server_name) { _server_name = server_name; }

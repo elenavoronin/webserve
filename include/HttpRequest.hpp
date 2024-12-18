@@ -5,36 +5,38 @@
 #include <string>
 #include <map>
 
+/**
+ * @brief The HttpRequest class manages the parsing and storage of HTTP requests.
+ *
+ * This class provides functionality to parse HTTP request headers and bodies,
+ * store key-value pairs of request fields, and determine request states such as
+ * whether headers have been fully received.
+ * @todo  make _readyToSendBack private
+ */
 class HttpRequest {
 
 	private:
-		std::map<std::string, std::string> _request;      // Stores parsed HTTP request fields (key-value pairs)
-		std::string _strReceived;
-		bool _headerReceived = false;
+		std::map<std::string, std::string> 			_request;      						// Stores parsed HTTP request fields (key-value pairs)
+		std::string 								_strReceived;						// Raw HTTP request string received from the client.
+		bool 										_headerReceived = false;			// Flag indicating whether the request headers have been fully received.
 
 	public:
-		//std::string _bodyReceived;                     // Raw HTTP request string
-		bool _readyToSendBack = false;                   // Indicates if headers are fully received
-		HttpRequest();                                   // Constructor to initialize request object
-		~HttpRequest();                                  // Destructor
-		HttpRequest& operator=(const HttpRequest& copy); // Assignment operator for deep copy
-		HttpRequest(const HttpRequest& copy);            // Copy constructor
+		bool 										_readyToSendBack = false; // Flag indicating whether the request is ready to send a response.
 
-		// Methods to set and get fields
-		void setField(std::string key, std::string value);    // Set a key-value pair in the request
-		std::string getField(std::string key);               // Retrieve value for a specific key
+		HttpRequest();
+		~HttpRequest();
+		HttpRequest& operator=(const HttpRequest& copy) = default;
+		HttpRequest(const HttpRequest& copy) = default;
 
-		// Getters and setters for _strReceived
-		std::string& getStrReceived();                       // Access raw received request string
-		void setStrReceived(std::string input);
-		void clearStrReceived();                             // Clear the raw request string
-
-		// Getter and setter for _headerReceived
-		bool isHeaderReceived() const;                       // Check if headers are fully received
-		void setHeaderReceived(bool received);               // Set the header received status
-
-		// Request parsing and utility methods
-		void readRequest(std::string request);               // Parse the raw HTTP request string
-		std::string trim(std::string& str);                  // Trim whitespace from a string
-		int findContentLength(std::string request);          // Get the Content-Length from the request
+		void 				setField(std::string key, std::string value);
+		std::string 		getField(std::string key);
+		std::string& 		getStrReceived();
+		void 				setStrReceived(std::string input);
+		void 				clearStrReceived();
+		bool 				isHeaderReceived() const;
+		void 				setHeaderReceived(bool received);
+		void 				readRequest(std::string request);
+		std::string 		trim(std::string& str);
+		int 				findContentLength(std::string request);
 };
+	//std::string _bodyReceived;// Raw HTTP request string
