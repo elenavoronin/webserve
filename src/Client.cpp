@@ -4,54 +4,15 @@
 
 
 Client::Client() : _clientSocket(-1), _HttpRequest(new HttpRequest()), _HttpResponse(new HttpResponse()), _CGI(NULL) {}
-/*
-1. Shadowing Issue in Client Constructor
 
-In your Client constructor, you are creating a local pointer Http instead of assigning to the class member Http. This is causing a memory leak and potential issues when the destructor tries to delete the uninitialized class-level Http pointer.
-Fix:
+Client::~Client(){}
 
-In the constructor, remove the local declaration and directly initialize the class member Http.*/
-Client::~Client(){
-	// if (_clientSocket != -1)
-	// 	close(_clientSocket);
-	// std::cout << "~Client() 1 " << std::endl;
-	// if (_HttpRequest != nullptr){
-	// 	delete _HttpRequest;
-	// 	_HttpRequest = nullptr;
-	// }
-	// 	if (_HttpResponse != nullptr){
-	// 	delete _HttpResponse;
-	// 	_HttpResponse = nullptr;
-	// }
-	// std::cout << "~Client() 2 " << std::endl;
-}
+Client& Client::operator=(const Client& copy) {}
 
-Client& Client::operator=(const Client& copy){
-	// std::cout << "Client::operator= 1 " << std::endl;
-	if (this != &copy) {
-		_clientSocket = copy._clientSocket;
-		if (_HttpRequest != nullptr)
-			delete _HttpRequest;
-		_HttpRequest = new HttpRequest(*copy._HttpRequest);
-		if (_HttpResponse != nullptr)
-			delete _HttpResponse;
-		_HttpResponse = new HttpResponse(*copy._HttpResponse);
-	}
-	// std::cout << "Client::operator= 2 " << std::endl;
-	return *this;
-}
-
-Client::Client(const Client& copy){
-	// std::cout << "Client(const Client& copy 1 " << std::endl;
-	_clientSocket = copy._clientSocket;
-	_HttpRequest = new HttpRequest(*copy._HttpRequest);
-	_HttpResponse = new HttpResponse(*copy._HttpResponse);
-	// std::cout << "Client(const Client& copy 2 " << std::endl;
-}
+Client::Client(const Client& copy) {}
 
 void Client::setSocket(int clientSocket){
 	_clientSocket = clientSocket;
-	// std::cout << "Socket " << clientSocket << std::endl;
 }
 
 int Client::getSocket(){
@@ -145,4 +106,12 @@ void Client::writeToSocket(Server *server) {
 	//data + offset inputindex 
     bytesWritten = write(_clientSocket, _HttpResponse->getFullResponse().data() + _responseIndex, bytesToWrite);
     _responseIndex += bytesWritten;
+}
+
+void Client::closeConnection(EventPoll &eventPoll) {
+    // Remove the client socket from EventPoll
+    eventPoll.ToremovePollEventFd(getSocket(), POLLIN | POLLOUT);
+
+    // Close the client socket
+    close(getSocket());
 }

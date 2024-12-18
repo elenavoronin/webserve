@@ -192,36 +192,40 @@ std::vector<Server> Config::parse_config(std::ifstream &file) {
 
 int Config::add_poll_fds() {
     std::vector<struct pollfd> pfds;
-    // std::map<int, Server*> fd_to_server_map;
     for (Server& current_server : _servers) {
         current_server.listener_fd = current_server.report_ready(pfds);
-		std::cout << "Listener fd " << current_server.listener_fd << " for " << current_server.getPortStr() << std::endl; 
-		// fd_to_server_map[current_server.listener_fd] = &current_server;
     }
     //make poll class
+
     pollLoop(pfds);
-	// file.close();
 }
 
-//needs to be poll class
-void Config::pollLoop(std::vector<struct pollfd> &pfds) {
+void Config::pollLoop(EventPoll &eventPoll) {
     while (true) {
+        // Update the event list from the add/remove queues
+        eventPoll.updateEventList();
+
+        // Retrieve the pollfd list from EventPoll
+        std::vector<pollfd> &pfds = eventPoll.getPollEventFd();
+
+        // Call poll() on the current list of pollfds
         int poll_test = poll(pfds.data(), pfds.size(), -1);
         if (poll_test == -1) {
             throw std::runtime_error("Poll failed!");
         }
+
+        // Iterate over the pollfds to handle events
         for (size_t i = 0; i < pfds.size(); i++) {
             if (pfds[i].revents & POLLIN) {
                 int fd = pfds[i].fd;
-                for (Server& current_server : _servers) {
-                    //std::cout << current_server.listener_fd << " " << current_server.getPortStr() << std::endl;
+
+                for (Server &current_server : _servers) {
                     if (fd == current_server.listener_fd) {
-                        current_server.handle_new_connection(pfds);
-                    } 
-                    else {
-                        //std::cout << current_server.listener_fd << " connection is " << current_server.connection << std::endl;
-                        current_server.handlePollEvent(pfds, i);
-                        // current_server.connection = false;
+                        // Handle new connection
+                        current_server.handle_new_connection(eventPoll);
+                    } else {
+                        // Handle events for existing connections
+                        current_server.handlePollEvent(eventPoll, i);
                     }
                 }
             }

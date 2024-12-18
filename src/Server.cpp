@@ -92,16 +92,6 @@ int Server::get_listener_socket(){
 	return serverSocket;
 }
 
-/*Function to add a new file descriptor to the poll vector
-- pfds: Vector of pollfd structures
-- newfd: The file descriptor of the new connection to be added*/
-void Server::add_to_pfds(std::vector<struct pollfd> &pfds, int newfd){
-	struct pollfd pfd;
-    pfd.fd = newfd;
-    pfd.events = POLLIN;
-    pfds.push_back(pfd);
-}
-
 /*Function to remove a file descriptor from the poll vector
 - pfds: Vector of pollfd structures
 - i: Index of the file descriptor to remove from the poll vector*/
@@ -126,96 +116,88 @@ int Server::report_ready(std::vector<struct pollfd> &pfds){
 	return listener;
 }
 
-/*Function to add a client connection to the server
-- pfds: Vector of pollfd structures
-- clientSocket: The file descriptor for the client socket to add
-- TODO could go wrong we're looping while pusing back so it wont be at end and we could loose other clients*/
-void Server::addClient(std::vector<struct pollfd> &pfds, int clientSocket){
-	Client newClient;
-	newClient.setSocket(clientSocket);
-	clients.push_back(newClient);
-	add_to_pfds(pfds, clientSocket);
-	//std::cout << "Add client" << getPortStr() << " I " << i << " clientSocket " << clientSocket << std::endl;
+/**
+ * @brief Handle a new connection and add it to the list of clients and the
+ * EventPoll
+ *
+ * This function accepts a new connection and adds it to the clients vector.
+ * It also adds the new client's file descriptor to the EventPoll so that it
+ * can be monitored for incoming data.
+ *
+ * @param eventPoll The EventPoll to add the new client to
+ */
+void Server::handleNewConnection(EventPoll &eventPoll){
+    int new_fd = accept(listener_fd, nullptr, nullptr);
+    if (new_fd == -1) {
+        std::cerr << "Error accepting new connection!" << std::endl;
+        return;
+    }
+
+    // Add the new client directly to the clients vector
+    clients.emplace_back(new_fd);
+
+    // Add the new client file descriptor to the EventPoll
+    eventPoll.addPollFdEventQueue(new_fd, POLLIN);
 }
 
-/*Function to remove a client connection from the server
-- pfds: Vector of pollfd structures
-- i: Index of the pollfd to remove
-- clientSocket: The client socket that needs to be closed*/
-void Server::removeClient(std::vector<struct pollfd> &pfds, int i, int clientSocket){
-	
-	(void)clientSocket;//unvoid
-	
-	del_from_pfds(pfds, i);
-	// for (auto it = clients.begin(); it != clients.end(); ++it) {
-	// 	if (it->getSocket() == clientSocket) {
-	// 		clients.erase(it);
-	// 		break;
-	// 	}
-	// }
-	// close(clientSocket);
-}
+/**
+ * @brief Handle events on a file descriptor
+ *
+ * This function takes an index into the EventPoll's list of pollfds, and
+ * handles the event(s) associated with that file descriptor. It first
+ * finds the Client associated with the file descriptor, and then
+ * processes the event(s) according to the type of event.
+ *
+ * @param eventPoll The EventPoll object containing the pollfds
+ * @param i The index into the pollfds vector
+ * @todo  implement client->closeConnection(); in client
+ */
+void Server::handlePollEvent(EventPoll &eventPoll, int i) {
+    Client *client = nullptr;
+    pollfd &currentPollFd = eventPoll.getPollEventFd()[i];
+    int event_fd = currentPollFd.fd;
 
-/*Function to handle new incoming connections
-- listener: The file descriptor for the listener socket
-- pfds: Vector of pollfd structures where the new connection will be added*/
-void Server::handle_new_connection(std::vector<struct pollfd> &pfds){
-	struct sockaddr_storage clientsAddr;
-    socklen_t clientsAddrSize = sizeof(clientsAddr);
-    int newfd = accept(listener_fd, (struct sockaddr *)&clientsAddr, &clientsAddrSize);
-	if (!newfd){
-		std::cerr << "Can't accept a new connection" << std::endl;
-		return;
-	}
-	std::cout << "New connection accepted: " << newfd << std::endl;
-	addClient(pfds, newfd);
-}
+    // Find the client associated with the file descriptor
+    for (auto &c : clients) {
+        if (c.getSocket() == event_fd || c.getCgiRead() == event_fd || c.getCgiWrite() == event_fd) {
+            client = &c;
+            break;
+        }
+    }
 
-// 	Function to handle data received from a connected client
-// - pfds: Vector of pollfd structures
-// - i: Index of the pollfd that has client data ready
-// - listener: File descriptor for the listener socket (used to avoid sending data back to it)
-//	TODO add file fd and/or pipe fd to client to read in chunks
-// 	unsigned long contentLength = 0;
-//	changed from int to unsigned long because of flags
-/*	Add POLLOUT when I reached the length, don't close cause I still need to connect to client*/
-void Server::handlePollEvent(std::vector<struct pollfd> &pfds, int i){
-	Client* client = nullptr;
-	int event_fd = pfds[i].fd;
-	// find the Client
-	for (auto& c : clients){
-		if (c.getSocket() == event_fd || client->getCgiRead() == event_fd || client->getCgiWrite() == event_fd){
-			client = &c;
-			break;
-		}
-	}
-	//do we read prepare
-	if (pfds[i].revents == POLLIN) {
-		if (event_fd != client->getSocket()) {
-			client->readFromCgi();
-			// done reading check
-		}
-		else {
-			client->readFromSocket(this);
-			// done reading check
-		}
-	}
-	//do we write prepare
-	if (pfds[i].revents == POLLOUT) {
-		if (event_fd != client->getSocket()) {
-			client->writeToCgi();
-			// done writing check
-		}
-		else {
-			client->writeToSocket(this);
-			// done writing check
-		}
-	}
-	//do we close
-	if (!client) {
-		// std::cerr << "Client not found!" << std::endl; //TODO remove later
-		return;
-	}
+    if (!client) {
+        // Client not found; skip processing
+        return;
+    }
+
+    // Handle readable events
+    if (currentPollFd.revents & POLLIN) {
+        if (event_fd != client->getSocket()) {
+            client->readFromCgi();
+        } else {
+            client->readFromSocket(this);
+        }
+    }
+
+    // Handle writable events
+    if (currentPollFd.revents & POLLOUT) {
+        if (event_fd != client->getSocket()) {
+            client->writeToCgi();
+        } else {
+            client->writeToSocket(this);
+        }
+    }
+
+    // Handle hangup or disconnection events
+    if (currentPollFd.revents & (POLLHUP | POLLRDHUP)) {
+        client->closeConnection(eventPoll);
+
+        // Remove the file descriptor from EventPoll
+        eventPoll.ToremovePollEventFd(event_fd, POLLIN | POLLOUT);
+
+        // Remove client from the list
+        clients.erase(std::remove(clients.begin(), clients.end(), *client), clients.end());
+    }
 }
 
 /**
