@@ -21,32 +21,6 @@ Server::Server(){
 
 Server::~Server(){}
 
-// Server::Server(const Server& copy) {
-//     _server_name = copy._server_name;
-//     _port = copy._port;
-//     _root = copy._root;
-//     _autoindex = copy._autoindex;
-//     _upload_store = copy._upload_store;
-//     _allowed_methods = copy._allowed_methods;
-//     _default_file = copy._default_file;
-// 	_locations = copy._locations;
-// }
-
-
-// Server& Server::operator=(const Server& copy) {
-// 	if (this != &copy) {
-// 		_server_name = copy._server_name;
-// 		_port = copy._port;
-// 		_root = copy._root;
-// 		_autoindex = copy._autoindex;
-// 		_upload_store = copy._upload_store;
-// 		_allowed_methods = copy._allowed_methods;
-// 		_default_file = copy._default_file;
-// 		_locations = copy._locations;
-// 	}
-// 	return *this;
-// }
-
 /*Function to create and return a listener socket
 - status: Result of getaddrinfo(), checks if address info is valid
 - hints: addrinfo structure with settings for creating socket
@@ -102,18 +76,16 @@ void Server::del_from_pfds(std::vector<struct pollfd> &pfds, int i){
 
 /*Function to report readiness of the server and set up the listener socket
 - pfds: Vector of pollfd structures where listener will be added
-- listener: The file descriptor for the listener socket*/
-int Server::report_ready(std::vector<struct pollfd> &pfds){
+- listener: The file descriptor for the listener socket
+TODO do we need to treturn listeren or should listener be a private variable?*/
+int Server::reportReady(EventPoll &eventPoll){
 	int listener = get_listener_socket(); // Set up and get a listening socket
 	if (listener == -1){
-		std::cout << "Error get listener socket" << std::endl;
-		exit(1);
+		throw std::runtime_error("Error get listener socket");
 	}
-	struct pollfd pfd; //add a new file descriptor to the vector of pollfd
-	pfd.fd = listener;
-	pfd.events = POLLIN; // Report ready to read on incoming connection
-	pfds.push_back(pfd);
-	return listener;
+    // Add the listener to EventPoll
+    eventPoll.addPollFdEventQueue(listener, POLLIN);
+    return listener;
 }
 
 /**
@@ -172,19 +144,36 @@ void Server::handlePollEvent(EventPoll &eventPoll, int i) {
 
     // Handle readable events
     if (currentPollFd.revents & POLLIN) {
-        if (event_fd != client->getSocket()) {
-            client->readFromCgi();
-        } else {
-            client->readFromSocket(this);
+        try {
+            if (event_fd != client->getSocket()) {
+                client->readFromCgi();
+            } else {
+                client->readFromSocket(this);
+            }
+        } catch (const std::runtime_error &e) {
+            std::cerr << "Read error: " << e.what() << std::endl;
+            client->closeConnection(eventPoll);
+            clients.erase(std::remove_if(clients.begin(), clients.end(), [&](const Client &c) {
+                return c.getSocket() == event_fd;
+            }), clients.end());
+            return;
         }
     }
-
     // Handle writable events
     if (currentPollFd.revents & POLLOUT) {
-        if (event_fd != client->getSocket()) {
-            // client->writeToCgi();
-        } else {
-            client->writeToSocket();
+        try {
+            if (event_fd != client->getSocket()) {
+                // client->writeToCgi();
+            } else {
+                // client->writeToSocket();
+            }
+        } catch (const std::runtime_error &e) {
+            std::cerr << "Write error: " << e.what() << std::endl;
+            client->closeConnection(eventPoll);
+            clients.erase(std::remove_if(clients.begin(), clients.end(), [&](const Client &c) {
+                return c.getSocket() == event_fd;
+            }), clients.end());
+            return;
         }
     }
 

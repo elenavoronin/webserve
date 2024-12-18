@@ -196,10 +196,8 @@ std::vector<Server> Config::parse_config(std::ifstream &file) {
 void Config::addPollFds() {
     EventPoll eventPoll;
     for (Server& current_server : _servers) {
-        current_server.listener_fd = current_server.report_ready(eventPoll.getPollEventFd());
+        current_server.listener_fd = current_server.reportReady(eventPoll);
     }
-    //make poll class
-
     pollLoop(eventPoll);
 }
 
@@ -208,12 +206,10 @@ void Config::pollLoop(EventPoll &eventPoll) {
         // Update the event list from the add/remove queues
         eventPoll.updateEventList();
 
-        // Retrieve the pollfd list from EventPoll
         std::vector<pollfd> &pfds = eventPoll.getPollEventFd();
+        int pollResult = poll(pfds.data(), pfds.size(), -1);
 
-        // Call poll() on the current list of pollfds
-        int poll_test = poll(pfds.data(), pfds.size(), -1);
-        if (poll_test == -1) {
+        if (pollResult == -1) {
             throw std::runtime_error("Poll failed!");
         }
 

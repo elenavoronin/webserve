@@ -45,7 +45,7 @@ class Server  {
 
 		void run();
 		/*listener socket*/
-		int 	report_ready(std::vector<struct pollfd> &pfds);
+		int 	reportReady(EventPoll &eventPoll);
 		int		get_listener_socket();
 		int 	sendall(int s, char *buf, int *len);
 		/*Fd management*/

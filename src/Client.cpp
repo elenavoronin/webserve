@@ -60,35 +60,36 @@ void Client::readFromCgi() {
 }
 
 void Client::readFromSocket(Server *server) {
-	char buf[100] = {0};
-	int contentLength;
+    char buf[READ_SIZE] = {0};
+    int contentLength;
 
-	int received = recv(_clientSocket, buf, sizeof(buf), 0);
-	if (received <= 0) {
-		throw std::runtime_error("no bytes to be read");
-	}
-	//save the request in _strReceived
-	_HttpRequest->getStrReceived().append(buf, received);
-	if (!_HttpRequest->isHeaderReceived()) {
-		if (_HttpRequest->getStrReceived().find("\r\n\r\n") != std::string::npos) {
-			contentLength = _HttpRequest->findContentLength(_HttpRequest->getStrReceived());
-			if (static_cast<int>(_HttpRequest->getStrReceived().length() - _HttpRequest->getStrReceived().find("\r\n\r\n") - 4) >= contentLength)
-				_HttpRequest->setHeaderReceived(true);
-		}
-	}
-	if (_HttpRequest->isHeaderReceived()) {
-		server->processClientRequest(*this, _HttpRequest->getStrReceived(), _HttpRequest);
-		_HttpRequest->setHeaderReceived(false);
-		_HttpRequest->clearStrReceived();
-	}
-	else if (received == 0) {
-        // std::cout << "Client closed connection: " << client_fd << std::endl;
-        // close(client_fd);
-        // removeClient(pfds, i, client_fd);
-    } else {
-        // An error occurred with recv
-		throw std::runtime_error("400"); // TODO need to link to http response
-		//return proper http response
+    // Try to receive data
+    int received = recv(_clientSocket, buf, sizeof(buf), 0);
+
+    if (received == 0) {
+        throw std::runtime_error("Client closed connection");
+    } 
+	else if (received < 0) {
+  	// Assume recv failed because no data is available (non-blocking)
+        throw std::runtime_error("Error reading from socket");
+        // return; // Gracefully exit if no data is available
+    }
+
+    // Append the data to the HTTP request buffer
+    _HttpRequest->getStrReceived().append(buf, received);
+
+    if (!_HttpRequest->isHeaderReceived()) {
+        if (_HttpRequest->getStrReceived().find("\r\n\r\n") != std::string::npos) {
+            contentLength = _HttpRequest->findContentLength(_HttpRequest->getStrReceived());
+            if (static_cast<int>(_HttpRequest->getStrReceived().length() - _HttpRequest->getStrReceived().find("\r\n\r\n") - 4) >= contentLength)
+                _HttpRequest->setHeaderReceived(true);
+        }
+    }
+
+    if (_HttpRequest->isHeaderReceived()) {
+        server->processClientRequest(*this, _HttpRequest->getStrReceived(), _HttpRequest);
+        _HttpRequest->setHeaderReceived(false);
+        _HttpRequest->clearStrReceived();
     }
 }
 
