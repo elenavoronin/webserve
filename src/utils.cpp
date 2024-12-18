@@ -1,6 +1,14 @@
 #include "../include/utils.hpp"
 
-
+/**
+ * @brief Returns the HTTP status message associated with the given status code.
+ *
+ * Given a HTTP status code, this function returns the corresponding status message.
+ * If the status code is not found, the function returns the string "Unknown status".
+ *
+ * @param statusCode The HTTP status code.
+ * @return The corresponding HTTP status message.
+ */
 std::string getStatusMessage(int statusCode){ //Do I need to add more??????
 	std::map<int, std::string> message = {
 		{200, "OK"},
