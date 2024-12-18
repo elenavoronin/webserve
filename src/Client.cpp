@@ -3,19 +3,15 @@
 #include <unistd.h>
 
 
-Client::Client() : _clientSocket(-1), _HttpRequest(new HttpRequest()), _HttpResponse(new HttpResponse()), _CGI(NULL) {}
+Client::Client(int clientSocket) : _clientSocket(clientSocket), _HttpRequest(new HttpRequest()), _HttpResponse(new HttpResponse()), _CGI(NULL) {}
 
 Client::~Client(){}
-
-Client& Client::operator=(const Client& copy) {}
-
-Client::Client(const Client& copy) {}
 
 void Client::setSocket(int clientSocket){
 	_clientSocket = clientSocket;
 }
 
-int Client::getSocket(){
+int Client::getSocket() const {
 	return _clientSocket;
 }
 
@@ -96,9 +92,9 @@ void Client::readFromSocket(Server *server) {
     }
 }
 
-void Client::writeToSocket(Server *server) {
-	int bytesToWrite = WRITE_SIZE;
-    int bytesWritten = 0;
+void Client::writeToSocket() {
+	unsigned long bytesToWrite = WRITE_SIZE;
+    unsigned long bytesWritten = 0;
 
     if (bytesToWrite > _HttpResponse->getFullResponse().size() - _responseIndex) {
         bytesToWrite = _HttpResponse->getFullResponse().size() - _responseIndex;

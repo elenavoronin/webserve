@@ -182,9 +182,9 @@ void Server::handlePollEvent(EventPoll &eventPoll, int i) {
     // Handle writable events
     if (currentPollFd.revents & POLLOUT) {
         if (event_fd != client->getSocket()) {
-            client->writeToCgi();
+            // client->writeToCgi();
         } else {
-            client->writeToSocket(this);
+            client->writeToSocket();
         }
     }
 
@@ -192,11 +192,10 @@ void Server::handlePollEvent(EventPoll &eventPoll, int i) {
     if (currentPollFd.revents & (POLLHUP | POLLRDHUP)) {
         client->closeConnection(eventPoll);
 
-        // Remove the file descriptor from EventPoll
-        eventPoll.ToremovePollEventFd(event_fd, POLLIN | POLLOUT);
-
         // Remove client from the list
-        clients.erase(std::remove(clients.begin(), clients.end(), *client), clients.end());
+        clients.erase(std::remove_if(clients.begin(), clients.end(), [&](const Client &c) {
+            return c.getSocket() == event_fd;
+        }), clients.end());
     }
 }
 

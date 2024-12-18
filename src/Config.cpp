@@ -185,19 +185,22 @@ std::vector<Server> Config::parse_config(std::ifstream &file) {
     return servers;
 }
 
-/*Function to run the server and handle incoming connections and data
-- pfds: Vector to hold poll file descriptors
-- listener: File descriptor for the server listening socket
-- poll_test: Result of poll() function to check file descriptors*/
 
-int Config::add_poll_fds() {
-    std::vector<struct pollfd> pfds;
+/**
+ * @brief Initializes and adds poll file descriptors for each server.
+ * 
+ * This function creates an EventPoll object and iterates over the list of servers, 
+ * calling each server's report_ready method to retrieve and set the listener file descriptor. 
+ * It then enters the poll loop to handle incoming events.
+ */
+void Config::addPollFds() {
+    EventPoll eventPoll;
     for (Server& current_server : _servers) {
-        current_server.listener_fd = current_server.report_ready(pfds);
+        current_server.listener_fd = current_server.report_ready(eventPoll.getPollEventFd());
     }
     //make poll class
 
-    pollLoop(pfds);
+    pollLoop(eventPoll);
 }
 
 void Config::pollLoop(EventPoll &eventPoll) {
@@ -222,7 +225,7 @@ void Config::pollLoop(EventPoll &eventPoll) {
                 for (Server &current_server : _servers) {
                     if (fd == current_server.listener_fd) {
                         // Handle new connection
-                        current_server.handle_new_connection(eventPoll);
+                        current_server.handleNewConnection(eventPoll);
                     } else {
                         // Handle events for existing connections
                         current_server.handlePollEvent(eventPoll, i);
@@ -263,7 +266,7 @@ int Config::check_config(const std::string &config_file) {
     }
     _servers = parse_config(file);
     this->_servers_default = _servers;
-	add_poll_fds();
+	addPollFds();
     return 0;
 }
 

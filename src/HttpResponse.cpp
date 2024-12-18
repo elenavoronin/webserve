@@ -105,7 +105,7 @@ void HttpResponse::setBody(const std::string& content) {
  * @todo        - Fix redundant status code addition in response.
  *              - Handle edge cases for invalid headers or body content.
  */
-std::string HttpResponse::buildResponse() {
+void HttpResponse::buildResponse() {
 	
 	// Build the HTTP status line
 	std::string statusCodeString = std::to_string(_statusCode);

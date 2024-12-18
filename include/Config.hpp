@@ -7,11 +7,13 @@
 #include <vector>
 #include <iostream>
 #include "../include/Location.hpp"
+#include "EventPoll.hpp"
 
 class Server;
 
 class Config {
     private:
+        EventPoll              _eventPoll;
         std::vector<Server>    _servers;
         std::vector<Server>    _servers_default;
 
@@ -31,6 +33,6 @@ class Config {
 		void print_config_parse() const;
 
         //TODO create Poll class
-		int add_poll_fds();
-        void pollLoop(std::vector<struct pollfd> &pfds);
+		void addPollFds();
+        void pollLoop(EventPoll &eventPoll);
 };

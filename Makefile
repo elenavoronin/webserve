@@ -20,6 +20,7 @@ SRC 		= 	./src/request.cpp			\
 				./src/Location.cpp			\
 				./src/Config.cpp            \
 				./src/utils.cpp			    \
+				./src/EventPoll.cpp			\
 # TESTSRC		= 	./tests/testsCGI.cpp  # Test source file	
 				
 #object files

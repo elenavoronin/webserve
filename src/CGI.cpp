@@ -176,8 +176,8 @@ void CGI::readCgiOutput() {
 }
 
 void CGI::writeCgiInput() {
-    int bytesToWrite = WRITE_SIZE;
-    int bytesWritten = 0;
+    unsigned long bytesToWrite = WRITE_SIZE;
+    unsigned long bytesWritten = 0;
 
     if (bytesToWrite > _cgiInput.size() - _inputIndex) {
         bytesToWrite = _cgiInput.size() - _inputIndex;
@@ -199,7 +199,7 @@ void CGI::sendResponse(int client_socket, const std::string& cgi_output) {
     response.setHeader("Content-Type", "text/html");
     response.setBody(cgi_output);
 
-    std::string response_str = response.buildResponse();
+    std::string response_str = response.getFullResponse();
     ssize_t bytes_written = write(client_socket, response_str.c_str(), response_str.size());
     if (bytes_written == -1) {
         std::cerr << "Error: failed to write response to client socket" << std::endl;

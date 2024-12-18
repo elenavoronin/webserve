@@ -28,6 +28,6 @@ class HttpResponse {
 		std::string &getFullResponse();
 
 		// Build and manage response
-		std::string buildResponse();                      // Construct full HTTP response
+		void buildResponse();                      // Construct full HTTP response
 		void redirect(const std::string& location, int status_code, const std::string& message); // Set up redirection
 };

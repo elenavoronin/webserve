@@ -36,7 +36,7 @@ class Server  {
 	public:
 		int listener_fd;
 		bool connection = false;
-		std::vector<struct pollfd> pfds;
+		std::vector<struct pollfd> pfds; // replace this with eventpoll?
 		std::vector<Client> clients;
 		Server();
 		Server(const Server& copy) = default;
@@ -49,15 +49,11 @@ class Server  {
 		int		get_listener_socket();
 		int 	sendall(int s, char *buf, int *len);
 		/*Fd management*/
-		void 	add_to_pfds(std::vector<struct pollfd> &pfds, int newfd);
 		void 	del_from_pfds(std::vector<struct pollfd> &pfds, int i);
 		/*Main loop*/
-		void 	handle_new_connection( std::vector<struct pollfd> &pfds);
-		void 	handlePollEvent(std::vector<struct pollfd> &pfds, int i);
+		void 	handleNewConnection(EventPoll &eventPoll);
+		void 	handlePollEvent(EventPoll &eventPoll, int i);
 		// void 	broadcast_message(int sender_fd, char *buf, int received, std::vector<struct pollfd> &pfds, int listener);
-
-		void 	addClient(std::vector<struct pollfd> &pfds, int clientSocket);
-		void 	removeClient(std::vector<struct pollfd> &pfds, int i, int clientSocket);
 		/*Handle requests*/
 //		int 	handleRequest(int clientSocket, std::string request, HttpRequest *Http);
 		int processClientRequest(Client &client, const std::string& request, HttpRequest* Http);

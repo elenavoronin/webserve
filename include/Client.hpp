@@ -6,10 +6,13 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 #include "utils.hpp"
+#include "EventPoll.hpp"
+#include "Server.hpp"
 
 class HttpRequest;
 class HttpResponse;
 class CGI;
+class Server;
 
 class Client {
 	private:
@@ -20,35 +23,38 @@ class Client {
 		int				_responseIndex;
 
 	public:
-		Client();// default to 0 if no parameter is provided
+		Client(int clientSocket);
 		~Client();
-		Client& operator=(const Client& copy);
-		Client(const Client& copy);
-		void setSocket(int clientSocket);
-		int getSocket();
+		Client& 			operator=(const Client& copy) 	= default;
+		Client(const Client& copy) 							= default;
+		void 				setSocket(int clientSocket);
+		int 				getSocket() const;
 		//sendRequest();
 
 		//Getter for _HttpRequest
-		HttpRequest* getHttpRequest() const;
+		HttpRequest* 		getHttpRequest() const;
 
 		//Getter for _HttpResponse
-		HttpResponse* getHttpResponse() const;
+		HttpResponse* 		getHttpResponse() const;
 
 		//Setter for _HttpRequest
-		void setHttpRequest(HttpRequest* httpRequest);
+		void 				setHttpRequest(HttpRequest* httpRequest);
 
 		//Setter for _HttpResponse
-		void setHttpResponse(HttpResponse* httpResponse);
+		void 				setHttpResponse(HttpResponse* httpResponse);
 
-		void writeToSocket(Server *server);
+		void 				writeToSocket();
 
 		// int processClientRequest(const std::string& request, HttpRequest* Http); ????
-		void readFromSocket(Server *server);
+		void 				readFromSocket(Server *server);
 		
+		void 				closeConnection(EventPoll &eventPoll);
+
 		//CGI calling methods
-		int getCgiRead();
-		int getCgiWrite();
-		void startCgi(HttpRequest *request);
-		void readFromCgi();
-		void writeToCgi();
+		int 				getCgiRead();
+		int 				getCgiWrite();
+		void 				startCgi(HttpRequest *request);
+		void 				readFromCgi();
+		// void 				writeToCgi();
+
 };
