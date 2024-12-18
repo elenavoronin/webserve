@@ -8,12 +8,19 @@
 #include "utils.hpp"
 #include "EventPoll.hpp"
 #include "Server.hpp"
+#include <unistd.h>
 
 class HttpRequest;
 class HttpResponse;
 class CGI;
 class Server;
 
+/**
+ * @brief The Client class represents a single client connection to the server.
+ *
+ * This class manages the state and behavior of a client connection, including
+ * its socket, associated HTTP request and response objects, and optional CGI handling.
+ */
 class Client {
 	private:
 		int 			_clientSocket;
@@ -29,25 +36,12 @@ class Client {
 		Client(const Client& copy) 							= default;
 		void 				setSocket(int clientSocket);
 		int 				getSocket() const;
-		//sendRequest();
-
-		//Getter for _HttpRequest
 		HttpRequest* 		getHttpRequest() const;
-
-		//Getter for _HttpResponse
 		HttpResponse* 		getHttpResponse() const;
-
-		//Setter for _HttpRequest
 		void 				setHttpRequest(HttpRequest* httpRequest);
-
-		//Setter for _HttpResponse
 		void 				setHttpResponse(HttpResponse* httpResponse);
-
 		void 				writeToSocket();
-
-		// int processClientRequest(const std::string& request, HttpRequest* Http); ????
 		void 				readFromSocket(Server *server);
-		
 		void 				closeConnection(EventPoll &eventPoll);
 
 		//CGI calling methods
@@ -58,3 +52,5 @@ class Client {
 		// void 				writeToCgi();
 
 };
+
+	// int processClientRequest(const std::string& request, HttpRequest* Http); ????

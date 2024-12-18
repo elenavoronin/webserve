@@ -12,7 +12,18 @@
 #include "Location.hpp"
 #include <poll.h>
 #include <algorithm>
-
+#include "utils.hpp"
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <arpa/inet.h>
+#include <netdb.h>
+#include "HttpResponse.hpp"
+#include "CGI.hpp"
 
 class Client; 
 // class Location;
@@ -62,6 +73,11 @@ class Server  {
 		int handleDeleteRequest(Client &client, const std::string& path, HttpRequest* Http);
 		void sendResponse(int clientSocket, const std::string& response);
 		void checkLocations(std::string path);
+		void sendFileResponse(int clientSocket, const std::string& filepath, int statusCode);
+		std::string readFileContent(const std::string& filepath);
+		void sendHeaders(int clientSocket, int statusCode, const std::string& contentType);
+		void sendBody(int clientSocket, const std::string& body);
+		int validateRequest(const std::string& method, const std::string& version);
 
 		//setters
      	void set_server_name(const std::string &server_name) { _server_name = server_name; }

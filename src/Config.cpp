@@ -1,22 +1,4 @@
 #include "../include/Config.hpp"
-#include "../include/Server.hpp"
-#include "../include/Location.hpp"
-#include <sstream>
-#include <fstream>
-#include <vector>
-#include <iostream>
-#include <vector>      // for std::vector
-#include <sys/types.h> // for basic types
-#include <sys/socket.h> // for socket-related functions and structures
-#include <netinet/in.h> // for sockaddr_in, sockaddr_storage
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-#include <arpa/inet.h>
-#include <netdb.h>
-#include <poll.h>
-
 
 Config::Config() {
     // std::cout << "Config constructor called" << std::endl;
@@ -201,6 +183,16 @@ void Config::addPollFds() {
     pollLoop(eventPoll);
 }
 
+/**
+ * @brief The main event loop for the web server.
+ * 
+ * This function creates a while loop that runs indefinitely, where it:
+ * 1. Updates the event list from the add/remove queues.
+ * 2. Calls poll() to block until there is an event.
+ * 3. Iterates over the pollfds returned by poll() to handle events.
+ * 
+ * Events are handled by calling the appropriate handler functions on the servers.
+ */
 void Config::pollLoop(EventPoll &eventPoll) {
     while (true) {
         // Update the event list from the add/remove queues
@@ -232,25 +224,22 @@ void Config::pollLoop(EventPoll &eventPoll) {
     }
 }
 
-/*
-
-TODO handleGet check extension (img. html ..) instead cgi-bin
-TODO Send should be done in chunks like read and go to poll, change events to POLLOUT somewhere
-TODO read in chunck cgi in void CGI::readCgiOutput(int client_socket) (djoyke)
-TODO create post and delete (djoyke, anna)
-TODO add CGI scripts for post and delete (djoyke)
-TODO finish locations (lena)
-TODO make ugly button not ugly in html (djoyke)
-TODO link error codes to http response, and display correct page (djoyke, anna)
-TODO validate data while parsing (lena)
-TODO eval sheet misery (jan)
-TODO unit test (all, jan)
 
 
-
-*/
-
-int Config::check_config(const std::string &config_file) {
+/**
+ * @brief Reads and parses a configuration file.
+ * 
+ * This function reads the configuration file specified by the parameter
+ * config_file and parses it into a list of Server objects. If the file
+ * cannot be opened or is empty, it prints an error message and returns -1.
+ * Otherwise, it sets the _servers member variable to the list of Server
+ * objects, sets the _servers_default member variable to the same list,
+ * and calls addPollFds() to set up the event loop.
+ * 
+ * @param config_file The path to the configuration file to read.
+ * @return 0 on success, -1 on error.
+ */
+int Config::checkConfig(const std::string &config_file) {
     std::ifstream file(config_file.c_str());
     if (!file) {
         std::cerr << "Error: Cannot open config file." << std::endl;

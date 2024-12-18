@@ -1,8 +1,4 @@
-#include "../include/HttpRequest.hpp"
 #include "../include/HttpResponse.hpp"
-#include "../include/utils.hpp"
-#include "../include/Server.hpp"
-#include <sstream>
 
 /**
  * @brief       Default constructor for the HttpResponse class.
@@ -142,6 +138,13 @@ void HttpResponse::redirect(const std::string& location, int status_code, const 
 	setBody(""); // Redirections typically have no body
 }
 
-std::string &HttpResponse::getFullResponse(){
-	return _fullResponse;
+/**
+ * @brief       Returns the full HTTP response as a string reference.
+ * 
+ * @return      A reference to the string containing the complete HTTP response.
+ * 
+ * @details     The response includes the status line, headers, and body.
+ */
+std::string &HttpResponse::getFullResponse() {
+    return _fullResponse;
 }

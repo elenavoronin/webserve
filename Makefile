@@ -10,8 +10,7 @@ CC			= c++
 CPPFLAGS	= -std=c++11 -Wall -Werror -Wextra -Wall -Wextra -Werror -g -fsanitize=address -I $(HEADERDIR)
 
 #sources
-SRC 		= 	./src/request.cpp			\
-				./src/start.cpp				\
+SRC 		= 	./src/start.cpp				\
 				./src/CGI.cpp				\
 				./src/Client.cpp			\
 				./src/HttpRequest.cpp 		\
