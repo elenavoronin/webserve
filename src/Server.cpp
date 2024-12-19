@@ -115,8 +115,7 @@ void Server::handleNewConnection(EventPoll &eventPoll){
     }
 
     // Add the new client directly to the clients vector
-    clients.emplace_back(new_fd);
-
+    clients.emplace_back(new_fd, eventPoll);
     // Add the new client file descriptor to the EventPoll
     eventPoll.addPollFdEventQueue(new_fd, POLLIN);
 }
@@ -175,10 +174,10 @@ void Server::handlePollEvent(EventPoll &eventPoll, int i) {
             if (event_fd != client->getSocket()) {
                 // client->writeToCgi();
             } else {
-                // client->writeToSocket();
+                client->writeToSocket();
             }
         } catch (const std::runtime_error &e) {
-            std::cerr << "Write error: " << e.what() << std::endl;
+            std::cerr << "Write error: " << e.what() << std::endl; //throw
             client->closeConnection(eventPoll);
             clients.erase(std::remove_if(clients.begin(), clients.end(), [&](const Client &c) {
                 return c.getSocket() == event_fd;
@@ -302,8 +301,8 @@ int Server::handleGetRequest(Client &client, const std::string& path, HttpReques
 		sendFileResponse(client.getSocket(), "www/html/404.html", 404);
 		return 404;
 	}
-	// setFileResponse()
-	sendFileResponse(client.getSocket(), filepath, 200);//needs to be set respionse because need to go back to poll loop
+	client.prepareFileResponse();
+	// sendFileResponse(client.getSocket(), filepath, 200);//needs to be set respionse because need to go back to poll loop
 	return 200;
 }
 

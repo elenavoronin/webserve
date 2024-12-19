@@ -96,5 +96,6 @@ void	EventPoll::updateEventList( void )
 	while (_pollfdsToAddQueue.size() != 0) {
 		_pollfds.push_back(_pollfdsToAddQueue.back());
 		_pollfdsToAddQueue.pop_back();
+		std::cout << "ADDED POLL EVENT " << _pollfds.back().fd << std::endl;
 	}
 }

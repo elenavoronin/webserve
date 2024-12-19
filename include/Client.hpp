@@ -27,12 +27,13 @@ class Client {
 		HttpRequest* 	_HttpRequest;
 		HttpResponse* 	_HttpResponse;
 		CGI*			_CGI;
+		EventPoll&		_eventPoll;
 		int				_responseIndex;
 
 	public:
-		Client(int clientSocket);
+		Client(int clientSocket, EventPoll& eventPoll);
 		~Client();
-		Client& 			operator=(const Client& copy) 	= default;
+		Client& 			operator=(const Client& copy);
 		Client(const Client& copy) 							= default;
 		void 				setSocket(int clientSocket);
 		int 				getSocket() const;
@@ -43,6 +44,7 @@ class Client {
 		void 				writeToSocket();
 		void 				readFromSocket(Server *server);
 		void 				closeConnection(EventPoll &eventPoll);
+		void				prepareFileResponse();
 
 		//CGI calling methods
 		int 				getCgiRead();

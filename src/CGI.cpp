@@ -19,6 +19,7 @@ CGI::CGI(HttpRequest *request) {
     else if (_pid == 0) {
         handleChildProcess(request);
     } else {
+        std ::cout << "going to parent process" << std::endl;
         handleParentProcess();
     }
 }
@@ -45,12 +46,21 @@ void CGI::parseQueryString(HttpRequest* request) {
         _path = request->getField("path");
         std::size_t startPos = _path.find("?");
         if (startPos != std::string::npos) {
-            _queryParams = _path.substr(startPos + 1);  // Extract query string
+            _queryParams = _path.substr(startPos + 1);
         } 
         else {
             _queryParams = "";
         }
+        if (_path.empty()) {
+            std::cerr << "Error: Path is empty. Cannot extract query string." << std::endl;
+            return;
+        }
+        else {
+            std::cout << "Request path: " << _path << std::endl;
+        }
         std::cout << "Extracted query string: " << _queryParams << std::endl;  // Debug
+        std::cout << "Parsing query string in process with PID: " << getpid() << std::endl;
+
     }
 }
 
@@ -96,11 +106,10 @@ void CGI::initializeEnvVars(HttpRequest* request) {
     // Add other common environment variables, such as SCRIPT_NAME
     _envVars.push_back("SCRIPT_NAME=" + request->getField("script_name"));
 
-    // Convert to char* for execve
     for (const auto& var : _envVars) {
-        _env.push_back(const_cast<char*>(var.c_str()));     // Convert strings to char* for execve
+        _env.push_back(const_cast<char*>(var.c_str()));
     }
-    _env.push_back(nullptr);                                // Null-terminate for execve
+    _env.push_back(nullptr);
 }
 
 
@@ -125,11 +134,10 @@ void CGI::executeCgi() {
     if (queryPos != std::string::npos) {
         _path = _path.substr(0, queryPos);  // Extract only the script path
     }
-    
-    // std::cout << "!!!!!!!!!!!!!!!!!!!Path is " << _path << std::endl;
 
 	std::string cgiProgramString = "./www/html" + _path;
     const char* cgiProgram = cgiProgramString.c_str();
+
     // const std::string &cgiPass = server._location.get_cgi_pass();
     const char* argv[] = {"/usr/bin/python3", cgiProgram, nullptr};
 
@@ -139,10 +147,9 @@ void CGI::executeCgi() {
     // std::string cgi_pass = server.getCgiPass();
     // std::string cgi_path = server.getCgiPath();
 
-    // Redirect stdout to the write end of the pipe (to send CGI output back to parent)
     dup2(_fromCgiPipe[WRITE], STDOUT_FILENO);
-    close(_fromCgiPipe[READ]);  // Close unused read end
-    close(_fromCgiPipe[WRITE]); // Close write end after dup2
+    close(_fromCgiPipe[READ]);
+    close(_fromCgiPipe[WRITE]);
 
     execve(argv[0], const_cast<char* const*>(argv), _env.data());	
 	perror("execve failed"); // save status code somewhere
@@ -158,12 +165,13 @@ void CGI::executeCgi() {
  *                      - put buffer to 10 and have a read loop. after buffer is read return to poll and pass that 
  *                      - go back to the server and then continue reading
  *                      - handle 
+ *                      - implement error handling 
+ *                      - maybe use vector of characters to have less trouble with images
  * 
  */
 void CGI::readCgiOutput() {
     char buffer[READ_SIZE];
 
-    // Read data from the pipe into the buffer
     ssize_t bytes_read = read(_fromCgiPipe[READ], buffer, sizeof(buffer));
     if (bytes_read == -1) {
         throw std::runtime_error("Error reading from pipe");
@@ -171,7 +179,6 @@ void CGI::readCgiOutput() {
     if (bytes_read == 0) {
         return;
     }
-    //maybe use vector of characters to have less trouble with images
     _cgiOutput.append(buffer, bytes_read);
 }
 
@@ -235,10 +242,9 @@ bool CGI::setupPipes() {
  * @param server The Server object that might provide configuration details.
  */
 void CGI::handleChildProcess(HttpRequest* request) {
-    close(_fromCgiPipe[READ]);  // Close unused read end
-    // read from requets pipe gelinkt aan HttpRequest
-    initializeEnvVars(request);  // Set up environment variables for CGI
-    executeCgi();          // Run CGI script
+    close(_fromCgiPipe[READ]);
+    initializeEnvVars(request);
+    executeCgi();
 }
 
 /**
@@ -249,8 +255,8 @@ void CGI::handleChildProcess(HttpRequest* request) {
  * @todo                - Implement reading from the pipe in chunks
  */
 void CGI::handleParentProcess() {
-    close(_fromCgiPipe[WRITE]);  // Close unused write end
-    close(_toCgiPipe[READ]);     // Close unused read end
+    close(_fromCgiPipe[WRITE]);
+    close(_toCgiPipe[READ]);
     //set everthing in HTTPresponse object
 }
 
@@ -271,4 +277,32 @@ int CGI::getReadFd() const {
  */
 int CGI::getWriteFd() const {
     return _toCgiPipe[WRITE];
+}
+
+const std::string& CGI::getCgiOutput() const {
+        return _cgiOutput;
+}
+
+void CGI::clearCgiOutput() {
+        _cgiOutput.clear();
+}
+
+bool CGI::areHeadersSent() const {
+        return _headersSent;
+}
+
+void CGI::markHeadersSent() {
+        _headersSent = true;
+}
+
+bool CGI::isCgiComplete() const {
+        return _cgiComplete;
+}
+
+void CGI::markCgiComplete() {
+        _cgiComplete = true;
+}
+
+pid_t CGI::getPid() const {
+    return _pid;
 }

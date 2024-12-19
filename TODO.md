@@ -1,8 +1,8 @@
 Server makes sure everything is parsed
 POll decides what we're doing not the server
 
-1. handle poll write (djoyke)
-2. reconnect cgi to poll loop (djoyke)
+1. reconnect cgi to poll loop (djoyke)
+2. handle poll write (djoyke)
 3. use throw instead of std cout or std cerr and have a catch somewhere (lena, djoyke)
 4. finish locations (lena)
 5. validate data while parsing (lena)

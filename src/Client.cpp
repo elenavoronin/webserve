@@ -1,6 +1,11 @@
 #include "../include/Client.hpp"
 
-Client::Client(int clientSocket) : _clientSocket(clientSocket), _HttpRequest(new HttpRequest()), _HttpResponse(new HttpResponse()), _CGI(NULL) {}
+Client::Client(int clientSocket, EventPoll& eventPoll) : 
+    _clientSocket(clientSocket), 
+    _HttpRequest(new HttpRequest()), 
+    _HttpResponse(new HttpResponse()), 
+    _CGI(NULL), 
+    _eventPoll(eventPoll){}
 
 /**
  * @brief client desctructor.
@@ -8,6 +13,14 @@ Client::Client(int clientSocket) : _clientSocket(clientSocket), _HttpRequest(new
  * @todo add deletes in here.
  */
 Client::~Client(){}
+
+Client& Client::operator=(const Client& copy) {
+    this->_clientSocket = copy._clientSocket;
+    this->_HttpRequest = copy._HttpRequest;
+    this->_HttpResponse = copy._HttpResponse;
+    this->_CGI = copy._CGI;
+    return *this;
+}
 
 /**
  * @brief Sets the file descriptor for the client's socket.
@@ -101,6 +114,7 @@ void Client::startCgi(HttpRequest *request) {
 	if (this->_CGI != NULL)
 		throw std::runtime_error("already initialized");
 	this->_CGI = new CGI(request);
+    _eventPoll.addPollFdEventQueue(_CGI->getReadFd(), POLLIN);
 }
 
 /**
@@ -113,14 +127,42 @@ void Client::startCgi(HttpRequest *request) {
  * CGI process.
  */
 void Client::readFromCgi() {
-	if (this->_CGI == NULL)
-		throw std::runtime_error("CGI not initialized");
-	//check bool if done reading
-		//decide continue reading
-		//or build response
-		//or error?
-	//signal kill if done ?
+    if (!_CGI) {
+        throw std::runtime_error("CGI object is not initialized.");
+    }
+
+    try {
+        // Read data from the CGI process
+        _CGI->readCgiOutput();
+
+        // Check if headers have been sent
+        if (!_CGI->areHeadersSent()) {
+            // Send HTTP headers
+            HttpResponse response;
+            response.setStatus(200, "OK");
+            response.setHeader("Content-Type", "text/html");
+            response.setHeader("Transfer-Encoding", "chunked");
+
+            std::string headers = response.getHeadersOnly();
+            _CGI->markHeadersSent();
+        }
+
+        // Check if the CGI process is done writing output
+        if (_CGI->isCgiComplete()) {
+            // Send the final chunk and terminate the CGI process
+            send(_clientSocket, "0\r\n\r\n", 5, 0);
+            std::cout << "PID IS: " << _CGI->getPid() << std::endl;
+            kill(_CGI->getPid(), SIGTERM); // Send signal to terminate the process
+            _CGI->markCgiComplete();
+            prepareFileResponse();
+        }
+    } catch (const std::exception& e) {
+        std::cerr << "Error while reading from CGI: " << e.what() << std::endl;
+        // Handle cleanup or error response
+        close(_clientSocket); // Optionally close the connection
+    }
 }
+
 
 /**
  * @brief Reads data from the client socket and appends it to the HTTP request buffer.
@@ -183,6 +225,7 @@ void Client::writeToSocket() {
     }
 	//data + offset inputindex 
     bytesWritten = write(_clientSocket, _HttpResponse->getFullResponse().data() + _responseIndex, bytesToWrite);
+    std::cout << "BYTES WRITTEN: " << bytesWritten << std::endl;
     _responseIndex += bytesWritten;
 }
 
@@ -201,4 +244,10 @@ void Client::closeConnection(EventPoll &eventPoll) {
 
     // Close the client socket
     close(getSocket());
+}
+
+void Client::prepareFileResponse() {
+    _HttpResponse->buildResponse();
+    _eventPoll.ToremovePollEventFd(_clientSocket, POLLIN);
+    _eventPoll.addPollFdEventQueue(_clientSocket, POLLOUT);
 }
