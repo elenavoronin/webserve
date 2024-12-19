@@ -255,4 +255,6 @@ int Config::checkConfig(const std::string &config_file) {
     return 0;
 }
 
-
+const std::vector<Server>&Config::get_servers() const {
+    return _servers;
+}
