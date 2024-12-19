@@ -1,5 +1,6 @@
 
 #pragma once
+
 #include <vector>
 #include <iostream>
 #include "Client.hpp"
@@ -130,5 +131,4 @@ class Server  {
 		std::string getDefault_file() const {return this->_default_file;}
 		std::string getHost() const {return this->_host;}
 		std::vector<std::string> getErrorPage() const {return this->_errorPage;}
-
 };
