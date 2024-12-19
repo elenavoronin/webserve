@@ -2,8 +2,12 @@
 
 Client::Client(int clientSocket) : _clientSocket(clientSocket), _HttpRequest(new HttpRequest()), _HttpResponse(new HttpResponse()), _CGI(NULL) {}
 
+/**
+ * @brief client desctructor.
+ *
+ * @todo add deletes in here.
+ */
 Client::~Client(){}
-
 
 /**
  * @brief Sets the file descriptor for the client's socket.
