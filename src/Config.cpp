@@ -181,6 +181,11 @@ void Config::addPollFds() {
         current_server.listener_fd = current_server.reportReady(eventPoll);
     }
     pollLoop(eventPoll);
+    // EventPoll _eventPoll;
+    // for (Server& current_server : _servers) {
+    //     current_server.listener_fd = current_server.reportReady(_eventPoll);
+    // }
+    // pollLoop();
 }
 
 /**
@@ -193,12 +198,15 @@ void Config::addPollFds() {
  * 
  * Events are handled by calling the appropriate handler functions on the servers.
  */
+// void Config::pollLoop() {
 void Config::pollLoop(EventPoll &eventPoll) {
     while (true) {
         // Update the event list from the add/remove queues
         eventPoll.updateEventList();
+        // _eventPoll.updateEventList();
 
         std::vector<pollfd> &pfds = eventPoll.getPollEventFd();
+        // std::vector<pollfd> &pfds = _eventPoll.getPollEventFd();
         int pollResult = poll(pfds.data(), pfds.size(), -1);
 
         if (pollResult == -1) {
@@ -214,9 +222,11 @@ void Config::pollLoop(EventPoll &eventPoll) {
                     if (fd == current_server.listener_fd) {
                         // Handle new connection
                         current_server.handleNewConnection(eventPoll);
+                        // current_server.handleNewConnection(_eventPoll);
                     } else {
                         // Handle events for existing connections
                         current_server.handlePollEvent(eventPoll, i);
+                        // current_server.handlePollEvent(_eventPoll, i);
                     }
                 }
             }

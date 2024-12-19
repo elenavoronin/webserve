@@ -42,4 +42,5 @@ class Config {
 		void                            print_config_parse() const;
 		void                            addPollFds();
         void                            pollLoop(EventPoll &eventPoll);
+        // void                            pollLoop();
 };

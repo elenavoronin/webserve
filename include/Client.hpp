@@ -28,7 +28,7 @@ class Client {
 		HttpResponse* 	_HttpResponse;
 		CGI*			_CGI;
 		EventPoll&		_eventPoll;
-		int				_responseIndex;
+		unsigned long	_responseIndex;
 
 	public:
 		Client(int clientSocket, EventPoll& eventPoll);

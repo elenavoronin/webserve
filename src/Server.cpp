@@ -86,6 +86,7 @@ void Server::del_from_pfds(std::vector<struct pollfd> &pfds, int i){
  *
  * @param eventPoll The EventPoll to add the listening socket to
  * @return The file descriptor of the listening socket
+ * @todo check that listener_fd is properly initialized and not overwritten elsewhere
  */
 int Server::reportReady(EventPoll &eventPoll){
 	int listener = get_listener_socket(); // Set up and get a listening socket
@@ -108,16 +109,32 @@ int Server::reportReady(EventPoll &eventPoll){
  * @param eventPoll The EventPoll to add the new client to
  */
 void Server::handleNewConnection(EventPoll &eventPoll){
-    int new_fd = accept(listener_fd, nullptr, nullptr);
+    // int new_fd = accept(listener_fd, nullptr, nullptr);
+    // if (new_fd == -1) {
+    //     std::cerr << "Error accepting new connection!" << std::endl;
+    //     return;
+    // }
+
+    // // Add the new client directly to the clients vector
+    // clients.emplace_back(new_fd, eventPoll);
+    // // Add the new client file descriptor to the EventPoll
+    // eventPoll.addPollFdEventQueue(new_fd, POLLIN);
+	int new_fd = accept(listener_fd, nullptr, nullptr);
     if (new_fd == -1) {
-        std::cerr << "Error accepting new connection!" << std::endl;
+        perror("Error accepting new connection");
         return;
     }
 
+    std::cout << "New connection accepted on fd: " << new_fd << std::endl;
+
     // Add the new client directly to the clients vector
     clients.emplace_back(new_fd, eventPoll);
-    // Add the new client file descriptor to the EventPoll
     eventPoll.addPollFdEventQueue(new_fd, POLLIN);
+
+    std::cout << "Added new client to EventPoll with fd: " << new_fd << std::endl;
+
+	// Update the event list
+    eventPoll.updateEventList(); //is this redundant?
 }
 
 /**
@@ -171,6 +188,7 @@ void Server::handlePollEvent(EventPoll &eventPoll, int i) {
     // Handle writable events
     if (currentPollFd.revents & POLLOUT) {
         try {
+			std::cout << "POLLOUT detected for fd: " << currentPollFd.fd << std::endl;
             if (event_fd != client->getSocket()) {
                 // client->writeToCgi();
             } else {

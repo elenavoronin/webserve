@@ -217,16 +217,35 @@ void Client::readFromSocket(Server *server) {
  *          associated with writing to the socket.
  */
 void Client::writeToSocket() {
-	unsigned long bytesToWrite = WRITE_SIZE;
+	// unsigned long bytesToWrite = WRITE_SIZE;
+    // unsigned long bytesWritten = 0;
+
+    // if (bytesToWrite > _HttpResponse->getFullResponse().size() - _responseIndex) {
+    //     bytesToWrite = _HttpResponse->getFullResponse().size() - _responseIndex;
+    // }
+	// //data + offset inputindex 
+    // bytesWritten = write(_clientSocket, _HttpResponse->getFullResponse().data() + _responseIndex, bytesToWrite);
+    // std::cout << "BYTES WRITTEN: " << bytesWritten << std::endl;
+    // _responseIndex += bytesWritten;
+
+    unsigned long bytesToWrite = WRITE_SIZE;
     unsigned long bytesWritten = 0;
 
     if (bytesToWrite > _HttpResponse->getFullResponse().size() - _responseIndex) {
         bytesToWrite = _HttpResponse->getFullResponse().size() - _responseIndex;
     }
-	//data + offset inputindex 
     bytesWritten = write(_clientSocket, _HttpResponse->getFullResponse().data() + _responseIndex, bytesToWrite);
-    std::cout << "BYTES WRITTEN: " << bytesWritten << std::endl;
-    _responseIndex += bytesWritten;
+    std::cout << "Writing to socket " << _clientSocket << ": " << bytesWritten << " bytes" << std::endl;
+
+    if (bytesWritten > 0) {
+        _responseIndex += bytesWritten;
+    }
+
+    if (_responseIndex >= _HttpResponse->getFullResponse().size()) {
+        std::cout << "Response fully written to client socket: " << _clientSocket << std::endl;
+        _eventPoll.ToremovePollEventFd(_clientSocket, POLLOUT);
+        close(_clientSocket);  // Or keep-alive logic if supported
+    }
 }
 
 /**
@@ -244,10 +263,21 @@ void Client::closeConnection(EventPoll &eventPoll) {
 
     // Close the client socket
     close(getSocket());
+
+    // Update the event list
+    eventPoll.updateEventList();//is this redundant
 }
 
 void Client::prepareFileResponse() {
-    _HttpResponse->buildResponse();
+    // _HttpResponse->buildResponse();
+    // _eventPoll.ToremovePollEventFd(_clientSocket, POLLIN);
+    // _eventPoll.addPollFdEventQueue(_clientSocket, POLLOUT);
+     _HttpResponse->buildResponse();
+    std::cout << "Preparing file response for client socket: " << _clientSocket << std::endl;
     _eventPoll.ToremovePollEventFd(_clientSocket, POLLIN);
     _eventPoll.addPollFdEventQueue(_clientSocket, POLLOUT);
+    std::cout << "Added POLLOUT for client socket: " << _clientSocket << std::endl;
+
+        // Update the event list
+    _eventPoll.updateEventList();//is this redundant?
 }
