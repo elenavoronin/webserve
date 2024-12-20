@@ -152,7 +152,6 @@ void Client::readFromCgi() {
         if (_CGI->isCgiComplete()) {
             // Send the final chunk and terminate the CGI process
             send(_clientSocket, "0\r\n\r\n", 5, 0);
-            std::cout << "PID IS: " << _CGI->getPid() << std::endl;
             kill(_CGI->getPid(), SIGTERM); // Send signal to terminate the process
             _CGI->markCgiComplete();
             prepareFileResponse();
@@ -234,15 +233,12 @@ void Client::writeToSocket() {
         bytesToWrite = _HttpResponse->getFullResponse().size() - _responseIndex;
     }
     bytesWritten = write(_clientSocket, _HttpResponse->getFullResponse().data() + _responseIndex, bytesToWrite);
-    std::cout << "Writing to socket " << _clientSocket << ": " << bytesWritten << " bytes" << std::endl;
 
     if (bytesWritten > 0) {
         _responseIndex += bytesWritten;
     }
 
     if (_responseIndex >= _HttpResponse->getFullResponse().size()) {
-        std::cout << "Response fully written to client socket: " << _clientSocket << std::endl;
-        std::cout << "FULL RESPONSE IS: " << _HttpResponse->getFullResponse() << std::endl;
         _eventPoll.ToremovePollEventFd(_clientSocket, POLLOUT);
         close(_clientSocket);  // Or keep-alive logic if supported
     }
@@ -277,10 +273,26 @@ void Client::prepareFileResponse() {
     // _HttpResponse->buildResponse();
     // _eventPoll.ToremovePollEventFd(_clientSocket, POLLIN);
     // _eventPoll.addPollFdEventQueue(_clientSocket, POLLOUT);
-    _HttpResponse->setBody();
+
+    std::string requestedFile = _HttpRequest->getFullPath();
+    //read file
+    std::ifstream file(requestedFile);
+    if (!file.is_open()) {
+        throw std::runtime_error("File not found: " + requestedFile);
+        // Handle 404 response
+    } else {
+        std::stringstream buffer;
+        buffer << file.rdbuf();
+        file.close();
+        // Send the file content as response
+        _HttpResponse->setBody(buffer.str());
+        _HttpResponse->setHeader("Content-Type", "text/html");
+        // _HttpResponse->setStatusCode(200); //replace by actual status code
+    }
+
     _HttpResponse->buildResponse();
-    std::cout << "Preparing file response for client socket: " << _clientSocket << std::endl;
+    // std::cout << "Preparing file response for client socket: " << _clientSocket << std::endl;
     _eventPoll.ToremovePollEventFd(_clientSocket, POLLIN);
     _eventPoll.addPollFdEventQueue(_clientSocket, POLLOUT);
-    std::cout << "Added POLLOUT for client socket: " << _clientSocket << std::endl;
+    // std::cout << "Added POLLOUT for client socket: " << _clientSocket << std::endl;
 }

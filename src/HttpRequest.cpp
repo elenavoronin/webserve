@@ -13,6 +13,95 @@ HttpRequest::~HttpRequest(){}
 
 
 /**
+ * @brief       Sets the path field of the HttpRequest object.
+ * 
+ * @param       path    The value to assign to the path field.
+ * 
+ * @return      The assigned path value.
+ * @todo		Do i need to use root instead of hardcoded is this correct?
+ */
+void	HttpRequest::setPath(std::string path) {
+	_path = path;
+}
+
+/**
+ * @brief       Sets the path field of the HttpRequest object.
+ * 
+ * @param       path    The value to assign to the path field.
+ * 
+ * @return      The assigned path value.
+ * @todo		Do i need to use root instead of hardcoded is this correct?
+ */
+void	HttpRequest::setFullPath(std::string path) {
+	std::string fullPath = path;
+	if (path == "/") {
+		fullPath = "/index.html";
+	}
+	_fullPath = fullPath;
+}
+
+
+/**
+ * @brief       Sets the method field of the HttpRequest object.
+ * 
+ * @param       method  The value to assign to the method field.
+ * 
+ * @return      The assigned method value.
+ */
+void	HttpRequest::setMethod(std::string method) {
+	_method	= method;
+}
+
+
+/**
+ * @brief       Sets the version field of the HttpRequest object.
+ * 
+ * @param       version  The value to assign to the version field.
+ * 
+ * @return      The assigned version value.
+ */
+void	HttpRequest::setVersion(std::string version) {
+	_version = version;
+}
+
+/**
+ * @brief       Returns the path of the HTTP request.
+ * 
+ * @return      The requested path.
+ */
+std::string	HttpRequest::getPath() {
+	return _path;
+}
+
+/**
+ * @brief       Returns the full path of the HTTP request.
+ * 
+ * @return      The requested full path.
+ */
+std::string	HttpRequest::getFullPath() {
+	return _fullPath;
+}
+
+/**
+ * @brief       Returns the HTTP method of the request.
+ * 
+ * @return      The HTTP method as a string.
+ */
+
+std::string	HttpRequest::getMethod() {
+	return _method;
+}
+
+/**
+ * @brief       Returns the HTTP version of the request.
+ * 
+ * @return      The HTTP version as a string (e.g., "HTTP/1.1").
+ */
+std::string	HttpRequest::getVersion() {
+	return _version;
+}
+
+/**
  * @brief       Sets a key-value pair in the internal request field map.
  * 
  * @param       key         The key (e.g., "method", "path").
@@ -81,16 +170,19 @@ void HttpRequest::setHeaderReceived(bool received){
  * 
  * @details     Extracts the method, path, version, and headers from the HTTP request 
  *              and stores them in the internal request map.
+ * @todo		Do i need the map or the private variables???
  */
 void HttpRequest::readRequest(std::string request){
 
 	std::istringstream request_stream(request);
-	std::string method, path, version, host;
 	std::string line;
-	request_stream >> method >> path >> version; 
-	setField("method", method);
-	setField("path", path);
-	setField("version", version); 
+	request_stream >> _method >> _path >> _version; 
+	setField("method", _method);
+	setField("path", _path);
+	setField("version", _version);
+	// setPath(path);
+	// setMethod(method);
+	// setVersion(version);
 	while(std::getline(request_stream, line)){
 		if (line.empty())
 			break;

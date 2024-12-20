@@ -132,9 +132,6 @@ void Server::handleNewConnection(EventPoll &eventPoll){
     eventPoll.addPollFdEventQueue(new_fd, POLLIN);
 
     std::cout << "Added new client to EventPoll with fd: " << new_fd << std::endl;
-
-	// // Update the event list
-    // eventPoll.updateEventList(); //is this redundant?
 }
 
 /**
@@ -261,12 +258,13 @@ void Server::checkLocations(std::string path) {
  * @return The HTTP status code indicating the result of the request processing.
  */
 int Server::processClientRequest(Client &client, const std::string& request, HttpRequest* HttpRequest) {
-	std::istringstream requestStream(request);
 	std::cout <<" This is request "<< request << std::endl;
-	std::string method, path, version;
-	HttpResponse response;
-	requestStream >> method >> path >> version;
 	HttpRequest->readRequest(request);
+
+	std::string method = HttpRequest->getMethod();
+    std::string path = HttpRequest->getPath();
+    std::string version = HttpRequest->getVersion();
+
 	checkLocations(path);
 	int status = validateRequest(method, version);
 	if (status != 200) {
@@ -274,14 +272,12 @@ int Server::processClientRequest(Client &client, const std::string& request, Htt
 		return status;
 	}
 	if (method == "GET" && std::find(this->_allowed_methods.begin(), this->_allowed_methods.end(), "GET") != this->_allowed_methods.end())
-		//check with this endpoint am I allowed to use get?
-		return handleGetRequest(client, path, HttpRequest); //?? what locations should be passed
+		return handleGetRequest(client, HttpRequest); //?? what locations should be passed
 	if (method == "POST" && std::find(this->_allowed_methods.begin(), this->_allowed_methods.end(), "POST") != this->_allowed_methods.end())
-	//check with this endpoint am I allowed to use post?
-		return handlePostRequest(client, path, HttpRequest);
+		return handlePostRequest(client, HttpRequest);
 	if (method == "DELETE" && std::find(this->_allowed_methods.begin(), this->_allowed_methods.end(), "DELETE") != this->_allowed_methods.end())
-	//check with this endpoint am I allowed to use delete?
-		return handleDeleteRequest(client, path, HttpRequest);
+		return handleDeleteRequest(client, HttpRequest);
+	HttpResponse response;
 	response.buildResponse();
 	// check poll if I can write?
 	return 0;
@@ -303,23 +299,39 @@ int Server::processClientRequest(Client &client, const std::string& request, Htt
  * @return The HTTP status code indicating the result of the request processing.
  * @todo writing needs to go through the poll loop not working yet
  */
-int Server::handleGetRequest(Client &client, const std::string& path, HttpRequest* request) {
+int Server::handleGetRequest(Client &client, HttpRequest* request) {
 	
-	std::string filepath = this->getRoot() + '/' + path;
-	if (path == "/") {
+	std::string filepath = this->getRoot() + '/' + request->getPath();
+	if (request->getPath() == "/") {
 		filepath = this->getRoot() + '/' + this->getIndex();
+		request->setFullPath(filepath);
 	}
-	if (path.rfind("/cgi-bin/", 0) == 0) { //change to config
+	if (request->getPath().rfind("/cgi-bin/", 0) == 0) { //change to config
 		client.startCgi(request);
 		return 0;
 	}
-	std::ifstream file(filepath);
-	if (!file) {
-		std::cerr << "Error: File not found for path " << filepath << std::endl;
-		sendFileResponse(client.getSocket(), "www/html/404.html", 404);
-		return 404;
-	}
-	client.prepareFileResponse();
+	// std::ifstream file(filepath);
+	// if (!file) {
+	// 	std::cerr << "Error: File not found for path " << filepath << std::endl;
+	// 	sendFileResponse(client.getSocket(), "www/html/404.html", 404);
+	// 	return 404;
+	// }
+	// client.prepareFileResponse();
+	try {
+        std::ifstream file(filepath);
+        if (!file) {
+            throw std::runtime_error("File not found: " + filepath);
+        }
+
+        // Proceed with sending the file response
+        client.prepareFileResponse();
+        return 200;
+
+    } catch (const std::runtime_error& e) {
+        std::cerr << e.what() << std::endl;
+        sendFileResponse(client.getSocket(), "www/html/404.html", 404);
+        return 404;
+    }
 	// sendFileResponse(client.getSocket(), filepath, 200);//needs to be set respionse because need to go back to poll loop
 	return 200;
 }
@@ -454,9 +466,8 @@ If there was an issue, return a corresponding error code:
 It’s often useful to log the deletion operation for auditing purposes, especially if your server manages important data.
 As with the POST request, decide whether to close the connection or keep it alive based on the HTTP version or the Connection header.
 */
-int Server::handleDeleteRequest(Client &client, const std::string& path, HttpRequest* Http) {
+int Server::handleDeleteRequest(Client &client, HttpRequest* Http) {
 	(void)client;
-	(void)path;
 	(void)Http;
 
 	return 0;
@@ -477,10 +488,9 @@ Error (400 Bad Request): If there was a problem with the data.
 Error (500 Internal Server Error): If something went wrong on the server side.
 Decide whether to close the connection or keep it alive (based on HTTP version or a Connection header).
 */
-int Server::handlePostRequest(Client &client, const std::string& path, HttpRequest* Http) {
+int Server::handlePostRequest(Client &client, HttpRequest* Http) {
 	
 	(void)client;
-	(void)path;
 	(void)Http;
 
 	// if (!Http->findContentLength(Http->_strReceived) || Http->findContentLength(Http->_strReceived) <= 0) //Can be equal to 0?

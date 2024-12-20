@@ -69,9 +69,9 @@ class Server  {
 		/*Handle requests*/
 //		int 	handleRequest(int clientSocket, std::string request, HttpRequest *Http);
 		int processClientRequest(Client &client, const std::string& request, HttpRequest* Http);
-		int handleGetRequest(Client &client, const std::string& path, HttpRequest* request);
-		int handlePostRequest(Client &client, const std::string& path, HttpRequest* Http);
-		int handleDeleteRequest(Client &client, const std::string& path, HttpRequest* Http);
+		int handleGetRequest(Client &client, HttpRequest* request);
+		int handlePostRequest(Client &client, HttpRequest* Http);
+		int handleDeleteRequest(Client &client, HttpRequest* Http);
 		void sendResponse(int clientSocket, const std::string& response);
 		void checkLocations(std::string path);
 		void sendFileResponse(int clientSocket, const std::string& filepath, int statusCode);

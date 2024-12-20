@@ -39,6 +39,8 @@ class Client {
 		int 				getSocket() const;
 		HttpRequest* 		getHttpRequest() const;
 		HttpResponse* 		getHttpResponse() const;
+		Server* 			getServer() const;
+		std::string			getBaseDirectory() const;
 		void 				setHttpRequest(HttpRequest* httpRequest);
 		void 				setHttpResponse(HttpResponse* httpResponse);
 		void 				writeToSocket();
