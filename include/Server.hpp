@@ -46,10 +46,11 @@ class Server  {
 		std::map<std::string, std::vector<Location>>	_locations;
 
 	public:
-		int listener_fd;
-		bool connection = false;
-		std::vector<struct pollfd> pfds; // replace this with eventpoll?
-		std::vector<Client> clients;
+		int listener_fd;							// make private
+		bool connection = false;					// make private
+		std::vector<struct pollfd> pfds; 			// replace this with eventpoll?
+		std::vector<Client> clients;				// make private
+		
 		Server();
 		Server(const Server& copy) = default;
 		Server& operator=(const Server& copy) = default;
@@ -65,6 +66,9 @@ class Server  {
 		/*Main loop*/
 		void 	handleNewConnection(EventPoll &eventPoll);
 		void 	handlePollEvent(EventPoll &eventPoll, int i);
+
+
+		void	eraseClient(int event_fd);
 		// void 	broadcast_message(int sender_fd, char *buf, int received, std::vector<struct pollfd> &pfds, int listener);
 		/*Handle requests*/
 //		int 	handleRequest(int clientSocket, std::string request, HttpRequest *Http);

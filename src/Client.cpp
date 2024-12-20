@@ -229,7 +229,6 @@ void Client::writeToSocket() {
 
     if (_responseIndex >= _HttpResponse->getFullResponse().size()) {
         _eventPoll.ToremovePollEventFd(_clientSocket, POLLOUT);
-        close(_clientSocket);  // Or keep-alive logic if supported
     }
 }
 
@@ -245,7 +244,6 @@ void Client::writeToSocket() {
 void Client::closeConnection(EventPoll &eventPoll) {
     // Remove the client socket from EventPoll
     eventPoll.ToremovePollEventFd(getSocket(), POLLIN | POLLOUT);
-
     // Close the client socket
     close(getSocket());
 }
@@ -276,8 +274,8 @@ void Client::prepareFileResponse() {
     }
 
     _HttpResponse->buildResponse();
-    // std::cout << "Preparing file response for client socket: " << _clientSocket << std::endl;
+    std::cout << "Preparing file response for client socket: " << _clientSocket << std::endl;
     _eventPoll.ToremovePollEventFd(_clientSocket, POLLIN);
     _eventPoll.addPollFdEventQueue(_clientSocket, POLLOUT);
-    // std::cout << "Added POLLOUT for client socket: " << _clientSocket << std::endl;
+    std::cout << "Added POLLOUT for client socket: " << _clientSocket << std::endl;
 }

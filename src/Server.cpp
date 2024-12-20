@@ -176,16 +176,14 @@ void Server::handlePollEvent(EventPoll &eventPoll, int i) {
         } catch (const std::runtime_error &e) {
             std::cerr << "Read error: " << e.what() << std::endl;
             client->closeConnection(eventPoll);
-            clients.erase(std::remove_if(clients.begin(), clients.end(), [&](const Client &c) {
-                return c.getSocket() == event_fd;
-            }), clients.end());
+			eraseClient(event_fd);
             return;
         }
     }
     // Handle writable events
     if (currentPollFd.revents & POLLOUT) {
         try {
-			std::cout << "POLLOUT detected for fd: " << currentPollFd.fd << std::endl;
+			// std::cout << "POLLOUT detected for fd: " << currentPollFd.fd << std::endl;
             if (event_fd != client->getSocket()) {
                 // client->writeToCgi();
             } else {
@@ -194,9 +192,7 @@ void Server::handlePollEvent(EventPoll &eventPoll, int i) {
         } catch (const std::runtime_error &e) {
             std::cerr << "Write error: " << e.what() << std::endl; //throw
             client->closeConnection(eventPoll);
-            clients.erase(std::remove_if(clients.begin(), clients.end(), [&](const Client &c) {
-                return c.getSocket() == event_fd;
-            }), clients.end());
+			eraseClient(event_fd);
             return;
         }
     }
@@ -493,4 +489,11 @@ int Server::handlePostRequest(Client &client, HttpRequest* Http) {
 	// if (Http->getField("Content-type") == "application/x-www-form-urlencoded")
 
 	return 0;
+}
+
+
+void	Server::eraseClient(int event_fd) {
+	clients.erase(std::remove_if(clients.begin(), clients.end(), [&](const Client &c) {
+        return c.getSocket() == event_fd;
+    }), clients.end());
 }
