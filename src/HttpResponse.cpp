@@ -32,6 +32,7 @@ void HttpResponse::setStatus(int code, const std::string& message) {
  * 
  * @param       key         The header name (e.g., "Content-Type").
  * @param       value       The header value (e.g., "text/html").
+ * @todo        update content lenght etc with the lenght of cgi if cgi calles
  */
 void HttpResponse::setHeader(const std::string& key, const std::string& value) {
 	_headers[key] = value;
@@ -77,6 +78,7 @@ int HttpResponse::getStatusCode() const {
 void HttpResponse::setBody(const std::string& content) {
 	_body = content;
 	setHeader("Content-Length", std::to_string(_body.size()));
+	std::cout << "dummy content lenght jjajajajjaajsdjsjdsa: " << std::to_string(_body.size()) << std::endl;
 }
 
 /**
@@ -102,24 +104,31 @@ void HttpResponse::setBody(const std::string& content) {
  *              - Handle edge cases for invalid headers or body content.
  */
 void HttpResponse::buildResponse() {
+
+	_fullResponse.clear();
+	_headersOnly.clear();
 	
 	// Build the HTTP status line
 	std::string statusCodeString = std::to_string(_statusCode);
-	_fullResponse += "HTTP/1.1 " + statusCodeString + " " + _statusMessage + "\r\n";
-	// Map status codes to reasons
-	_fullResponse += statusCodeString += "\r\n";
+	std::string statusLine = "HTTP/1.1 " + statusCodeString + " " + _statusMessage + "\r\n";
+	
 	// Build the headers
+	std::ostringstream headersStream;
 	for (const auto& header : _headers) {
 		// The header name and value are separated by a colon and a space
-		_fullResponse += header.first + ": " + header.second + "\r\n";
+		headersStream << header.first << ": " << header.second << "\r\n";
 	}
-	// End headers section
-	_fullResponse += "\r\n";
-	// Add body if present
+	headersStream << "\r\n"; // End headers section
+
+	// Store headers-only for later retrieval
+	_headersOnly = statusLine + headersStream.str();
+	
+	// Build the full response
+	_fullResponse = _headersOnly;
 	if (!_body.empty()) {
 		_fullResponse += _body;
 	}
-	std::cout << _fullResponse << std::endl;
+	// std::cout << _fullResponse << std::endl; // Debug output
 }
 
 /**
@@ -147,4 +156,17 @@ void HttpResponse::redirect(const std::string& location, int status_code, const 
  */
 std::string &HttpResponse::getFullResponse() {
     return _fullResponse;
+}
+
+/**
+ * @brief       Returns the HTTP headers as a string.
+ *
+ * @details     This method returns only the headers of the HTTP response
+ *              without the body. Useful for cases where headers are sent
+ *              separately from the body, such as in chunked transfer encoding.
+ *
+ * @return      A string containing the HTTP headers.
+ */
+std::string HttpResponse::getHeadersOnly() const {
+    return _headersOnly;
 }

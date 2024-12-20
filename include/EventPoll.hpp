@@ -3,6 +3,7 @@
 #include <vector>
 #include <poll.h>
 #include <unistd.h>
+#include <iostream>
 
 /**
  * @brief Structure to specify a file descriptor and event type to be removed.

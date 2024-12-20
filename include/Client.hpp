@@ -27,22 +27,26 @@ class Client {
 		HttpRequest* 	_HttpRequest;
 		HttpResponse* 	_HttpResponse;
 		CGI*			_CGI;
-		int				_responseIndex;
+		EventPoll&		_eventPoll;
+		unsigned long	_responseIndex;
 
 	public:
-		Client(int clientSocket);
+		Client(int clientSocket, EventPoll& eventPoll);
 		~Client();
-		Client& 			operator=(const Client& copy) 	= default;
+		Client& 			operator=(const Client& copy);
 		Client(const Client& copy) 							= default;
 		void 				setSocket(int clientSocket);
 		int 				getSocket() const;
 		HttpRequest* 		getHttpRequest() const;
 		HttpResponse* 		getHttpResponse() const;
+		Server* 			getServer() const;
+		std::string			getBaseDirectory() const;
 		void 				setHttpRequest(HttpRequest* httpRequest);
 		void 				setHttpResponse(HttpResponse* httpResponse);
 		void 				writeToSocket();
 		void 				readFromSocket(Server *server);
 		void 				closeConnection(EventPoll &eventPoll);
+		void				prepareFileResponse();
 
 		//CGI calling methods
 		int 				getCgiRead();
@@ -50,7 +54,5 @@ class Client {
 		void 				startCgi(HttpRequest *request);
 		void 				readFromCgi();
 		// void 				writeToCgi();
-
 };
-
 	// int processClientRequest(const std::string& request, HttpRequest* Http); ????

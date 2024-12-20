@@ -20,7 +20,8 @@ class HttpResponse {
 		int 										_statusCode;				// HTTP status code (e.g., 200, 404)
 		std::string 								_statusMessage;				// Corresponding status message (e.g., "OK", "Not Found")
 		std::map<std::string, std::string> 			_headers;					// HTTP headers (key-value pairs)
-		std::string 								_body;						// Response body content
+		std::string 								_body;
+		std::string 								_headersOnly;				// HTTP headers without body
 
 	public:
 		HttpResponse();
@@ -35,4 +36,5 @@ class HttpResponse {
 		std::string 		&getFullResponse();
 		void 				buildResponse();
 		void 				redirect(const std::string& location, int status_code, const std::string& message);
+		std::string			getHeadersOnly() const;
 };

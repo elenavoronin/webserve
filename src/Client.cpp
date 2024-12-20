@@ -1,9 +1,27 @@
 #include "../include/Client.hpp"
 
-Client::Client(int clientSocket) : _clientSocket(clientSocket), _HttpRequest(new HttpRequest()), _HttpResponse(new HttpResponse()), _CGI(NULL) {}
+Client::Client(int clientSocket, EventPoll& eventPoll) : 
+    _clientSocket(clientSocket), 
+    _HttpRequest(new HttpRequest()), 
+    _HttpResponse(new HttpResponse()), 
+    _CGI(NULL), 
+    _eventPoll(eventPoll),
+    _responseIndex(0){}
 
+/**
+ * @brief client desctructor.
+ *
+ * @todo add deletes in here.
+ */
 Client::~Client(){}
 
+Client& Client::operator=(const Client& copy) {
+    this->_clientSocket = copy._clientSocket;
+    this->_HttpRequest = copy._HttpRequest;
+    this->_HttpResponse = copy._HttpResponse;
+    this->_CGI = copy._CGI;
+    return *this;
+}
 
 /**
  * @brief Sets the file descriptor for the client's socket.
@@ -97,6 +115,7 @@ void Client::startCgi(HttpRequest *request) {
 	if (this->_CGI != NULL)
 		throw std::runtime_error("already initialized");
 	this->_CGI = new CGI(request);
+    _eventPoll.addPollFdEventQueue(_CGI->getReadFd(), POLLIN);
 }
 
 /**
@@ -109,14 +128,41 @@ void Client::startCgi(HttpRequest *request) {
  * CGI process.
  */
 void Client::readFromCgi() {
-	if (this->_CGI == NULL)
-		throw std::runtime_error("CGI not initialized");
-	//check bool if done reading
-		//decide continue reading
-		//or build response
-		//or error?
-	//signal kill if done ?
+    if (!_CGI) {
+        throw std::runtime_error("CGI object is not initialized.");
+    }
+
+    try {
+        // Read data from the CGI process
+        _CGI->readCgiOutput();
+
+        // Check if headers have been sent
+        if (!_CGI->areHeadersSent()) {
+            // Send HTTP headers
+            HttpResponse response;
+            response.setStatus(200, "OK");
+            response.setHeader("Content-Type", "text/html");
+            response.setHeader("Transfer-Encoding", "chunked");
+
+            std::string headers = response.getHeadersOnly();
+            _CGI->markHeadersSent();
+        }
+
+        // Check if the CGI process is done writing output
+        if (_CGI->isCgiComplete()) {
+            // Send the final chunk and terminate the CGI process
+            send(_clientSocket, "0\r\n\r\n", 5, 0);
+            kill(_CGI->getPid(), SIGTERM); // Send signal to terminate the process
+            _CGI->markCgiComplete();
+            prepareFileResponse();
+        }
+    } catch (const std::exception& e) {
+        std::cerr << "Error while reading from CGI: " << e.what() << std::endl;
+        // Handle cleanup or error response
+        close(_clientSocket); // Optionally close the connection
+    }
 }
+
 
 /**
  * @brief Reads data from the client socket and appends it to the HTTP request buffer.
@@ -137,9 +183,7 @@ void Client::readFromSocket(Server *server) {
         throw std::runtime_error("Client closed connection");
     } 
 	else if (received < 0) {
-  	// Assume recv failed because no data is available (non-blocking)
         throw std::runtime_error("Error reading from socket");
-        // return; // Gracefully exit if no data is available
     }
 
     // Append the data to the HTTP request buffer
@@ -171,15 +215,25 @@ void Client::readFromSocket(Server *server) {
  *          associated with writing to the socket.
  */
 void Client::writeToSocket() {
-	unsigned long bytesToWrite = WRITE_SIZE;
+    unsigned long bytesToWrite = WRITE_SIZE;
     unsigned long bytesWritten = 0;
 
     if (bytesToWrite > _HttpResponse->getFullResponse().size() - _responseIndex) {
         bytesToWrite = _HttpResponse->getFullResponse().size() - _responseIndex;
     }
-	//data + offset inputindex 
     bytesWritten = write(_clientSocket, _HttpResponse->getFullResponse().data() + _responseIndex, bytesToWrite);
-    _responseIndex += bytesWritten;
+
+    // std::cout << this->getHttpResponse()->getHeadersOnly().size() << std::endl;
+    // std::cout << this->getHttpResponse()->getHeadersOnly() << std::endl;
+    if (bytesWritten > 0) {
+        _responseIndex += bytesWritten;
+    }
+    std::cout << _responseIndex << std::endl;
+    // std::cout << _responseIndex << std::endl;
+
+    if (_responseIndex >= _HttpResponse->getFullResponse().size()) {
+        _eventPoll.ToremovePollEventFd(_clientSocket, POLLOUT);
+    }
 }
 
 /**
@@ -194,7 +248,40 @@ void Client::writeToSocket() {
 void Client::closeConnection(EventPoll &eventPoll) {
     // Remove the client socket from EventPoll
     eventPoll.ToremovePollEventFd(getSocket(), POLLIN | POLLOUT);
-
     // Close the client socket
-    close(getSocket());
+    // close(getSocket());
+}
+
+/**
+ * @brief Prepares a file response for the client by building the response and adding POLLOUT to the EventPoll.
+ *
+ * This method should be called when the client connection has been fully handled
+ * and the file response should be sent. It builds the HTTP response using the
+ * HttpResponse object and adds POLLOUT to the EventPoll, so that the response
+ * can be written to the client socket when it is ready.
+ */
+void Client::prepareFileResponse() {
+    std::string requestedFile = _HttpRequest->getFullPath();
+    //read file
+    std::ifstream file(requestedFile);
+    std::cout << "!!!!!!!!!Requested file is : " << requestedFile << std::endl;
+    if (!file.is_open()) {
+        throw std::runtime_error("File not found 1: " + requestedFile);
+        return ;
+        // Handle 404 response
+    } else {
+        std::stringstream buffer;
+        buffer << file.rdbuf();
+        file.close();
+        // Send the file content as response
+        _HttpResponse->setBody(buffer.str());
+        _HttpResponse->setHeader("Content-Type", "text/html");
+        // _HttpResponse->setStatusCode(200); //replace by actual status code
+    }
+
+    _HttpResponse->buildResponse();
+    std::cout << "Preparing file response for client socket: " << _clientSocket << std::endl;
+    _eventPoll.ToremovePollEventFd(_clientSocket, POLLIN);
+    _eventPoll.addPollFdEventQueue(_clientSocket, POLLOUT);
+    std::cout << "Added POLLOUT for client socket: " << _clientSocket << std::endl;
 }

@@ -181,6 +181,11 @@ void Config::addPollFds() {
         current_server.listener_fd = current_server.reportReady(eventPoll);
     }
     pollLoop(eventPoll);
+    // EventPoll _eventPoll;
+    // for (Server& current_server : _servers) {
+    //     current_server.listener_fd = current_server.reportReady(_eventPoll);
+    // }
+    // pollLoop();
 }
 
 /**
@@ -193,12 +198,15 @@ void Config::addPollFds() {
  * 
  * Events are handled by calling the appropriate handler functions on the servers.
  */
+// void Config::pollLoop() {
 void Config::pollLoop(EventPoll &eventPoll) {
     while (true) {
         // Update the event list from the add/remove queues
         eventPoll.updateEventList();
+        // _eventPoll.updateEventList();
 
         std::vector<pollfd> &pfds = eventPoll.getPollEventFd();
+        // std::vector<pollfd> &pfds = _eventPoll.getPollEventFd();
         int pollResult = poll(pfds.data(), pfds.size(), -1);
 
         if (pollResult == -1) {
@@ -207,24 +215,24 @@ void Config::pollLoop(EventPoll &eventPoll) {
 
         // Iterate over the pollfds to handle events
         for (size_t i = 0; i < pfds.size(); i++) {
-            if (pfds[i].revents & POLLIN) {
+            if (pfds[i].revents & POLLIN || pfds[i].revents & POLLOUT || pfds[i].revents & POLLHUP || pfds[i].revents & POLLRDHUP) {
                 int fd = pfds[i].fd;
 
                 for (Server &current_server : _servers) {
                     if (fd == current_server.listener_fd) {
                         // Handle new connection
                         current_server.handleNewConnection(eventPoll);
+                        // current_server.handleNewConnection(_eventPoll);
                     } else {
                         // Handle events for existing connections
                         current_server.handlePollEvent(eventPoll, i);
+                        // current_server.handlePollEvent(_eventPoll, i);
                     }
                 }
             }
         }
     }
 }
-
-
 
 /**
  * @brief Reads and parses a configuration file.
@@ -255,4 +263,6 @@ int Config::checkConfig(const std::string &config_file) {
     return 0;
 }
 
-
+const std::vector<Server>&Config::get_servers() const {
+    return _servers;
+}

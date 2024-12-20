@@ -19,6 +19,10 @@ class HttpRequest {
 		std::map<std::string, std::string> 			_request;      						// Stores parsed HTTP request fields (key-value pairs)
 		std::string 								_strReceived;						// Raw HTTP request string received from the client.
 		bool 										_headerReceived = false;			// Flag indicating whether the request headers have been fully received.
+		std::string									_fullPath;
+		std::string									_path;
+		std::string									_method;
+		std::string									_version;
 
 	public:
 		bool 										_readyToSendBack = false; // Flag indicating whether the request is ready to send a response.
@@ -38,5 +42,14 @@ class HttpRequest {
 		void 				readRequest(std::string request);
 		std::string 		trim(std::string& str);
 		int 				findContentLength(std::string request);
+		void				setPath(std::string path);
+		void				setFullPath(std::string path);
+		void				setMethod(std::string method);
+		void				setVersion(std::string version);
+
+		std::string 		getPath();
+		std::string 		getFullPath();
+		std::string			getMethod();
+		std::string			getVersion();
 };
 	//std::string _bodyReceived;// Raw HTTP request string

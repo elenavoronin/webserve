@@ -32,17 +32,15 @@ class Config {
         Config(const Config& other) = default;
         Config& operator=(const Config& other) = default;
         ~Config();
-        int checkConfig(const std::string &config_file);
-		std::vector<std::string> tokenize(const std::string &line);
-		bool isFileEmpty(const std::string& fileName);
-		std::vector<Server> parse_config(std::ifstream &file);
-		void print_servers() const;
-        const std::vector<Server>& get_servers() const {
-            return _servers;
-        }
-		void print_config_parse() const;
 
-        //TODO create Poll class
-		void addPollFds();
-        void pollLoop(EventPoll &eventPoll);
+        int                             checkConfig(const std::string &config_file);
+		std::vector<std::string>        tokenize(const std::string &line);
+		bool                            isFileEmpty(const std::string& fileName);
+		std::vector<Server>             parse_config(std::ifstream &file);
+		void                            print_servers() const;
+        const std::vector<Server>&      get_servers() const;
+		void                            print_config_parse() const;
+		void                            addPollFds();
+        void                            pollLoop(EventPoll &eventPoll);
+        // void                            pollLoop();
 };

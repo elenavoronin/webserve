@@ -87,8 +87,8 @@ void	EventPoll::updateEventList( void )
 	// remove every fd from the removal list
 	while (_pollfdsToRemoveQueue.size() != 0) {
 		t_pollfdToRemove	fdToRemove = _pollfdsToRemoveQueue.back();
-
 		_pollfdsToRemoveQueue.pop_back();
+		std::cout << "REMOVED POLL EVENT " << fdToRemove.fd << std::endl;
 		eraseFromList(_pollfds, fdToRemove);
 	}
 
@@ -96,5 +96,6 @@ void	EventPoll::updateEventList( void )
 	while (_pollfdsToAddQueue.size() != 0) {
 		_pollfds.push_back(_pollfdsToAddQueue.back());
 		_pollfdsToAddQueue.pop_back();
+		std::cout << "ADDED POLL EVENT " << _pollfds.back().fd << std::endl;
 	}
 }

@@ -1,5 +1,6 @@
 
 #pragma once
+
 #include <vector>
 #include <iostream>
 #include "Client.hpp"
@@ -45,10 +46,11 @@ class Server  {
 		std::map<std::string, std::vector<Location>>	_locations;
 
 	public:
-		int listener_fd;
-		bool connection = false;
-		std::vector<struct pollfd> pfds; // replace this with eventpoll?
-		std::vector<Client> clients;
+		int listener_fd;							// make private
+		bool connection = false;					// make private
+		std::vector<struct pollfd> pfds; 			// replace this with eventpoll?
+		std::vector<Client> clients;				// make private
+		
 		Server();
 		Server(const Server& copy) = default;
 		Server& operator=(const Server& copy) = default;
@@ -64,13 +66,16 @@ class Server  {
 		/*Main loop*/
 		void 	handleNewConnection(EventPoll &eventPoll);
 		void 	handlePollEvent(EventPoll &eventPoll, int i);
+
+
+		void	eraseClient(int event_fd);
 		// void 	broadcast_message(int sender_fd, char *buf, int received, std::vector<struct pollfd> &pfds, int listener);
 		/*Handle requests*/
 //		int 	handleRequest(int clientSocket, std::string request, HttpRequest *Http);
 		int processClientRequest(Client &client, const std::string& request, HttpRequest* Http);
-		int handleGetRequest(Client &client, const std::string& path, HttpRequest* request);
-		int handlePostRequest(Client &client, const std::string& path, HttpRequest* Http);
-		int handleDeleteRequest(Client &client, const std::string& path, HttpRequest* Http);
+		int handleGetRequest(Client &client, HttpRequest* request);
+		int handlePostRequest(Client &client, HttpRequest* Http);
+		int handleDeleteRequest(Client &client, HttpRequest* Http);
 		void sendResponse(int clientSocket, const std::string& response);
 		void checkLocations(std::string path);
 		void sendFileResponse(int clientSocket, const std::string& filepath, int statusCode);
@@ -130,5 +135,4 @@ class Server  {
 		std::string getDefault_file() const {return this->_default_file;}
 		std::string getHost() const {return this->_host;}
 		std::vector<std::string> getErrorPage() const {return this->_errorPage;}
-
 };
