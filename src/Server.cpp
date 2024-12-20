@@ -187,7 +187,10 @@ void Server::handlePollEvent(EventPoll &eventPoll, int i) {
             if (event_fd != client->getSocket()) {
                 // client->writeToCgi();
             } else {
-                client->writeToSocket();
+                if (client->writeToSocket() == 0)
+					return;
+				else
+					eraseClient(event_fd);
             }
         } catch (const std::runtime_error &e) {
             std::cerr << "Write error: " << e.what() << std::endl; //throw

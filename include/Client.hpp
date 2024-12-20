@@ -43,7 +43,7 @@ class Client {
 		std::string			getBaseDirectory() const;
 		void 				setHttpRequest(HttpRequest* httpRequest);
 		void 				setHttpResponse(HttpResponse* httpResponse);
-		void 				writeToSocket();
+		int 				writeToSocket();
 		void 				readFromSocket(Server *server);
 		void 				closeConnection(EventPoll &eventPoll);
 		void				prepareFileResponse();

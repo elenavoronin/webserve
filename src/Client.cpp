@@ -214,7 +214,7 @@ void Client::readFromSocket(Server *server) {
  *          _HttpResponse object. The function does not handle errors
  *          associated with writing to the socket.
  */
-void Client::writeToSocket() {
+int Client::writeToSocket() {
     unsigned long bytesToWrite = WRITE_SIZE;
     unsigned long bytesWritten = 0;
 
@@ -228,12 +228,15 @@ void Client::writeToSocket() {
     if (bytesWritten > 0) {
         _responseIndex += bytesWritten;
     }
-    std::cout << _responseIndex << std::endl;
+    // std::cout << _responseIndex << std::endl;
     // std::cout << _responseIndex << std::endl;
 
     if (_responseIndex >= _HttpResponse->getFullResponse().size()) {
         _eventPoll.ToremovePollEventFd(_clientSocket, POLLOUT);
+        close(_clientSocket);
+        return 1;
     }
+    return 0;
 }
 
 /**
