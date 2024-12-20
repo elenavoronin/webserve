@@ -310,13 +310,6 @@ int Server::handleGetRequest(Client &client, HttpRequest* request) {
 		client.startCgi(request);
 		return 0;
 	}
-	// std::ifstream file(filepath);
-	// if (!file) {
-	// 	std::cerr << "Error: File not found for path " << filepath << std::endl;
-	// 	sendFileResponse(client.getSocket(), "www/html/404.html", 404);
-	// 	return 404;
-	// }
-	// client.prepareFileResponse();
 	try {
         std::ifstream file(filepath);
         if (!file) {

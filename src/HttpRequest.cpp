@@ -180,9 +180,6 @@ void HttpRequest::readRequest(std::string request){
 	setField("method", _method);
 	setField("path", _path);
 	setField("version", _version);
-	// setPath(path);
-	// setMethod(method);
-	// setVersion(version);
 	while(std::getline(request_stream, line)){
 		if (line.empty())
 			break;
