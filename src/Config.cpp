@@ -215,7 +215,7 @@ void Config::pollLoop(EventPoll &eventPoll) {
 
         // Iterate over the pollfds to handle events
         for (size_t i = 0; i < pfds.size(); i++) {
-            if (pfds[i].revents & POLLIN) {
+            if (pfds[i].revents & POLLIN || pfds[i].revents & POLLOUT || pfds[i].revents & POLLHUP || pfds[i].revents & POLLRDHUP) {
                 int fd = pfds[i].fd;
 
                 for (Server &current_server : _servers) {
@@ -233,8 +233,6 @@ void Config::pollLoop(EventPoll &eventPoll) {
         }
     }
 }
-
-
 
 /**
  * @brief Reads and parses a configuration file.

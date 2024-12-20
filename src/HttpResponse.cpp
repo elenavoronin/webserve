@@ -32,6 +32,7 @@ void HttpResponse::setStatus(int code, const std::string& message) {
  * 
  * @param       key         The header name (e.g., "Content-Type").
  * @param       value       The header value (e.g., "text/html").
+ * @todo        update content lenght etc with the lenght of cgi if cgi calles
  */
 void HttpResponse::setHeader(const std::string& key, const std::string& value) {
 	_headers[key] = value;

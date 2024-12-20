@@ -5,7 +5,8 @@ Client::Client(int clientSocket, EventPoll& eventPoll) :
     _HttpRequest(new HttpRequest()), 
     _HttpResponse(new HttpResponse()), 
     _CGI(NULL), 
-    _eventPoll(eventPoll){}
+    _eventPoll(eventPoll),
+    _responseIndex(0){}
 
 /**
  * @brief client desctructor.
@@ -183,9 +184,7 @@ void Client::readFromSocket(Server *server) {
         throw std::runtime_error("Client closed connection");
     } 
 	else if (received < 0) {
-  	// Assume recv failed because no data is available (non-blocking)
         throw std::runtime_error("Error reading from socket");
-        // return; // Gracefully exit if no data is available
     }
 
     // Append the data to the HTTP request buffer
@@ -243,6 +242,7 @@ void Client::writeToSocket() {
 
     if (_responseIndex >= _HttpResponse->getFullResponse().size()) {
         std::cout << "Response fully written to client socket: " << _clientSocket << std::endl;
+        std::cout << "FULL RESPONSE IS: " << _HttpResponse->getFullResponse() << std::endl;
         _eventPoll.ToremovePollEventFd(_clientSocket, POLLOUT);
         close(_clientSocket);  // Or keep-alive logic if supported
     }
@@ -263,21 +263,24 @@ void Client::closeConnection(EventPoll &eventPoll) {
 
     // Close the client socket
     close(getSocket());
-
-    // Update the event list
-    eventPoll.updateEventList();//is this redundant
 }
 
+/**
+ * @brief Prepares a file response for the client by building the response and adding POLLOUT to the EventPoll.
+ *
+ * This method should be called when the client connection has been fully handled
+ * and the file response should be sent. It builds the HTTP response using the
+ * HttpResponse object and adds POLLOUT to the EventPoll, so that the response
+ * can be written to the client socket when it is ready.
+ */
 void Client::prepareFileResponse() {
     // _HttpResponse->buildResponse();
     // _eventPoll.ToremovePollEventFd(_clientSocket, POLLIN);
     // _eventPoll.addPollFdEventQueue(_clientSocket, POLLOUT);
-     _HttpResponse->buildResponse();
+    _HttpResponse->setBody();
+    _HttpResponse->buildResponse();
     std::cout << "Preparing file response for client socket: " << _clientSocket << std::endl;
     _eventPoll.ToremovePollEventFd(_clientSocket, POLLIN);
     _eventPoll.addPollFdEventQueue(_clientSocket, POLLOUT);
     std::cout << "Added POLLOUT for client socket: " << _clientSocket << std::endl;
-
-        // Update the event list
-    _eventPoll.updateEventList();//is this redundant?
 }

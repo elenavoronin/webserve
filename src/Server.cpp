@@ -133,8 +133,8 @@ void Server::handleNewConnection(EventPoll &eventPoll){
 
     std::cout << "Added new client to EventPoll with fd: " << new_fd << std::endl;
 
-	// Update the event list
-    eventPoll.updateEventList(); //is this redundant?
+	// // Update the event list
+    // eventPoll.updateEventList(); //is this redundant?
 }
 
 /**
