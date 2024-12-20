@@ -200,11 +200,8 @@ void Server::handlePollEvent(EventPoll &eventPoll, int i) {
     // Handle hangup or disconnection events
     if (currentPollFd.revents & (POLLHUP | POLLRDHUP)) {
         client->closeConnection(eventPoll);
-
         // Remove client from the list
-        clients.erase(std::remove_if(clients.begin(), clients.end(), [&](const Client &c) {
-            return c.getSocket() == event_fd;
-        }), clients.end());
+		eraseClient(event_fd);
     }
 }
 
@@ -297,19 +294,22 @@ int Server::processClientRequest(Client &client, const std::string& request, Htt
  */
 int Server::handleGetRequest(Client &client, HttpRequest* request) {
 	
-	std::string filepath = this->getRoot() + '/' + request->getPath();
+	std::string filepath = this->getRoot() + request->getPath();
+	request->setFullPath(filepath);
+
 	if (request->getPath() == "/") {
 		filepath = this->getRoot() + '/' + this->getIndex();
 		request->setFullPath(filepath);
 	}
 	if (request->getPath().rfind("/cgi-bin/", 0) == 0) { //change to config
+		request->setFullPath(filepath);
 		client.startCgi(request);
 		return 0;
 	}
 	try {
         std::ifstream file(filepath);
         if (!file) {
-            throw std::runtime_error("File not found: " + filepath);
+            throw std::runtime_error(" " + filepath);
         }
 
         // Proceed with sending the file response
@@ -362,7 +362,7 @@ void Server::sendFileResponse(int clientSocket, const std::string& filepath, int
 std::string Server::readFileContent(const std::string& filepath) {
     std::ifstream file(filepath);
     if (!file) {
-        std::cerr << "Error: File not found: " << filepath << std::endl;
+        std::cerr << "Error: File not found 2: " << filepath << std::endl;
         return "";
     }
     std::ostringstream buffer;

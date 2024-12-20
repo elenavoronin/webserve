@@ -30,14 +30,10 @@ void	HttpRequest::setPath(std::string path) {
  * @param       path    The value to assign to the path field.
  * 
  * @return      The assigned path value.
- * @todo		Do i need to use root instead of hardcoded is this correct?
+ * @todo		Do i need to use root instead of hardcoded is this correct? get it from location?
  */
 void	HttpRequest::setFullPath(std::string path) {
-	std::string fullPath = path;
-	if (path == "/") {
-		fullPath = "/index.html";
-	}
-	_fullPath = fullPath;
+	_fullPath = path;
 }
 
 

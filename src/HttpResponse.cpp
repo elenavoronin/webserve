@@ -78,6 +78,7 @@ int HttpResponse::getStatusCode() const {
 void HttpResponse::setBody(const std::string& content) {
 	_body = content;
 	setHeader("Content-Length", std::to_string(_body.size()));
+	std::cout << "dummy content lenght jjajajajjaajsdjsjdsa: " << std::to_string(_body.size()) << std::endl;
 }
 
 /**

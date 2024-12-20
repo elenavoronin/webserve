@@ -223,9 +223,13 @@ void Client::writeToSocket() {
     }
     bytesWritten = write(_clientSocket, _HttpResponse->getFullResponse().data() + _responseIndex, bytesToWrite);
 
+    // std::cout << this->getHttpResponse()->getHeadersOnly().size() << std::endl;
+    // std::cout << this->getHttpResponse()->getHeadersOnly() << std::endl;
     if (bytesWritten > 0) {
         _responseIndex += bytesWritten;
     }
+    std::cout << _responseIndex << std::endl;
+    // std::cout << _responseIndex << std::endl;
 
     if (_responseIndex >= _HttpResponse->getFullResponse().size()) {
         _eventPoll.ToremovePollEventFd(_clientSocket, POLLOUT);
@@ -245,7 +249,7 @@ void Client::closeConnection(EventPoll &eventPoll) {
     // Remove the client socket from EventPoll
     eventPoll.ToremovePollEventFd(getSocket(), POLLIN | POLLOUT);
     // Close the client socket
-    close(getSocket());
+    // close(getSocket());
 }
 
 /**
@@ -260,8 +264,10 @@ void Client::prepareFileResponse() {
     std::string requestedFile = _HttpRequest->getFullPath();
     //read file
     std::ifstream file(requestedFile);
+    std::cout << "!!!!!!!!!Requested file is : " << requestedFile << std::endl;
     if (!file.is_open()) {
-        throw std::runtime_error("File not found: " + requestedFile);
+        throw std::runtime_error("File not found 1: " + requestedFile);
+        return ;
         // Handle 404 response
     } else {
         std::stringstream buffer;
