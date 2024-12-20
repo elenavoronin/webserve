@@ -215,17 +215,6 @@ void Client::readFromSocket(Server *server) {
  *          associated with writing to the socket.
  */
 void Client::writeToSocket() {
-	// unsigned long bytesToWrite = WRITE_SIZE;
-    // unsigned long bytesWritten = 0;
-
-    // if (bytesToWrite > _HttpResponse->getFullResponse().size() - _responseIndex) {
-    //     bytesToWrite = _HttpResponse->getFullResponse().size() - _responseIndex;
-    // }
-	// //data + offset inputindex 
-    // bytesWritten = write(_clientSocket, _HttpResponse->getFullResponse().data() + _responseIndex, bytesToWrite);
-    // std::cout << "BYTES WRITTEN: " << bytesWritten << std::endl;
-    // _responseIndex += bytesWritten;
-
     unsigned long bytesToWrite = WRITE_SIZE;
     unsigned long bytesWritten = 0;
 
@@ -270,10 +259,6 @@ void Client::closeConnection(EventPoll &eventPoll) {
  * can be written to the client socket when it is ready.
  */
 void Client::prepareFileResponse() {
-    // _HttpResponse->buildResponse();
-    // _eventPoll.ToremovePollEventFd(_clientSocket, POLLIN);
-    // _eventPoll.addPollFdEventQueue(_clientSocket, POLLOUT);
-
     std::string requestedFile = _HttpRequest->getFullPath();
     //read file
     std::ifstream file(requestedFile);
