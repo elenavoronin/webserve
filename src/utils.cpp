@@ -30,22 +30,37 @@ std::string getStatusMessage(int statusCode){ //Do I need to add more??????
 	return "Unknown status";
 }
 
-void printConfigParse(Config &config) {
-std::vector<Server> servers = config.getServers();
+/**
+ * @brief Prints the configuration of a given server.
+ *
+ * This function takes a Config object as parameter and prints the configuration
+ * of all the servers contained in it. For each server, it prints the server's
+ * information and the information of all the locations contained in it.
+ *
+ * @param config The configuration to be printed.
+ */
+void printConfigParse(std::vector<Server> &servers) {
 for (std::vector<Server>::const_iterator serverIt = servers.begin(); serverIt != servers.end(); ++serverIt) {
-    printInfo(*serverIt);
+    printInfoServer(*serverIt);
     std::map<std::string, std::vector<Location>> locations = serverIt->getLocations();
     for (std::map<std::string, std::vector<Location>>::const_iterator locIt = locations.begin(); locIt != locations.end(); ++locIt) {
         std::cout << "Location Path: " << locIt->first << std::endl; // Print the path
         const std::vector<Location>& locationVector = locIt->second;
             for (std::vector<Location>::const_iterator vecIt = locationVector.begin(); vecIt != locationVector.end(); ++vecIt) {
-                vecIt->printInfo(); // Print information about the location
+                printInfoLocations(*vecIt); // Print information about the location
             }
 }
 }
 std::cout << "---------------------------" << std::endl;
 }
 
+/**
+ * @brief Prints the contents of a vector of strings to the console.
+ *
+ * This function is used for debugging purposes to print out the contents of a vector of strings.
+ * It takes a const reference to a vector of strings and prints each string with a comma space
+ * separator. The last string is not followed by a comma space separator.
+ */
 void printTokens(const std::vector<std::string>& tokens) {
     std::cout << "Tokens: ";
     for (size_t i = 0; i < tokens.size(); ++i) {
@@ -57,10 +72,28 @@ void printTokens(const std::vector<std::string>& tokens) {
     std::cout << std::endl;
 }
 
-void printInfo(const Server &server) {
-    std::cout << "Server Name: " << server.getServer_name() << std::endl;
+/**
+ * @brief Prints detailed information about a server configuration.
+ *
+ * This function outputs various server properties to the console, including:
+ * - Server name
+ * - Port
+ * - Root path
+ * - Index file
+ * - Allowed HTTP methods
+ * - Error pages
+ *
+ * It retrieves these details using the appropriate getter methods of the Server class 
+ * and iterates over lists to print multiple allowed methods and error pages.
+ *
+ * @param server A reference to a Server object containing the configuration details.
+ */
+
+void printInfoServer(const Server &server) {
+    std::cout << "Server Name: " << server.getServerName() << std::endl;
     std::cout << "Port: " << server.getPortStr() << std::endl;
     std::cout << "Root: " << server.getRoot() << std::endl;
+    std::cout << "MaxBodySize: " << server.getMaxBodySize() << std::endl;
     std::cout << "Index: " << server.getIndex() << std::endl;
 
     // Store the result of getAllowed_methods() to avoid dangling references
@@ -78,4 +111,43 @@ void printInfo(const Server &server) {
         std::cout << *it << " ";
     }
     std::cout << std::endl;
+}
+
+/**
+ * Prints information about a Location object to the standard output
+ * @param[in] location The Location object to print information about
+ */
+void printInfoLocations(const Location &location) {
+    std::cout << "    Root: " << location.getRoot() << std::endl;
+    std::cout << "    Index: " << location.getIndex() << std::endl;
+    std::cout << "    Redirect: " << location.getRedirect() << std::endl;
+    std::cout << "    MaxBodySize: " << location.getMaxBodySize() << std::endl;
+    std::cout << "    Return: " << location.getReturn() << std::endl;
+    std::cout << "    Autoindex: " << (location.getAutoindex() ? "on" : "off") << std::endl;
+
+    // Store the result of getAllowedMethods() to avoid dangling references
+    const std::vector<std::string>& allowedMethods = location.getAllowedMethods();
+    std::cout << "    Allowed methods: ";
+    for (std::vector<std::string>::const_iterator it = allowedMethods.begin(); it != allowedMethods.end(); ++it) {
+        std::cout << *it << " ";
+    }
+    std::cout << std::endl;
+
+    const std::vector<std::string>& errorPages = location.getErrorPages();
+    std::cout << "    Error Pages: ";
+    for (std::vector<std::string>::const_iterator it = errorPages.begin(); it != errorPages.end(); ++it) {
+        std::cout << *it << " ";
+    }
+    std::cout << std::endl;
+
+    std::cout << "    CGI pass: " << location.getCgiPass() << std::endl;
+    std::cout << "    CGI path: " << location.getCgiPath() << std::endl;
+    std::cout << std::endl;
+}
+
+bool isEmpty(const Location& location) {
+    return location.getRoot().empty() && location.getIndex().empty() 
+        && location.getReturn().empty() && location.getRedirect().empty() 
+        && location.getAllowedMethods().empty() && location.getCgiPass().empty() 
+        && location.getCgiPath().empty() && location.getMaxBodySize() == 0;
 }

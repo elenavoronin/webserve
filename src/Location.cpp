@@ -6,7 +6,9 @@
 #include <vector>
 #include <iostream>
 
-Location::Location() {}
+Location::Location() : _root(), _index(), _return(), _errorPages(), _redirect(),
+      _allowedMethods(), _autoindex(false), _cgiPass(), _cgiPath(),
+      _maxBodySize(0), _cgiExtension(){}
 Location::~Location() {}
 
 void Location::setRoot(const std::string& root) {
@@ -25,6 +27,10 @@ void Location::setCgiPass(const std::string& cgiPass) {
     _cgiPass = cgiPass;
 }
 
+void Location::setCgiExtension(const std::string& cgiExtension) {
+    _cgiExtension = cgiExtension;
+}
+
 void Location::setCgiPath(const std::string& cgiPath) {
     _cgiPath = cgiPath;
 }
@@ -41,19 +47,10 @@ void Location::setErrorPages(const std::vector<std::string>& errorPages) {
     _errorPages = errorPages;
 }
 
-
-void Location::printInfo() const {
-    std::cout << "    Root: " << _root << std::endl;
-    std::cout << "    Autoindex: " << (_autoindex ? "on" : "off") << std::endl;
-
-    std::cout << "    Allowed methods: ";
-	for (std::vector<std::string>::const_iterator it = _allowedMethods.begin(); it != _allowedMethods.end(); ++it) {
-			std::cout << *it << " ";
-		}
-    std::cout << std::endl;
-
-    std::cout << "    CGI pass: " << _cgiPass << std::endl;
-    std::cout << std::endl;
+void Location::setMaxBodySize(const size_t& maxBodySize) {
+    _maxBodySize = maxBodySize;
 }
 
-
+void Location::setReturn(const std::string& returns) {
+    _return = returns;
+}

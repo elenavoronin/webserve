@@ -17,5 +17,8 @@ class Config;
 # define BACKLOG 10
 
 std::string             getStatusMessage(int statusCode);
-void                    printConfigParse(Config &config);
-void                    printInfo(const Server &server);
+void                    printConfigParse(std::vector<Server> &servers);
+void                    printInfoServer(const Server &server);
+void                    printInfoLocations(const Location &location);
+void                    printTokens(const std::vector<std::string>& tokens);
+bool                    isEmpty(const Location& location);

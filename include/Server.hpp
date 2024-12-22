@@ -32,13 +32,12 @@ class HttpRequest;
 class Server  {
 	private:
 		std::string										_portString;
-		// const char* 									_port;
 		std::string 									_serverName;
 		std::string                 					_root;
 		std::string										_index;
         std::vector<std::string>    					_allowedMethods;
 		bool                        					_autoindex;
-		size_t											_maxBodySize; //TODO to parse in config
+		size_t											_maxBodySize;
         std::string                 					_uploadStore;
         std::string                 					_defaultFile;
 		std::string										_host;			   
@@ -87,6 +86,7 @@ class Server  {
      	void 											setServerName(const std::string &server_name) { _serverName = server_name;}
         void 											setPortString(const std::string &port) { _portString = port;}
         void 											setRoot(const std::string &root) { _root = root;}
+        void 											setMaxBodySize(const size_t &maxBodySize) { _maxBodySize = maxBodySize;}
         void 											setAutoindex(bool autoindex) { _autoindex = autoindex;}
         void 											setUploadStore(const std::string &upload_store) { _uploadStore = upload_store;}
         void 											setAllowedMethods(const std::vector<std::string> &allowed_methods) { _allowedMethods = allowed_methods;}
@@ -99,12 +99,13 @@ class Server  {
 		std::map<std::string, std::vector<Location>> 	getLocations() const {return _locations;}
 		std::string 									getPortStr() const {return this->_portString;}
 		std::string 									getIndex() const {return this->_index;}
-		std::string 									getServer_name() const {return this->_serverName;}
+		std::string 									getServerName() const {return this->_serverName;}
+		size_t		 									getMaxBodySize() const {return this->_maxBodySize;}
 		std::string 									getRoot() const {return this->_root;}
 		std::vector<std::string> 						getAllowed_methods() const {return this->_allowedMethods;}
 		bool 											getAutoindex() const {return this->_autoindex;}
-		std::string 									getUpload_store() const {return this->_uploadStore;}
-		std::string 									getDefault_file() const {return this->_defaultFile;}
+		std::string 									getUploadStore() const {return this->_uploadStore;}
+		std::string 									getDefaultFile() const {return this->_defaultFile;}
 		std::string 									getHost() const {return this->_host;}
 		std::vector<std::string> 						getErrorPage() const {return this->_errorPage;}
 };

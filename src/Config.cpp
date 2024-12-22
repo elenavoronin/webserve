@@ -69,6 +69,41 @@ bool Config::isFileEmpty(const std::string& fileName) {
     return file.tellg() == 0;
 }
 
+void Config::parseLocationTokens(const std::vector<std::string>& tokens, Location& newLocation)
+
+{
+    if (tokens.size() >= 2) {
+        std::string key = tokens[0];
+        std::string value = tokens[1];
+
+        if (key == "root") {
+            newLocation.setRoot(value);
+        } else if (key == "index") {
+            newLocation.setIndex(value);
+        } else if (key == "autoindex") {
+            newLocation.setAutoindex(value == "on");
+        } else if (key == "cgi_pass") {
+            newLocation.setCgiPass(value);
+        }  else if (key == "cgi_extension") {
+            newLocation.setCgiExtension(value);
+        } else if (key == "cgi_path") {
+            newLocation.setCgiPath(value);
+        } else if (key == "redirect") {
+            newLocation.setRedirect(value);
+        } else if (key == "max_body_size") {
+            value = value.substr(0, value.size() - 1);
+            size_t maxSize = std::stoul(value);
+            newLocation.setMaxBodySize(maxSize);
+        } else if (key == "methods") {
+            std::vector<std::string> methods;
+            for (size_t i = 1; i < tokens.size(); i++) {
+                methods.push_back(tokens[i]);
+            }
+            newLocation.setAllowedMethods(methods);
+        }
+    }
+}
+
 /**
  * @brief Reads and parses a configuration file.
  * 
@@ -86,9 +121,13 @@ std::vector<Server> Config::parseConfig(std::ifstream &file) {
     std::vector<Server> servers;
     Server currentServer;
     std::string line;
+    currentServer.getLocations()["keys"].reserve(100); // Pre-allocate space for expected number of locations.
     Location newLocation;
+    std::vector<std::string> errorPages;
     bool insideServerBlock = false;
     bool insideLocationBlock = false;
+    bool locationComplete = false;
+
     while (std::getline(file, line)) {
         std::vector<std::string> tokens = tokenize(line);
         
@@ -103,10 +142,11 @@ std::vector<Server> Config::parseConfig(std::ifstream &file) {
 			currentServer.setLocation(tokens[1], newLocation);
             continue;
         }
-        if (insideLocationBlock && tokens[0] == "}") {
+        if (insideLocationBlock && tokens[0] == "}" && locationComplete) {
             insideLocationBlock = false;
-            currentServer.setLocation(tokens[1], newLocation); // Reset for next location
-			newLocation = Location();
+            locationComplete = false;
+            currentServer.setLocation(tokens[1], newLocation);
+            newLocation = Location();
             continue;
         }
         if (insideServerBlock && tokens[0] == "}") {
@@ -123,14 +163,17 @@ std::vector<Server> Config::parseConfig(std::ifstream &file) {
 
                 if (key == "listen") {
                     currentServer.setPortString(value);
-					// currentServer.set_port_char(value);
                 } else if (key == "root") {
                     currentServer.setRoot(value);
                 } else if (key == "server_name") {
                     currentServer.setServerName(value);
                 } else if (key == "index") {
                     currentServer.setIndex(value);
-                } else if (key == "methods") {
+                } else if (key == "max_body_size") {
+                    value = value.substr(0, value.size() - 1);
+                    size_t maxSize = std::stoul(value);
+                    currentServer.setMaxBodySize(maxSize);
+                }else if (key == "methods") {
 					std::vector<std::string> methods;
 					for (size_t i = 1; i < tokens.size(); i++) {
 						methods.push_back(tokens[i]);
@@ -138,39 +181,19 @@ std::vector<Server> Config::parseConfig(std::ifstream &file) {
                     currentServer.setAllowedMethods(methods);
                 }
                 if (key == "error_page") {
-                    std::vector<std::string> errorPages;
-                    for (size_t i = 1; i < tokens.size(); i++) {
-                        errorPages.push_back(tokens[i]);
+                        errorPages.push_back(tokens[2]);
                     }
                     currentServer.setErrorPage(errorPages);
                 }
             }
-        }
         if (insideLocationBlock) {
-            if (tokens.size() >= 2) {
-                std::string key = tokens[0];
-                std::string value = tokens[1];
-
-                if (key == "root") {
-                    newLocation.setRoot(value);
-                } else if (key == "autoindex") {
-                    newLocation.setAutoindex(value == "on");
-                } else if (key == "cgi_pass") {
-                    newLocation.setCgiPass(value);
-                }
-				else if (key == "methods") {
-					std::vector<std::string> methods;
-					for (size_t i = 1; i < tokens.size(); i++) {
-						methods.push_back(tokens[i]);
-					}
-					newLocation.setAllowedMethods(methods);
-				}
-            }
+            parseLocationTokens(tokens, newLocation);
+            if (isEmpty(newLocation) == false)
+                locationComplete = true;
         }
     }
     return servers;
 }
-
 
 /**
  * @brief Initializes and adds poll file descriptors for each server.
@@ -185,11 +208,6 @@ void Config::addPollFds() {
         currentServer.listener_fd = currentServer.reportReady(eventPoll);
     }
     pollLoop(eventPoll);
-    // EventPoll _eventPoll;
-    // for (Server& currentServer : _servers) {
-    //     currentServer.listener_fd = currentServer.reportReady(_eventPoll);
-    // }
-    // pollLoop();
 }
 
 /**
@@ -262,11 +280,8 @@ int Config::checkConfig(const std::string &config_file) {
         return -1;
     }
     _servers = parseConfig(file);
+    printConfigParse(_servers);
     this->_serversDefault = _servers;
 	addPollFds();
     return 0;
-}
-
-const std::vector<Server>&Config::getServers() const {
-    return _servers;
 }

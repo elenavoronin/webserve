@@ -4,6 +4,7 @@
 #include <fstream>
 #include <vector>
 #include <iostream>
+#include "../include/utils.hpp"
 #include "../include/Location.hpp"
 #include "EventPoll.hpp"
 #include "../include/Server.hpp"
@@ -18,8 +19,6 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <poll.h>
-#include "../include/utils.hpp"
-#include "../include/utils.hpp"
 
 class Server;
 
@@ -37,11 +36,11 @@ class Config {
 
         int                             checkConfig(const std::string &config_file);
 		std::vector<std::string>        tokenize(const std::string &line);
+        void                            parseLocationTokens(const std::vector<std::string>& tokens, Location& newLocation);
 		bool                            isFileEmpty(const std::string& fileName);
 		std::vector<Server>             parseConfig(std::ifstream &file);
 		void                            printServers() const;
-        const std::vector<Server>&      getServers() const;
-		void                            printConfigParse() const;
+        const std::vector<Server>&      getServers() const {return _servers;}
 		void                            addPollFds();
         void                            pollLoop(EventPoll &eventPoll);
 };
