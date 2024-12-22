@@ -18,6 +18,8 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <poll.h>
+#include "../include/utils.hpp"
+#include "../include/utils.hpp"
 
 class Server;
 
@@ -25,7 +27,7 @@ class Config {
     private:
         EventPoll              _eventPoll;
         std::vector<Server>    _servers;
-        std::vector<Server>    _servers_default;
+        std::vector<Server>    _serversDefault;
 
     public:
         Config();
@@ -36,11 +38,10 @@ class Config {
         int                             checkConfig(const std::string &config_file);
 		std::vector<std::string>        tokenize(const std::string &line);
 		bool                            isFileEmpty(const std::string& fileName);
-		std::vector<Server>             parse_config(std::ifstream &file);
-		void                            print_servers() const;
-        const std::vector<Server>&      get_servers() const;
-		void                            print_config_parse() const;
+		std::vector<Server>             parseConfig(std::ifstream &file);
+		void                            printServers() const;
+        const std::vector<Server>&      getServers() const;
+		void                            printConfigParse() const;
 		void                            addPollFds();
         void                            pollLoop(EventPoll &eventPoll);
-        // void                            pollLoop();
 };

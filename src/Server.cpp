@@ -23,7 +23,7 @@ Server::~Server(){}
  * @return The file descriptor for the created listener socket on success, 
  *         or -1 if an error occurs during listening setup.
  */
-int Server::get_listener_socket(){
+int Server::getListenerSocket(){
 	int status;
 	struct addrinfo hints;
 	struct addrinfo *servinfo;
@@ -73,7 +73,7 @@ int Server::get_listener_socket(){
  * @param i The index of the element to remove
  * @todo this will be replaced by the pollEvent class function and deleted
  */
-void Server::del_from_pfds(std::vector<struct pollfd> &pfds, int i){
+void Server::delFromPfds(std::vector<struct pollfd> &pfds, int i){
 	pfds[i] = pfds.back(); // Move the last one to the deleted spot
 	pfds.pop_back(); // Remove the last one (which is now duplicated)
 }
@@ -89,7 +89,7 @@ void Server::del_from_pfds(std::vector<struct pollfd> &pfds, int i){
  * @todo check that listener_fd is properly initialized and not overwritten elsewhere
  */
 int Server::reportReady(EventPoll &eventPoll){
-	int listener = get_listener_socket(); // Set up and get a listening socket
+	int listener = getListenerSocket(); // Set up and get a listening socket
 	if (listener == -1){
 		throw std::runtime_error("Error get listener socket");
 	}
@@ -229,7 +229,7 @@ void Server::checkLocations(std::string path) {
 			if (!location.second.empty()) {
 				Location loc = location.second[0];
 				if (!loc.getRoot().empty())
-					this->set_root(loc.getRoot());
+					this->setRoot(loc.getRoot());
 			}
 		}
 	}
@@ -267,11 +267,11 @@ int Server::processClientRequest(Client &client, const std::string& request, Htt
 		sendFileResponse(client.getSocket(), "www/html/500.html", status);  //change to a config ones?
 		return status;
 	}
-	if (method == "GET" && std::find(this->_allowed_methods.begin(), this->_allowed_methods.end(), "GET") != this->_allowed_methods.end())
+	if (method == "GET" && std::find(this->_allowedMethods.begin(), this->_allowedMethods.end(), "GET") != this->_allowedMethods.end())
 		return handleGetRequest(client, HttpRequest); //?? what locations should be passed
-	if (method == "POST" && std::find(this->_allowed_methods.begin(), this->_allowed_methods.end(), "POST") != this->_allowed_methods.end())
+	if (method == "POST" && std::find(this->_allowedMethods.begin(), this->_allowedMethods.end(), "POST") != this->_allowedMethods.end())
 		return handlePostRequest(client, HttpRequest);
-	if (method == "DELETE" && std::find(this->_allowed_methods.begin(), this->_allowed_methods.end(), "DELETE") != this->_allowed_methods.end())
+	if (method == "DELETE" && std::find(this->_allowedMethods.begin(), this->_allowedMethods.end(), "DELETE") != this->_allowedMethods.end())
 		return handleDeleteRequest(client, HttpRequest);
 	HttpResponse response;
 	response.buildResponse();

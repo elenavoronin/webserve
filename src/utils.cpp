@@ -29,3 +29,53 @@ std::string getStatusMessage(int statusCode){ //Do I need to add more??????
 		return message[statusCode];
 	return "Unknown status";
 }
+
+void printConfigParse(Config &config) {
+std::vector<Server> servers = config.getServers();
+for (std::vector<Server>::const_iterator serverIt = servers.begin(); serverIt != servers.end(); ++serverIt) {
+    printInfo(*serverIt);
+    std::map<std::string, std::vector<Location>> locations = serverIt->getLocations();
+    for (std::map<std::string, std::vector<Location>>::const_iterator locIt = locations.begin(); locIt != locations.end(); ++locIt) {
+        std::cout << "Location Path: " << locIt->first << std::endl; // Print the path
+        const std::vector<Location>& locationVector = locIt->second;
+            for (std::vector<Location>::const_iterator vecIt = locationVector.begin(); vecIt != locationVector.end(); ++vecIt) {
+                vecIt->printInfo(); // Print information about the location
+            }
+}
+}
+std::cout << "---------------------------" << std::endl;
+}
+
+void printTokens(const std::vector<std::string>& tokens) {
+    std::cout << "Tokens: ";
+    for (size_t i = 0; i < tokens.size(); ++i) {
+        std::cout << tokens[i];
+        if (i != tokens.size() - 1) {
+            std::cout << ", ";
+        }
+    }
+    std::cout << std::endl;
+}
+
+void printInfo(const Server &server) {
+    std::cout << "Server Name: " << server.getServer_name() << std::endl;
+    std::cout << "Port: " << server.getPortStr() << std::endl;
+    std::cout << "Root: " << server.getRoot() << std::endl;
+    std::cout << "Index: " << server.getIndex() << std::endl;
+
+    // Store the result of getAllowed_methods() to avoid dangling references
+    const std::vector<std::string>& allowedMethods = server.getAllowed_methods();
+    std::cout << "Allowed Methods: ";
+    for (std::vector<std::string>::const_iterator it = allowedMethods.begin(); it != allowedMethods.end(); ++it) {
+        std::cout << *it << " ";
+    }
+    std::cout << std::endl;
+
+    // Store the result of getErrorPage() to avoid dangling references
+    const std::vector<std::string>& errorPages = server.getErrorPage();
+    std::cout << "Error Pages: ";
+    for (std::vector<std::string>::const_iterator it = errorPages.begin(); it != errorPages.end(); ++it) {
+        std::cout << *it << " ";
+    }
+    std::cout << std::endl;
+}
