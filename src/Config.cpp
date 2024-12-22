@@ -1,33 +1,20 @@
 #include "../include/Config.hpp"
 
-Config::Config() {
-    // std::cout << "Config constructor called" << std::endl;
-}
+Config::Config() {}
 
-Config::~Config() {
-    // std::cout << "Config destructor called" << std::endl;
-}
+Config::~Config() {}
 
-void Config::print_config_parse() const {
-std::vector<Server> servers = get_servers();
-for (std::vector<Server>::const_iterator serverIt = servers.begin(); serverIt != servers.end(); ++serverIt) {
-    serverIt->print_info();
-    std::map<std::string, std::vector<Location>> locations = serverIt->getLocations();
-    for (std::map<std::string, std::vector<Location>>::const_iterator locIt = locations.begin(); locIt != locations.end(); ++locIt) {
-        std::cout << "Location Path: " << locIt->first << std::endl; // Print the path
-        const std::vector<Location>& locationVector = locIt->second;
-            for (std::vector<Location>::const_iterator vecIt = locationVector.begin(); vecIt != locationVector.end(); ++vecIt) {
-                vecIt->printInfo(); // Print information about the location
-            }
-}
-}
-std::cout << "---------------------------" << std::endl;
-}
-
-// Function to remove comments and trim leading/trailing spaces
-std::string remove_comments_and_trim(const std::string& line) {
-    std::size_t comment_pos = line.find('#');
-    std::string trimmed = (comment_pos != std::string::npos) ? line.substr(0, comment_pos) : line;
+/**
+ * @brief Removes any comments from a line (starting with '#') and trims leading
+ *        and trailing whitespace.
+ * 
+ * @param line The line to remove comments and trim.
+ * 
+ * @return The line with comments removed and trimmed.
+ */
+std::string removeCommentsAndTrim(const std::string& line) {
+    std::size_t commentPos = line.find('#');
+    std::string trimmed = (commentPos != std::string::npos) ? line.substr(0, commentPos) : line;
     
     // Remove leading and trailing whitespace
     std::size_t first = trimmed.find_first_not_of(" \t");
@@ -36,27 +23,25 @@ std::string remove_comments_and_trim(const std::string& line) {
     return (first == std::string::npos) ? "" : trimmed.substr(first, last - first + 1);
 }
 
-void print_tokens(const std::vector<std::string>& tokens) {
-    std::cout << "Tokens: ";
-    for (size_t i = 0; i < tokens.size(); ++i) {
-        std::cout << tokens[i];
-        if (i != tokens.size() - 1) {
-            std::cout << ", ";  // Add a comma between tokens for clarity
-        }
-    }
-    std::cout << std::endl;  // End with a newline
-}
-
-    
+/**
+ * @brief Splits a line into tokens.
+ *
+ * Skips empty or comment-only lines and splits the line into tokens,
+ * treating '{' and '}' as separate tokens (to mark the start and end of blocks).
+ * 
+ * @param line The line to tokenize.
+ * 
+ * @return A vector of tokens in the given line.
+ */
 std::vector<std::string> Config::tokenize(const std::string &line) {
     std::vector<std::string> tokens;
-    std::string clean_line = remove_comments_and_trim(line);
+    std::string cleanLine = removeCommentsAndTrim(line);
     
-    if (clean_line.empty()) {
+    if (cleanLine.empty()) {
         return tokens; // Skip empty or comment-only lines
     }
 
-    std::stringstream ss(clean_line);
+    std::stringstream ss(cleanLine);
     std::string token;
     
     while (ss >> token) {
@@ -67,99 +52,118 @@ std::vector<std::string> Config::tokenize(const std::string &line) {
             break;
         }
     }
-	// std::cout << "HERE" << std::endl;
-	// std::cout << "HERE" << std::endl;
-    // print_tokens(tokens);
     return tokens;
 }
 
+/**
+ * @brief Checks if a file is empty.
+ *
+ * Opens a file in binary mode and checks if the file size is 0.
+ *
+ * @param fileName The name of the file to check.
+ *
+ * @return true if the file is empty, false if it is not.
+ */
 bool Config::isFileEmpty(const std::string& fileName) {
     std::ifstream file(fileName, std::ios::binary | std::ios::ate);
     return file.tellg() == 0;
 }
 
-std::vector<Server> Config::parse_config(std::ifstream &file) {
+/**
+ * @brief Reads and parses a configuration file.
+ * 
+ * This function reads the configuration file specified by the parameter
+ * config_file and parses it into a list of Server objects. If the file
+ * cannot be opened or is empty, it prints an error message and returns -1.
+ * Otherwise, it sets the _servers member variable to the list of Server
+ * objects, sets the _serversDefault member variable to the same list,
+ * and calls addPollFds() to set up the event loop.
+ * 
+ * @param config_file The path to the configuration file to read.
+ * @return 0 on success, -1 on error.
+ */
+std::vector<Server> Config::parseConfig(std::ifstream &file) {
     std::vector<Server> servers;
-    Server current_server;
+    Server currentServer;
     std::string line;
-    Location new_location;
-    bool inside_server_block = false;
-    bool inside_location_block = false;
+    Location newLocation;
+    bool insideServerBlock = false;
+    bool insideLocationBlock = false;
     while (std::getline(file, line)) {
         std::vector<std::string> tokens = tokenize(line);
         
         if (tokens.empty()) continue;
 
         if (tokens[0] == "server" && tokens[1] == "{") {
-            inside_server_block = true;
+            insideServerBlock = true;
             continue;
         }
-        if (inside_server_block && tokens[0] == "location" && tokens[2] == "{") {
-            inside_location_block = true;   
-			current_server.set_location(tokens[1], new_location);
+        if (insideServerBlock && tokens[0] == "location" && tokens[2] == "{") {
+            insideLocationBlock = true;   
+			currentServer.setLocation(tokens[1], newLocation);
             continue;
         }
-        if (inside_location_block && tokens[0] == "}") {
-            inside_location_block = false;
-            current_server.set_location(tokens[1], new_location); // Reset for next location
-			new_location = Location();
+        if (insideLocationBlock && tokens[0] == "}") {
+            insideLocationBlock = false;
+            currentServer.setLocation(tokens[1], newLocation); // Reset for next location
+			newLocation = Location();
             continue;
         }
-        if (inside_server_block && tokens[0] == "}") {
-            inside_server_block = false;
-            servers.push_back(current_server);
-            current_server = Server(); // Reset for next server block
+        if (insideServerBlock && tokens[0] == "}") {
+            insideServerBlock = false;
+            servers.push_back(currentServer);
+            currentServer = Server(); // Reset for next server block
             continue;
         }
         // Now handle key-value pairs inside blocks
-        if (inside_server_block && !inside_location_block) {
+        if (insideServerBlock && !insideLocationBlock) {
             if (tokens.size() >= 2) {
                 std::string key = tokens[0];
                 std::string value = tokens[1];
 
                 if (key == "listen") {
-                    current_server.set_port_string(value);
-					// current_server.set_port_char(value);
+                    currentServer.setPortString(value);
+					// currentServer.set_port_char(value);
                 } else if (key == "root") {
-                    current_server.set_root(value);
+                    currentServer.setRoot(value);
                 } else if (key == "server_name") {
-                    current_server.set_server_name(value);
+                    currentServer.setServerName(value);
                 } else if (key == "index") {
-                    current_server.set_index(value);
+                    currentServer.setIndex(value);
                 } else if (key == "methods") {
 					std::vector<std::string> methods;
 					for (size_t i = 1; i < tokens.size(); i++) {
 						methods.push_back(tokens[i]);
 					}
-                    current_server.set_allowed_methods(methods);
+                    currentServer.setAllowedMethods(methods);
                 }
                 if (key == "error_page") {
                     std::vector<std::string> errorPages;
                     for (size_t i = 1; i < tokens.size(); i++) {
                         errorPages.push_back(tokens[i]);
                     }
-                    current_server.set_error_page(errorPages);
+                    currentServer.setErrorPage(errorPages);
                 }
             }
         }
-        if (inside_location_block) {
+        if (insideLocationBlock) {
             if (tokens.size() >= 2) {
                 std::string key = tokens[0];
                 std::string value = tokens[1];
 
                 if (key == "root") {
-                    new_location.setRoot(value);
+                    newLocation.setRoot(value);
                 } else if (key == "autoindex") {
-                    new_location.setAutoindex(value == "on");
+                    newLocation.setAutoindex(value == "on");
                 } else if (key == "cgi_pass") {
-                    new_location.setCgiPass(value);
+                    newLocation.setCgiPass(value);
                 }
 				else if (key == "methods") {
 					std::vector<std::string> methods;
 					for (size_t i = 1; i < tokens.size(); i++) {
 						methods.push_back(tokens[i]);
 					}
-					new_location.setAllowedMethods(methods);
+					newLocation.setAllowedMethods(methods);
 				}
             }
         }
@@ -177,13 +181,13 @@ std::vector<Server> Config::parse_config(std::ifstream &file) {
  */
 void Config::addPollFds() {
     EventPoll eventPoll;
-    for (Server& current_server : _servers) {
-        current_server.listener_fd = current_server.reportReady(eventPoll);
+    for (Server& currentServer : _servers) {
+        currentServer.listener_fd = currentServer.reportReady(eventPoll);
     }
     pollLoop(eventPoll);
     // EventPoll _eventPoll;
-    // for (Server& current_server : _servers) {
-    //     current_server.listener_fd = current_server.reportReady(_eventPoll);
+    // for (Server& currentServer : _servers) {
+    //     currentServer.listener_fd = currentServer.reportReady(_eventPoll);
     // }
     // pollLoop();
 }
@@ -218,15 +222,15 @@ void Config::pollLoop(EventPoll &eventPoll) {
             if (pfds[i].revents & POLLIN || pfds[i].revents & POLLOUT || pfds[i].revents & POLLHUP || pfds[i].revents & POLLRDHUP) {
                 int fd = pfds[i].fd;
 
-                for (Server &current_server : _servers) {
-                    if (fd == current_server.listener_fd) {
+                for (Server &currentServer : _servers) {
+                    if (fd == currentServer.listener_fd) {
                         // Handle new connection
-                        current_server.handleNewConnection(eventPoll);
-                        // current_server.handleNewConnection(_eventPoll);
+                        currentServer.handleNewConnection(eventPoll);
+                        // currentServer.handleNewConnection(_eventPoll);
                     } else {
                         // Handle events for existing connections
-                        current_server.handlePollEvent(eventPoll, i);
-                        // current_server.handlePollEvent(_eventPoll, i);
+                        currentServer.handlePollEvent(eventPoll, i);
+                        // currentServer.handlePollEvent(_eventPoll, i);
                     }
                 }
             }
@@ -241,7 +245,7 @@ void Config::pollLoop(EventPoll &eventPoll) {
  * config_file and parses it into a list of Server objects. If the file
  * cannot be opened or is empty, it prints an error message and returns -1.
  * Otherwise, it sets the _servers member variable to the list of Server
- * objects, sets the _servers_default member variable to the same list,
+ * objects, sets the _serversDefault member variable to the same list,
  * and calls addPollFds() to set up the event loop.
  * 
  * @param config_file The path to the configuration file to read.
@@ -257,12 +261,12 @@ int Config::checkConfig(const std::string &config_file) {
         std::cerr << "Error: Cannot open config file." << std::endl;
         return -1;
     }
-    _servers = parse_config(file);
-    this->_servers_default = _servers;
+    _servers = parseConfig(file);
+    this->_serversDefault = _servers;
 	addPollFds();
     return 0;
 }
 
-const std::vector<Server>&Config::get_servers() const {
+const std::vector<Server>&Config::getServers() const {
     return _servers;
 }
