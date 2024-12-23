@@ -39,8 +39,9 @@ class Config {
         void                            parseLocationTokens(const std::vector<std::string>& tokens, Location& newLocation);
 		bool                            isFileEmpty(const std::string& fileName);
 		std::vector<Server>             parseConfig(std::ifstream &file);
-		void                            printServers() const;
         const std::vector<Server>&      getServers() const {return _servers;}
 		void                            addPollFds();
         void                            pollLoop(EventPoll &eventPoll);
+
+        bool                            validateParsedData(Server &server);
 };

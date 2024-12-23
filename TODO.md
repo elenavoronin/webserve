@@ -5,7 +5,7 @@ POll decides what we're doing not the server
 2. reconnect cgi to poll loop (djoyke)
 3. use throw instead of std cout or std cerr and have a catch somewhere (lena, djoyke)
 4. finish locations (lena)
-5. validate data while parsing (lena)
+5. validate data while parsing (lena) - need to check with djoyke and anna what else needs validating
 6. link throw to http response, and display correct page (djoyke, lena)
 7. handling null characters for requesting images eg assets/nebula.jpg dont handle it like a string (lena)
 8. should we assert more? (all)
