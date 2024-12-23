@@ -477,7 +477,7 @@ If there was an issue, return a corresponding error code:
 It’s often useful to log the deletion operation for auditing purposes, especially if your server manages important data.
 As with the POST request, decide whether to close the connection or keep it alive based on the HTTP version or the Connection header.
 */
-int Server::handleDeleteRequest(Client &client, HttpRequest* Http) {
+int Server::handleRequest(Client &client, HttpRequest* Http) {
 	(void)client;
 	(void)Http;
 

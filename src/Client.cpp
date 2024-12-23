@@ -13,7 +13,11 @@ Client::Client(int clientSocket, EventPoll& eventPoll) :
  *
  * @todo add deletes in here.
  */
-Client::~Client(){}
+Client::~Client(){
+    close(_clientSocket);
+    delete(_HttpRequest);
+    delete(_HttpResponse);
+}
 
 Client& Client::operator=(const Client& copy) {
     this->_clientSocket = copy._clientSocket;
@@ -159,7 +163,7 @@ void Client::readFromCgi() {
     } catch (const std::exception& e) {
         std::cerr << "Error while reading from CGI: " << e.what() << std::endl;
         // Handle cleanup or error response
-        close(_clientSocket); // Optionally close the connection
+        // close(_clientSocket); // Optionally close the connection
     }
 }
 
@@ -233,7 +237,7 @@ int Client::writeToSocket() {
 
     if (_responseIndex >= _HttpResponse->getFullResponse().size()) {
         _eventPoll.ToremovePollEventFd(_clientSocket, POLLOUT);
-        close(_clientSocket);
+        // close(_clientSocket);
         return 1;
     }
     return 0;
