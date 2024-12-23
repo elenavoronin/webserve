@@ -8,9 +8,6 @@ POll decides what we're doing not the server
 5. link throw to http response, and display correct page (djoyke, lena)
 6. handling null characters for requesting images eg assets/nebula.jpg dont handle it like a string (lena)
 7. should we assert more? (all)
-8. move methods that don't belong in server to their classes (djoyke)
-9. make eventPoll private attribute to Server
-10. make all public attributes in server private
 
 WE USE UTILS... DO NOT REMOVE, love you!
 
