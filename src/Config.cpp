@@ -4,6 +4,41 @@ Config::Config() {}
 
 Config::~Config() {}
 
+
+/**
+ * @brief Validates the essential fields of a server configuration.
+ * 
+ * This function checks if the server's configuration has a valid port number,
+ * root directory, and index file. The port number must not be empty and must
+ * contain only digits. The root directory and index file must not be empty.
+ * 
+ * @param server A reference to the Server object whose configuration is being validated.
+ * 
+ * @return true if the server configuration is valid, false otherwise.
+ */
+
+bool Config::validateParsedData(Server &server) {
+    printInfoServer(server);
+    std::cout << "getPortStr: " <<server.getPortStr() << std::endl;
+    std::cout << "getRoot: " <<server.getRoot() << std::endl;
+    std::cout << "getIndex: " <<server.getIndex() << std::endl;
+
+    if (server.getPortStr().empty())
+        return false;
+
+    bool isNumeric = true;
+    for (char c : server.getPortStr()) {
+    if (!std::isdigit(c)) {
+        isNumeric = false;
+        return false;
+    } }
+    if (server.getRoot().empty())
+        return false;
+    if (server.getIndex().empty())
+        return false;
+    return true;
+}
+
 /**
  * @brief Removes any comments from a line (starting with '#') and trims leading
  *        and trailing whitespace.
@@ -128,69 +163,78 @@ std::vector<Server> Config::parseConfig(std::ifstream &file) {
     bool insideLocationBlock = false;
     bool locationComplete = false;
 
-    while (std::getline(file, line)) {
-        std::vector<std::string> tokens = tokenize(line);
-        
-        if (tokens.empty()) continue;
+    try {
+        while (std::getline(file, line)) {
+            std::vector<std::string> tokens = tokenize(line);
+            
+            if (tokens.empty()) continue;
 
-        if (tokens[0] == "server" && tokens[1] == "{") {
-            insideServerBlock = true;
-            continue;
-        }
-        if (insideServerBlock && tokens[0] == "location" && tokens[2] == "{") {
-            insideLocationBlock = true;   
-			currentServer.setLocation(tokens[1], newLocation);
-            continue;
-        }
-        if (insideLocationBlock && tokens[0] == "}" && locationComplete) {
-            insideLocationBlock = false;
-            locationComplete = false;
-            currentServer.setLocation(tokens[1], newLocation);
-            newLocation = Location();
-            continue;
-        }
-        if (insideServerBlock && tokens[0] == "}") {
-            insideServerBlock = false;
-            servers.push_back(currentServer);
-            currentServer = Server(); // Reset for next server block
-            continue;
-        }
-        // Now handle key-value pairs inside blocks
-        if (insideServerBlock && !insideLocationBlock) {
-            if (tokens.size() >= 2) {
-                std::string key = tokens[0];
-                std::string value = tokens[1];
-
-                if (key == "listen") {
-                    currentServer.setPortString(value);
-                } else if (key == "root") {
-                    currentServer.setRoot(value);
-                } else if (key == "server_name") {
-                    currentServer.setServerName(value);
-                } else if (key == "index") {
-                    currentServer.setIndex(value);
-                } else if (key == "max_body_size") {
-                    value = value.substr(0, value.size() - 1);
-                    size_t maxSize = std::stoul(value);
-                    currentServer.setMaxBodySize(maxSize);
-                }else if (key == "methods") {
-					std::vector<std::string> methods;
-					for (size_t i = 1; i < tokens.size(); i++) {
-						methods.push_back(tokens[i]);
-					}
-                    currentServer.setAllowedMethods(methods);
-                }
-                if (key == "error_page") {
-                        errorPages.push_back(tokens[2]);
-                    }
-                    currentServer.setErrorPage(errorPages);
-                }
+            if (tokens[0] == "server" && tokens[1] == "{") {
+                insideServerBlock = true;
+                continue;
             }
-        if (insideLocationBlock) {
-            parseLocationTokens(tokens, newLocation);
-            if (isEmpty(newLocation) == false)
-                locationComplete = true;
+            if (insideServerBlock && tokens[0] == "location" && tokens[2] == "{") {
+                insideLocationBlock = true;   
+                currentServer.setLocation(tokens[1], newLocation);
+                continue;
+            }
+            if (insideLocationBlock && tokens[0] == "}" && locationComplete) {
+                insideLocationBlock = false;
+                locationComplete = false;
+                currentServer.setLocation(tokens[1], newLocation);
+                newLocation = Location();
+                continue;
+            }
+            if (insideServerBlock && tokens[0] == "}") {
+                insideServerBlock = false;
+                if (validateParsedData(currentServer))
+                    servers.push_back(currentServer);
+                else {
+                    throw std::runtime_error("Error in config file: Invalid server block detected.");
+                }
+                currentServer = Server(); // Reset for next server block
+                continue;
+            }
+            // Now handle key-value pairs inside blocks
+            if (insideServerBlock && !insideLocationBlock) {
+                if (tokens.size() >= 2) {
+                    std::string key = tokens[0];
+                    std::string value = tokens[1];
+
+                    if (key == "listen") {
+                        currentServer.setPortString(value);
+                    } else if (key == "root") {
+                        currentServer.setRoot(value);
+                    } else if (key == "server_name") {
+                        currentServer.setServerName(value);
+                    } else if (key == "index") {
+                        currentServer.setIndex(value);
+                    } else if (key == "max_body_size") {
+                        value = value.substr(0, value.size() - 1);
+                        size_t maxSize = std::stoul(value);
+                        currentServer.setMaxBodySize(maxSize);
+                    }else if (key == "methods") {
+                        std::vector<std::string> methods;
+                        for (size_t i = 1; i < tokens.size(); i++) {
+                            methods.push_back(tokens[i]);
+                        }
+                        currentServer.setAllowedMethods(methods);
+                    }
+                    if (key == "error_page") {
+                            errorPages.push_back(tokens[2]);
+                        }
+                        currentServer.setErrorPage(errorPages);
+                    }
+                }
+            if (insideLocationBlock) {
+                parseLocationTokens(tokens, newLocation);
+                if (isEmpty(newLocation) == false)
+                    locationComplete = true;
+            }
         }
+    }  catch (const std::exception &e) {
+        std::cerr << "Parsing error: " << e.what() << std::endl;
+        throw; // Rethrow to handle at a higher level if needed
     }
     return servers;
 }
@@ -279,9 +323,14 @@ int Config::checkConfig(const std::string &config_file) {
         std::cerr << "Error: Cannot open config file." << std::endl;
         return -1;
     }
-    _servers = parseConfig(file);
-    printConfigParse(_servers);
-    this->_serversDefault = _servers;
-	addPollFds();
+    try {
+        _servers = parseConfig(file);
+        printConfigParse(_servers);
+        this->_serversDefault = _servers;
+        addPollFds();
+    } catch (const std::exception &e) {
+        std::cerr << "Configuration error: " << e.what() << std::endl;
+        return -1;
+    }
     return 0;
 }
