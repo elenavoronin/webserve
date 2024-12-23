@@ -27,14 +27,14 @@ class Client {
 		HttpRequest* 	_HttpRequest;
 		HttpResponse* 	_HttpResponse;
 		CGI*			_CGI;
-		EventPoll&		_eventPoll;
+		EventPoll*		_eventPoll;
 		unsigned long	_responseIndex;
 
 	public:
 		Client(int clientSocket, EventPoll& eventPoll);
 		~Client();
 		Client& 			operator=(const Client& copy);
-		Client(const Client& copy) 							= default;
+		Client(const Client& copy);
 		void 				setSocket(int clientSocket);
 		int 				getSocket() const;
 		HttpRequest* 		getHttpRequest() const;

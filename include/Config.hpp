@@ -40,7 +40,7 @@ class Config {
 		std::vector<Server>             parseConfig(std::ifstream &file);
         const std::vector<Server>&      getServers() const {return _servers;}
 		void                            addPollFds();
-        void                            pollLoop(EventPoll &eventPoll);
+        void                            pollLoop();
 
         bool                            validateParsedData(Server &server);
 };

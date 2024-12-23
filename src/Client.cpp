@@ -4,8 +4,8 @@ Client::Client(int clientSocket, EventPoll& eventPoll) :
     _clientSocket(clientSocket), 
     _HttpRequest(new HttpRequest()), 
     _HttpResponse(new HttpResponse()), 
-    _CGI(NULL), 
-    _eventPoll(eventPoll),
+    _CGI(nullptr), 
+    _eventPoll(&eventPoll),
     _responseIndex(0){}
 
 /**
@@ -15,15 +15,61 @@ Client::Client(int clientSocket, EventPoll& eventPoll) :
  */
 Client::~Client(){
     close(_clientSocket);
-    delete(_HttpRequest);
-    delete(_HttpResponse);
+    delete _HttpRequest;
+    delete _HttpResponse;
+    _HttpRequest = nullptr;
+    _HttpResponse = nullptr;
 }
 
-Client& Client::operator=(const Client& copy) {
-    this->_clientSocket = copy._clientSocket;
-    this->_HttpRequest = copy._HttpRequest;
-    this->_HttpResponse = copy._HttpResponse;
-    this->_CGI = copy._CGI;
+/**
+ * @brief Copy constructor for the Client class.
+ *
+ * This constructor initializes a new Client object by performing a deep copy
+ * of the provided Client object. It copies the client's socket, HTTP request
+ * and response objects, and other relevant data members. If the original
+ * Client has associated HTTP request or response objects, new copies of those
+ * objects are created to ensure independent ownership.
+ *
+ * @param copy The Client object to copy from.
+ */
+Client::Client(const Client& copy)     
+    : _clientSocket(copy._clientSocket), 
+      _HttpRequest(copy._HttpRequest ? new HttpRequest(*copy._HttpRequest) : nullptr),
+      _HttpResponse(copy._HttpResponse ? new HttpResponse(*copy._HttpResponse) : nullptr),
+      _CGI(nullptr),
+      _eventPoll(copy._eventPoll), // Initialize the reference
+      _responseIndex(copy._responseIndex) {}
+
+
+/**
+ * @brief Copy assignment operator for the Client class.
+ *
+ * This function performs a deep copy of the provided Client object. It copies
+ * the client's socket, HTTP request and response objects, and other relevant
+ * data members. If the original Client has associated HTTP request or response
+ * objects, new copies of those objects are created to ensure independent
+ * ownership.
+ *
+ * @param copy The Client object to copy from.
+ * @return A reference to the copied Client object.
+ */
+Client& Client::operator=(const Client& copy) {    
+    if (this == &copy) return *this; // Handle self-assignment
+
+    // Cleanup existing resources
+    close(_clientSocket);
+    delete _HttpRequest;
+    delete _HttpResponse;
+    delete _CGI;
+
+    // Copy resources
+    _clientSocket = -1; // Prevent socket conflicts
+    _HttpRequest = copy._HttpRequest ? new HttpRequest(*copy._HttpRequest) : nullptr;
+    _HttpResponse = copy._HttpResponse ? new HttpResponse(*copy._HttpResponse) : nullptr;
+    _CGI = nullptr; // Reset CGI in the assigned instance
+    _eventPoll = copy._eventPoll; // References must remain valid
+    _responseIndex = copy._responseIndex;
+
     return *this;
 }
 
@@ -119,7 +165,7 @@ void Client::startCgi(HttpRequest *request) {
 	if (this->_CGI != NULL)
 		throw std::runtime_error("already initialized");
 	this->_CGI = new CGI(request);
-    _eventPoll.addPollFdEventQueue(_CGI->getReadFd(), POLLIN);
+    _eventPoll->addPollFdEventQueue(_CGI->getReadFd(), POLLIN);
 }
 
 /**
@@ -177,6 +223,10 @@ void Client::readFromCgi() {
  * If the HTTP request headers have not been fully received, continues to read from the socket.
  */
 void Client::readFromSocket(Server *server, Server &defaultServer) {
+    if (!_HttpRequest) {
+        throw std::runtime_error("_HttpRequest is null. Possible use-after-free.");
+    }
+    
     char buf[READ_SIZE] = {0};
     int contentLength;
 
@@ -191,7 +241,7 @@ void Client::readFromSocket(Server *server, Server &defaultServer) {
     }
 
     // Append the data to the HTTP request buffer
-    _HttpRequest->getStrReceived().append(buf, received);
+    _HttpRequest->getStrReceived().append(buf, received); //heap use after free here
 
     if (!_HttpRequest->isHeaderReceived()) {
         if (_HttpRequest->getStrReceived().find("\r\n\r\n") != std::string::npos) {
@@ -227,17 +277,13 @@ int Client::writeToSocket() {
     }
     bytesWritten = write(_clientSocket, _HttpResponse->getFullResponse().data() + _responseIndex, bytesToWrite);
 
-    // std::cout << this->getHttpResponse()->getHeadersOnly().size() << std::endl;
-    // std::cout << this->getHttpResponse()->getHeadersOnly() << std::endl;
     if (bytesWritten > 0) {
         _responseIndex += bytesWritten;
     }
-    // std::cout << _responseIndex << std::endl;
-    // std::cout << _responseIndex << std::endl;
 
     if (_responseIndex >= _HttpResponse->getFullResponse().size()) {
-        _eventPoll.ToremovePollEventFd(_clientSocket, POLLOUT);
-        // close(_clientSocket);
+        _eventPoll->ToremovePollEventFd(_clientSocket, POLLOUT);
+        closeConnection(*_eventPoll); // Close connection when done
         return 1;
     }
     return 0;
@@ -253,10 +299,14 @@ int Client::writeToSocket() {
  * @param eventPoll The EventPoll object to remove the client socket from.
  */
 void Client::closeConnection(EventPoll &eventPoll) {
-    // Remove the client socket from EventPoll
-    eventPoll.ToremovePollEventFd(getSocket(), POLLIN | POLLOUT);
+    // Remove socket from event poll
+    eventPoll.ToremovePollEventFd(_clientSocket, POLLIN | POLLOUT);
+    
     // Close the client socket
-    // close(getSocket());
+    if (_clientSocket >= 0) {
+        close(_clientSocket);
+        _clientSocket = -1; // Mark as invalid
+    }
 }
 
 /**
@@ -288,7 +338,7 @@ void Client::prepareFileResponse() {
 
     _HttpResponse->buildResponse();
     std::cout << "Preparing file response for client socket: " << _clientSocket << std::endl;
-    _eventPoll.ToremovePollEventFd(_clientSocket, POLLIN);
-    _eventPoll.addPollFdEventQueue(_clientSocket, POLLOUT);
+    _eventPoll->ToremovePollEventFd(_clientSocket, POLLIN);
+    _eventPoll->addPollFdEventQueue(_clientSocket, POLLOUT);
     std::cout << "Added POLLOUT for client socket: " << _clientSocket << std::endl;
 }

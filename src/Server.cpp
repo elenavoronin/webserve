@@ -161,7 +161,9 @@ void Server::handlePollEvent(EventPoll &eventPoll, int i, Server& defaultServer)
     }
 
     if (!client) {
-        // Client not found; skip processing
+        std::cerr << "Client not found for fd: " << event_fd << std::endl;
+        eventPoll.ToremovePollEventFd(event_fd, POLLIN | POLLOUT);
+        close(event_fd);
         return;
     }
 
@@ -177,7 +179,6 @@ void Server::handlePollEvent(EventPoll &eventPoll, int i, Server& defaultServer)
             std::cerr << "Read error: " << e.what() << std::endl;
             client->closeConnection(eventPoll);
 			eraseClient(event_fd);
-            return;
         }
     }
     // Handle writable events
@@ -187,23 +188,19 @@ void Server::handlePollEvent(EventPoll &eventPoll, int i, Server& defaultServer)
             if (event_fd != client->getSocket()) {
                 // client->writeToCgi();
             } else {
-                if (client->writeToSocket() == 0)
-					return;
-				else
+                if (client->writeToSocket() > 0)
 					eraseClient(event_fd);
             }
         } catch (const std::runtime_error &e) {
             std::cerr << "Write error: " << e.what() << std::endl; //throw
             client->closeConnection(eventPoll);
 			eraseClient(event_fd);
-            return;
         }
     }
 
     // Handle hangup or disconnection events
     if (currentPollFd.revents & (POLLHUP | POLLRDHUP)) {
         client->closeConnection(eventPoll);
-        // Remove client from the list
 		eraseClient(event_fd);
     }
 }
@@ -477,7 +474,7 @@ If there was an issue, return a corresponding error code:
 It’s often useful to log the deletion operation for auditing purposes, especially if your server manages important data.
 As with the POST request, decide whether to close the connection or keep it alive based on the HTTP version or the Connection header.
 */
-int Server::handleRequest(Client &client, HttpRequest* Http) {
+int Server::handleDeleteRequest(Client &client, HttpRequest* Http) {
 	(void)client;
 	(void)Http;
 
@@ -515,7 +512,26 @@ int Server::handlePostRequest(Client &client, HttpRequest* Http) {
 
 
 void	Server::eraseClient(int event_fd) {
-	clients.erase(std::remove_if(clients.begin(), clients.end(), [&](const Client &c) {
+	
+	//option 1
+	// clients.erase(std::remove_if(clients.begin(), clients.end(), [&](const Client &c) {
+    //     return c.getSocket() == event_fd;
+    // }), clients.end());
+
+
+    // for (auto iter = it; iter != clients.end(); ++iter) {
+    //     iter->~Client(); // Explicitly call destructor for cleanup
+    // }
+    // clients.erase(it, clients.end());
+
+
+	//option 2
+	auto it = std::remove_if(clients.begin(), clients.end(), [&](const Client &c) {
         return c.getSocket() == event_fd;
-    }), clients.end());
+    });
+	if (it != clients.end()) {
+        std::cout << "Removing client with fd: " << event_fd << std::endl;
+        clients.erase(it, clients.end());
+    }
+
 }

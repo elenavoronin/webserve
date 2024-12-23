@@ -247,11 +247,10 @@ std::vector<Server> Config::parseConfig(std::ifstream &file) {
  * It then enters the poll loop to handle incoming events.
  */
 void Config::addPollFds() {
-    EventPoll eventPoll;
     for (Server& currentServer : _servers) {
-        currentServer.listener_fd = currentServer.reportReady(eventPoll);
+        currentServer.listener_fd = currentServer.reportReady(_eventPoll);
     }
-    pollLoop(eventPoll);
+    pollLoop();
 }
 
 /**
@@ -264,15 +263,12 @@ void Config::addPollFds() {
  * 
  * Events are handled by calling the appropriate handler functions on the servers.
  */
-// void Config::pollLoop() {
-void Config::pollLoop(EventPoll &eventPoll) {
+void Config::pollLoop() {
     while (true) {
         // Update the event list from the add/remove queues
-        eventPoll.updateEventList();
-        // _eventPoll.updateEventList();
+        _eventPoll.updateEventList();
 
-        std::vector<pollfd> &pfds = eventPoll.getPollEventFd();
-        // std::vector<pollfd> &pfds = _eventPoll.getPollEventFd();
+        std::vector<pollfd> &pfds = _eventPoll.getPollEventFd();
         int pollResult = poll(pfds.data(), pfds.size(), -1);
 
         if (pollResult == -1) {
@@ -288,12 +284,10 @@ void Config::pollLoop(EventPoll &eventPoll) {
                     Server &defaultServer = currentServer;
                     if (fd == currentServer.listener_fd) {
                         // Handle new connection
-                        currentServer.handleNewConnection(eventPoll);
-                        // currentServer.handleNewConnection(_eventPoll);
+                        currentServer.handleNewConnection(_eventPoll);
                     } else {
                         // Handle events for existing connections
-                        currentServer.handlePollEvent(eventPoll, i, defaultServer);
-                        // currentServer.handlePollEvent(_eventPoll, i);
+                        currentServer.handlePollEvent(_eventPoll, i, defaultServer);
                     }
                 }
             }
