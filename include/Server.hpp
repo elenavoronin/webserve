@@ -39,8 +39,8 @@ class Server  {
 		bool                        					_autoindex;
 		size_t											_maxBodySize;
         std::string                 					_uploadStore;
-        std::string                 					_defaultFile;
-		std::string										_host;			   
+        std::string                 					_defaultFile; //do we need this?
+		std::string										_host;	//do we need this?		   
 		std::vector<std::string>						_errorPage;
 		std::map<std::string, std::vector<Location>>	_locations;
 
@@ -64,19 +64,19 @@ class Server  {
 		void 											delFromPfds(std::vector<struct pollfd> &pfds, int i); // replace pollfd with eventpoll??
 		/*Main loop*/
 		void 											handleNewConnection(EventPoll &eventPoll);
-		void 											handlePollEvent(EventPoll &eventPoll, int i);
+		void 											handlePollEvent(EventPoll &eventPoll, int i, Server& defaultServer);
 
 
 		void											eraseClient(int event_fd);
 		// void 										broadcastMessage(int sender_fd, char *buf, int received, std::vector<struct pollfd> &pfds, int listener);
 		/*Handle requests*/	
 		// int 											handleRequest(int clientSocket, std::string request, HttpRequest *Http);
-		int 											processClientRequest(Client &client, const std::string& request, HttpRequest* Http);
+		int 											processClientRequest(Client &client, const std::string& request, HttpRequest* Http, Server &defaultServer);
 		int 											handleGetRequest(Client &client, HttpRequest* request);
 		int 											handlePostRequest(Client &client, HttpRequest* Http);
 		int 											handleDeleteRequest(Client &client, HttpRequest* Http);
 		void 											sendResponse(int clientSocket, const std::string& response);
-		void 											checkLocations(std::string path);
+		void 											checkLocations(std::string path, Server &defaultServer);
 		void 											sendFileResponse(int clientSocket, const std::string& filepath, int statusCode);
 		std::string 									readFileContent(const std::string& filepath);
 		void 											sendHeaders(int clientSocket, int statusCode, const std::string& contentType);
@@ -89,7 +89,7 @@ class Server  {
         void 											setMaxBodySize(const size_t &maxBodySize) { _maxBodySize = maxBodySize;}
         void 											setAutoindex(bool autoindex) { _autoindex = autoindex;}
         void 											setUploadStore(const std::string &upload_store) { _uploadStore = upload_store;}
-        void 											setAllowedMethods(const std::vector<std::string> &allowed_methods) { _allowedMethods = allowed_methods;}
+        void 											setAllowedMethods(const std::vector<std::string> &AllowedMethods) { _allowedMethods = AllowedMethods;}
         void 											setDefaultFile(const std::string &default_file) { _defaultFile = default_file;}
         void 											setIndex(const std::string &index) { _index = index;}
 		void 											setErrorPage(const std::vector<std::string>& errorPages) {_errorPage = errorPages;}
@@ -102,7 +102,7 @@ class Server  {
 		std::string 									getServerName() const {return this->_serverName;}
 		size_t		 									getMaxBodySize() const {return this->_maxBodySize;}
 		std::string 									getRoot() const {return this->_root;}
-		std::vector<std::string> 						getAllowed_methods() const {return this->_allowedMethods;}
+		std::vector<std::string> 						getAllowedMethods() const {return this->_allowedMethods;}
 		bool 											getAutoindex() const {return this->_autoindex;}
 		std::string 									getUploadStore() const {return this->_uploadStore;}
 		std::string 									getDefaultFile() const {return this->_defaultFile;}

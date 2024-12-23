@@ -147,7 +147,7 @@ void Server::handleNewConnection(EventPoll &eventPoll){
  * @todo  implement client->closeConnection(); in client
  * @todo  divide into smaller functions doing one thing
  */
-void Server::handlePollEvent(EventPoll &eventPoll, int i) {
+void Server::handlePollEvent(EventPoll &eventPoll, int i, Server& defaultServer) {
     Client *client = nullptr;
     pollfd &currentPollFd = eventPoll.getPollEventFd()[i];
     int event_fd = currentPollFd.fd;
@@ -171,7 +171,7 @@ void Server::handlePollEvent(EventPoll &eventPoll, int i) {
             if (event_fd != client->getSocket()) {
                 client->readFromCgi();
             } else {
-                client->readFromSocket(this);
+                client->readFromSocket(this, defaultServer);
             }
         } catch (const std::runtime_error &e) {
             std::cerr << "Read error: " << e.what() << std::endl;
@@ -220,8 +220,16 @@ void Server::handlePollEvent(EventPoll &eventPoll, int i) {
  * @param path The path to check against the server's locations.
  * @todo figure out when to reset server information to default
  */
-void Server::checkLocations(std::string path) {
+void Server::checkLocations(std::string path, Server &defaultServer) {
     if (path == this->getIndex()) {
+		this->setRoot(defaultServer.getRoot());
+		this->setIndex(defaultServer.getIndex());
+		this->setPortString(defaultServer.getPortStr());
+		this->setAllowedMethods(defaultServer.getAllowedMethods());
+		this->setAutoindex(defaultServer.getAutoindex());
+		this->setMaxBodySize(defaultServer.getMaxBodySize());
+		this->setUploadStore(defaultServer.getUploadStore());
+		this->setErrorPage(defaultServer.getErrorPage());
 		return;
 	}
 	for (const auto& location : this->getLocations()) {
@@ -230,6 +238,17 @@ void Server::checkLocations(std::string path) {
 				Location loc = location.second[0];
 				if (!loc.getRoot().empty())
 					this->setRoot(loc.getRoot());
+				if (!loc.getIndex().empty())
+					this->setIndex(loc.getIndex());
+				if (!loc.getAllowedMethods().empty())
+					this->setAllowedMethods(loc.getAllowedMethods());
+				if (loc.getAutoindex())
+					this->setAutoindex(loc.getAutoindex());
+				if (loc.getMaxBodySize() != 0)
+					this->setMaxBodySize(loc.getMaxBodySize());
+				if (!loc.getErrorPages().empty())
+					this->setErrorPage(loc.getErrorPages());
+				return;
 			}
 		}
 	}
@@ -253,7 +272,7 @@ void Server::checkLocations(std::string path) {
  * @param HttpRequest The HttpRequest object associated with the client.
  * @return The HTTP status code indicating the result of the request processing.
  */
-int Server::processClientRequest(Client &client, const std::string& request, HttpRequest* HttpRequest) {
+int Server::processClientRequest(Client &client, const std::string& request, HttpRequest* HttpRequest, Server &defaultServer) {
 	std::cout <<" This is request "<< request << std::endl;
 	HttpRequest->readRequest(request);
 
@@ -261,7 +280,7 @@ int Server::processClientRequest(Client &client, const std::string& request, Htt
     std::string path = HttpRequest->getPath();
     std::string version = HttpRequest->getVersion();
 
-	checkLocations(path);
+	checkLocations(path, defaultServer);
 	int status = validateRequest(method, version);
 	if (status != 200) {
 		sendFileResponse(client.getSocket(), "www/html/500.html", status);  //change to a config ones?
