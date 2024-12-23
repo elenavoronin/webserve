@@ -61,23 +61,6 @@ int Server::getListenerSocket(){
 	return serverSocket;
 }
 
-
-/**
- * @brief Removes a pollfd element from the given vector at the given index i.
- *
- * This function swaps the element to be deleted with the last element in the vector,
- * and then pops the last element to remove it. This is done to avoid having to shift
- * all the elements after the one to be deleted.
- *
- * @param pfds The vector of pollfd elements to modify
- * @param i The index of the element to remove
- * @todo this will be replaced by the pollEvent class function and deleted
- */
-void Server::delFromPfds(std::vector<struct pollfd> &pfds, int i){
-	pfds[i] = pfds.back(); // Move the last one to the deleted spot
-	pfds.pop_back(); // Remove the last one (which is now duplicated)
-}
-
 /**
  * @brief Reports that the server is ready to accept connections
  *
@@ -512,20 +495,6 @@ int Server::handlePostRequest(Client &client, HttpRequest* Http) {
 
 
 void	Server::eraseClient(int event_fd) {
-	
-	//option 1
-	// clients.erase(std::remove_if(clients.begin(), clients.end(), [&](const Client &c) {
-    //     return c.getSocket() == event_fd;
-    // }), clients.end());
-
-
-    // for (auto iter = it; iter != clients.end(); ++iter) {
-    //     iter->~Client(); // Explicitly call destructor for cleanup
-    // }
-    // clients.erase(it, clients.end());
-
-
-	//option 2
 	auto it = std::remove_if(_clients.begin(), _clients.end(), [&](const Client &c) {
         return c.getSocket() == event_fd;
     });
