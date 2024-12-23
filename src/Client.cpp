@@ -216,6 +216,9 @@ void Client::readFromCgi() {
 
 /**
  * @brief Reads data from the client socket and appends it to the HTTP request buffer.
+ * 
+ * @param server Pointer to the Server object.
+ * @param defaultServer Reference to the default Server object.
  *
  * If the client closes the connection, throws a std::runtime_error.
  * If there is an error reading from the socket, throws a std::runtime_error.
@@ -241,7 +244,7 @@ void Client::readFromSocket(Server *server, Server &defaultServer) {
     }
 
     // Append the data to the HTTP request buffer
-    _HttpRequest->getStrReceived().append(buf, received); //heap use after free here
+    _HttpRequest->getStrReceived().append(buf, received);
 
     if (!_HttpRequest->isHeaderReceived()) {
         if (_HttpRequest->getStrReceived().find("\r\n\r\n") != std::string::npos) {
@@ -305,7 +308,7 @@ void Client::closeConnection(EventPoll &eventPoll) {
     // Close the client socket
     if (_clientSocket >= 0) {
         close(_clientSocket);
-        _clientSocket = -1; // Mark as invalid
+        // _clientSocket = -1; // Mark as invalid
     }
 }
 
@@ -316,12 +319,14 @@ void Client::closeConnection(EventPoll &eventPoll) {
  * and the file response should be sent. It builds the HTTP response using the
  * HttpResponse object and adds POLLOUT to the EventPoll, so that the response
  * can be written to the client socket when it is ready.
+ * 
+ * @todo add response status code
+ * @todo add timeout?
  */
 void Client::prepareFileResponse() {
     std::string requestedFile = _HttpRequest->getFullPath();
     //read file
     std::ifstream file(requestedFile);
-    std::cout << "!!!!!!!!!Requested file is : " << requestedFile << std::endl;
     if (!file.is_open()) {
         throw std::runtime_error("File not found 1: " + requestedFile);
         return ;
@@ -341,4 +346,5 @@ void Client::prepareFileResponse() {
     _eventPoll->ToremovePollEventFd(_clientSocket, POLLIN);
     _eventPoll->addPollFdEventQueue(_clientSocket, POLLOUT);
     std::cout << "Added POLLOUT for client socket: " << _clientSocket << std::endl;
+
 }

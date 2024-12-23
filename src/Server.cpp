@@ -90,18 +90,10 @@ int Server::reportReady(EventPoll &eventPoll){
  * can be monitored for incoming data.
  *
  * @param eventPoll The EventPoll to add the new client to
+ * @todo replace perror with throw
  */
 void Server::handleNewConnection(EventPoll &eventPoll){
-    // int new_fd = accept(listener_fd, nullptr, nullptr);
-    // if (new_fd == -1) {
-    //     std::cerr << "Error accepting new connection!" << std::endl;
-    //     return;
-    // }
 
-    // // Add the new client directly to the clients vector
-    // clients.emplace_back(new_fd, eventPoll);
-    // // Add the new client file descriptor to the EventPoll
-    // eventPoll.addPollFdEventQueue(new_fd, POLLIN);
 	int new_fd = accept(_listener_fd, nullptr, nullptr);
     if (new_fd == -1) {
         perror("Error accepting new connection");
@@ -127,8 +119,9 @@ void Server::handleNewConnection(EventPoll &eventPoll){
  *
  * @param eventPoll The EventPoll object containing the pollfds
  * @param i The index into the pollfds vector
- * @todo  implement client->closeConnection(); in client
+ * @param defaultServer The default Server object
  * @todo  divide into smaller functions doing one thing
+ * @todo throw instead of error or cout
  */
 void Server::handlePollEvent(EventPoll &eventPoll, int i, Server& defaultServer) {
     Client *client = nullptr;
@@ -147,6 +140,7 @@ void Server::handlePollEvent(EventPoll &eventPoll, int i, Server& defaultServer)
         std::cerr << "Client not found for fd: " << event_fd << std::endl;
         eventPoll.ToremovePollEventFd(event_fd, POLLIN | POLLOUT);
         close(event_fd);
+		eraseClient(event_fd); // Additional cleanup, if needed.
         return;
     }
 
@@ -167,15 +161,16 @@ void Server::handlePollEvent(EventPoll &eventPoll, int i, Server& defaultServer)
     // Handle writable events
     if (currentPollFd.revents & POLLOUT) {
         try {
-			// std::cout << "POLLOUT detected for fd: " << currentPollFd.fd << std::endl;
             if (event_fd != client->getSocket()) {
                 // client->writeToCgi();
             } else {
-                if (client->writeToSocket() > 0)
+                if (client->writeToSocket() > 0) {
+					client->closeConnection(eventPoll);
 					eraseClient(event_fd);
+				}
             }
         } catch (const std::runtime_error &e) {
-            std::cerr << "Write error: " << e.what() << std::endl; //throw
+            std::cerr << "Write error: " << e.what() << std::endl;
             client->closeConnection(eventPoll);
 			eraseClient(event_fd);
         }

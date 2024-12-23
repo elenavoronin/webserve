@@ -42,8 +42,8 @@ class Server  {
 		std::vector<std::string>						_errorPage;
 		std::map<std::string, std::vector<Location>>	_locations;
 		int 											_listener_fd;
-		bool											_connection = false;
 		std::vector<Client> 							_clients;
+		
 	public:
 		
 		Server();

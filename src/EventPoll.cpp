@@ -55,27 +55,6 @@ void	EventPoll::ToremovePollEventFd(int fd, int eventType)
 }
 
 /**
- * @brief       Removes the first occurrence of a pollfd element from the list
- *              that matches the given fd and eventType.
- *
- * @param[in]   list       The list of pollfd elements to search in.
- * @param[in]   fdToErase  The pollfd element to remove, given as a s_pollfdToRemove struct.
- *
- * @details     This function iterates over the list and erases the first pollfd element
- *              that matches the given file descriptor and event type. If no match is
- *              found, the list remains unchanged.
- */
-static void eraseFromList(std::vector<pollfd>& list, s_pollfdToRemove fdToErase)
-{
-    for (auto it = list.begin(); it != list.end(); ++it) {
-        if (it->fd == fdToErase.fd && it->events == fdToErase.eventType) {
-            list.erase(it);
-            return; // Exit after erasing the first match
-        }
-    }
-}
-
-/**
  * @brief      Updates the internal poll event list by adding new events
  *             and removing old ones.
  *
@@ -84,18 +63,32 @@ static void eraseFromList(std::vector<pollfd>& list, s_pollfdToRemove fdToErase)
  */
 void	EventPoll::updateEventList( void )
 {
-	// remove every fd from the removal list
-	while (_pollfdsToRemoveQueue.size() != 0) {
-		t_pollfdToRemove	fdToRemove = _pollfdsToRemoveQueue.back();
-		_pollfdsToRemoveQueue.pop_back();
-		std::cout << "REMOVED POLL EVENT " << fdToRemove.fd << std::endl;
-		eraseFromList(_pollfds, fdToRemove);
-	}
 
-	// add every fd from the addition list
-	while (_pollfdsToAddQueue.size() != 0) {
-		_pollfds.push_back(_pollfdsToAddQueue.back());
-		_pollfdsToAddQueue.pop_back();
-		std::cout << "ADDED POLL EVENT " << _pollfds.back().fd << std::endl;
-	}
+	while (!_pollfdsToRemoveQueue.empty()) {
+        t_pollfdToRemove fdToRemove = _pollfdsToRemoveQueue.back();
+        _pollfdsToRemoveQueue.pop_back();
+
+        auto it = std::find_if(_pollfds.begin(), _pollfds.end(),
+                               [&](const pollfd& p) {
+                                   return p.fd == fdToRemove.fd && p.events == fdToRemove.eventType;
+                               });
+        if (it != _pollfds.end()) {
+            std::cout << "REMOVED POLL EVENT " << fdToRemove.fd << std::endl;
+            _pollfds.erase(it);
+        }
+    }
+
+    // Add every fd from the addition list
+    while (!_pollfdsToAddQueue.empty()) {
+        pollfd newEvent = _pollfdsToAddQueue.back();
+        _pollfdsToAddQueue.pop_back();
+
+        // Ensure no duplicates
+        auto it = std::find_if(_pollfds.begin(), _pollfds.end(),
+                               [&](const pollfd& p) { return p.fd == newEvent.fd; });
+        if (it == _pollfds.end()) {
+            _pollfds.push_back(newEvent);
+            std::cout << "ADDED POLL EVENT " << newEvent.fd << std::endl;
+        }
+    }
 }
