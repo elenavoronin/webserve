@@ -26,7 +26,6 @@ class Config {
     private:
         EventPoll              _eventPoll;
         std::vector<Server>    _servers;
-        std::vector<Server>    _serversDefault;
 
     public:
         Config();

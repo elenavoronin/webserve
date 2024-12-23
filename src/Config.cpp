@@ -285,13 +285,14 @@ void Config::pollLoop(EventPoll &eventPoll) {
                 int fd = pfds[i].fd;
 
                 for (Server &currentServer : _servers) {
+                    Server &defaultServer = currentServer;
                     if (fd == currentServer.listener_fd) {
                         // Handle new connection
                         currentServer.handleNewConnection(eventPoll);
                         // currentServer.handleNewConnection(_eventPoll);
                     } else {
                         // Handle events for existing connections
-                        currentServer.handlePollEvent(eventPoll, i);
+                        currentServer.handlePollEvent(eventPoll, i, defaultServer);
                         // currentServer.handlePollEvent(_eventPoll, i);
                     }
                 }
@@ -325,8 +326,7 @@ int Config::checkConfig(const std::string &config_file) {
     }
     try {
         _servers = parseConfig(file);
-        printConfigParse(_servers);
-        this->_serversDefault = _servers;
+        // printConfigParse(_servers);
         addPollFds();
     } catch (const std::exception &e) {
         std::cerr << "Configuration error: " << e.what() << std::endl;

@@ -44,7 +44,7 @@ class Client {
 		void 				setHttpRequest(HttpRequest* httpRequest);
 		void 				setHttpResponse(HttpResponse* httpResponse);
 		int 				writeToSocket();
-		void 				readFromSocket(Server *server);
+		void 				readFromSocket(Server *server, Server &defaultServer);
 		void 				closeConnection(EventPoll &eventPoll);
 		void				prepareFileResponse();
 

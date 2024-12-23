@@ -172,7 +172,7 @@ void Client::readFromCgi() {
  * If the HTTP request headers have been fully received, processes the request using Server::processClientRequest.
  * If the HTTP request headers have not been fully received, continues to read from the socket.
  */
-void Client::readFromSocket(Server *server) {
+void Client::readFromSocket(Server *server, Server &defaultServer) {
     char buf[READ_SIZE] = {0};
     int contentLength;
 
@@ -198,7 +198,7 @@ void Client::readFromSocket(Server *server) {
     }
 
     if (_HttpRequest->isHeaderReceived()) {
-        server->processClientRequest(*this, _HttpRequest->getStrReceived(), _HttpRequest);
+        server->processClientRequest(*this, _HttpRequest->getStrReceived(), _HttpRequest, defaultServer);
         _HttpRequest->setHeaderReceived(false);
         _HttpRequest->clearStrReceived();
     }
