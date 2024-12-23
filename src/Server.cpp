@@ -119,7 +119,7 @@ void Server::handleNewConnection(EventPoll &eventPoll){
     // clients.emplace_back(new_fd, eventPoll);
     // // Add the new client file descriptor to the EventPoll
     // eventPoll.addPollFdEventQueue(new_fd, POLLIN);
-	int new_fd = accept(listener_fd, nullptr, nullptr);
+	int new_fd = accept(_listener_fd, nullptr, nullptr);
     if (new_fd == -1) {
         perror("Error accepting new connection");
         return;
@@ -128,7 +128,7 @@ void Server::handleNewConnection(EventPoll &eventPoll){
     std::cout << "New connection accepted on fd: " << new_fd << std::endl;
 
     // Add the new client directly to the clients vector
-    clients.emplace_back(new_fd, eventPoll);
+    _clients.emplace_back(new_fd, eventPoll);
     eventPoll.addPollFdEventQueue(new_fd, POLLIN);
 
     std::cout << "Added new client to EventPoll with fd: " << new_fd << std::endl;
@@ -153,7 +153,7 @@ void Server::handlePollEvent(EventPoll &eventPoll, int i, Server& defaultServer)
     int event_fd = currentPollFd.fd;
 
     // Find the client associated with the file descriptor
-    for (auto &c : clients) {
+    for (auto &c : _clients) {
         if (c.getSocket() == event_fd || c.getCgiRead() == event_fd || c.getCgiWrite() == event_fd) {
             client = &c;
             break;
@@ -526,12 +526,11 @@ void	Server::eraseClient(int event_fd) {
 
 
 	//option 2
-	auto it = std::remove_if(clients.begin(), clients.end(), [&](const Client &c) {
+	auto it = std::remove_if(_clients.begin(), _clients.end(), [&](const Client &c) {
         return c.getSocket() == event_fd;
     });
-	if (it != clients.end()) {
+	if (it != _clients.end()) {
         std::cout << "Removing client with fd: " << event_fd << std::endl;
-        clients.erase(it, clients.end());
+        _clients.erase(it, _clients.end());
     }
-
 }

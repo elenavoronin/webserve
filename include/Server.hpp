@@ -38,17 +38,14 @@ class Server  {
         std::vector<std::string>    					_allowedMethods;
 		bool                        					_autoindex;
 		size_t											_maxBodySize;
-        std::string                 					_uploadStore;
-        std::string                 					_defaultFile; //do we need this?
-		std::string										_host;	//do we need this?		   
+        std::string                 					_uploadStore;   
 		std::vector<std::string>						_errorPage;
 		std::map<std::string, std::vector<Location>>	_locations;
-
+		int 											_listener_fd;
+		bool											_connection = false;
+		std::vector<Client> 							_clients;
 	public:
-		int listener_fd;							// make private
-		bool connection = false;					// make private
-		std::vector<struct pollfd> pfds; 			// replace this with eventpoll?
-		std::vector<Client> clients;				// make private
+		// std::vector<Client> clients;				// make private
 		
 		Server();
 		Server(const Server& copy) = default;
@@ -90,10 +87,10 @@ class Server  {
         void 											setAutoindex(bool autoindex) { _autoindex = autoindex;}
         void 											setUploadStore(const std::string &upload_store) { _uploadStore = upload_store;}
         void 											setAllowedMethods(const std::vector<std::string> &AllowedMethods) { _allowedMethods = AllowedMethods;}
-        void 											setDefaultFile(const std::string &default_file) { _defaultFile = default_file;}
         void 											setIndex(const std::string &index) { _index = index;}
 		void 											setErrorPage(const std::vector<std::string>& errorPages) {_errorPage = errorPages;}
 		void 											setLocation(const std::string& path, const Location& location) {_locations[path].push_back(location);}
+		void											setListenerFd(int listener_fd) {_listener_fd = listener_fd;}
 
 
 		std::map<std::string, std::vector<Location>> 	getLocations() const {return _locations;}
@@ -105,7 +102,6 @@ class Server  {
 		std::vector<std::string> 						getAllowedMethods() const {return this->_allowedMethods;}
 		bool 											getAutoindex() const {return this->_autoindex;}
 		std::string 									getUploadStore() const {return this->_uploadStore;}
-		std::string 									getDefaultFile() const {return this->_defaultFile;}
-		std::string 									getHost() const {return this->_host;}
 		std::vector<std::string> 						getErrorPage() const {return this->_errorPage;}
+		int												getListenerFd() const {return this->_listener_fd;}
 };

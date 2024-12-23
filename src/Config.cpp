@@ -248,7 +248,7 @@ std::vector<Server> Config::parseConfig(std::ifstream &file) {
  */
 void Config::addPollFds() {
     for (Server& currentServer : _servers) {
-        currentServer.listener_fd = currentServer.reportReady(_eventPoll);
+        currentServer.setListenerFd(currentServer.reportReady(_eventPoll));
     }
     pollLoop();
 }
@@ -282,7 +282,7 @@ void Config::pollLoop() {
 
                 for (Server &currentServer : _servers) {
                     Server &defaultServer = currentServer;
-                    if (fd == currentServer.listener_fd) {
+                    if (fd == currentServer.getListenerFd()) {
                         // Handle new connection
                         currentServer.handleNewConnection(_eventPoll);
                     } else {
