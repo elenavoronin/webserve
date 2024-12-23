@@ -45,34 +45,25 @@ class Server  {
 		bool											_connection = false;
 		std::vector<Client> 							_clients;
 	public:
-		// std::vector<Client> clients;				// make private
 		
 		Server();
 		Server(const Server& copy) = default;
 		Server& operator=(const Server& copy) = default;
 		~Server();
 
-		void 											run();
 		/*listener socket*/
 		int 											reportReady(EventPoll &eventPoll);
 		int												getListenerSocket();
-		int 											sendall(int s, char *buf, int *len);
-		/*Fd management*/
-		void 											delFromPfds(std::vector<struct pollfd> &pfds, int i); // replace pollfd with eventpoll??
 		/*Main loop*/
 		void 											handleNewConnection(EventPoll &eventPoll);
 		void 											handlePollEvent(EventPoll &eventPoll, int i, Server& defaultServer);
-
-
 		void											eraseClient(int event_fd);
 		// void 										broadcastMessage(int sender_fd, char *buf, int received, std::vector<struct pollfd> &pfds, int listener);
 		/*Handle requests*/	
-		// int 											handleRequest(int clientSocket, std::string request, HttpRequest *Http);
 		int 											processClientRequest(Client &client, const std::string& request, HttpRequest* Http, Server &defaultServer);
 		int 											handleGetRequest(Client &client, HttpRequest* request);
 		int 											handlePostRequest(Client &client, HttpRequest* Http);
 		int 											handleDeleteRequest(Client &client, HttpRequest* Http);
-		void 											sendResponse(int clientSocket, const std::string& response);
 		void 											checkLocations(std::string path, Server &defaultServer);
 		void 											sendFileResponse(int clientSocket, const std::string& filepath, int statusCode);
 		std::string 									readFileContent(const std::string& filepath);
