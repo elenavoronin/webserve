@@ -53,6 +53,6 @@ class Client {
 		int 				getCgiWrite();
 		void 				startCgi(HttpRequest *request);
 		void 				readFromCgi();
-		// void 				writeToCgi();
+		void 				writeToCgi();
 };
 	// int processClientRequest(const std::string& request, HttpRequest* Http); ????

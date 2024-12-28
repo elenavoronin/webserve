@@ -3,11 +3,13 @@ POll decides what we're doing not the server
 
 1. reconnect cgi to poll loop (djoyke)
 2. use throw instead of std cout or std cerr and have a catch somewhere (lena, djoyke)
-3. finish locations (lena) -> still need to test them
+3. integrate locations into CGI (lena)
 4. validate data while parsing (lena) - need to check with djoyke and anna what else needs validating
 5. link throw to http response, and display correct page (djoyke, lena)
 6. handling null characters for requesting images eg assets/nebula.jpg dont handle it like a string (lena)
 7. should we assert more? (all)
+8. close pipe when something goes wrong reading or writing (djoyke)
+9. test config file with 2 servers
 
 WE USE UTILS... DO NOT REMOVE, love you!
 
@@ -21,10 +23,10 @@ TODO When Anna is back:
 6. fix the download thing without us telling it to do so (anna)
 7. set the fields as private variables in HTTPRequest (djoyke) so I don't copy the strings all the time
 8. parse root, index and so on from config in handle request
-10. do we need broadcast message?
-13. add charset 8 for Content type
-14. handleGet check extension (img. html ..) instead cgi-bin
-15. add timeout struct pollfd pfd = { _clientSocket, POLLIN | POLLOUT, 0 };
+9. do we need broadcast message?
+10. add charset 8 for Content type
+11. handleGet check extension (img. html ..) instead cgi-bin
+12. add timeout struct pollfd pfd = { _clientSocket, POLLIN | POLLOUT, 0 };
 int ret = poll(&pfd, 1, 5000); // Timeout after 5000ms
 if (ret == 0) {
     std::cerr << "Timeout on socket: " << _clientSocket << std::endl;

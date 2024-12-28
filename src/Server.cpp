@@ -130,7 +130,9 @@ void Server::handlePollEvent(EventPoll &eventPoll, int i, Server& defaultServer)
 
     // Find the client associated with the file descriptor
     for (auto &c : _clients) {
-        if (c.getSocket() == event_fd || c.getCgiRead() == event_fd || c.getCgiWrite() == event_fd) {
+        if (c.getSocket() == event_fd || 
+			c.getCgiRead() == event_fd || 
+			c.getCgiWrite() == event_fd) {
             client = &c;
             break;
         }
@@ -147,7 +149,7 @@ void Server::handlePollEvent(EventPoll &eventPoll, int i, Server& defaultServer)
     // Handle readable events
     if (currentPollFd.revents & POLLIN) {
         try {
-            if (event_fd != client->getSocket()) {
+            if (event_fd != client->getSocket() && event_fd == client->getCgiRead()) {
                 client->readFromCgi();
             } else {
                 client->readFromSocket(this, defaultServer);
@@ -161,8 +163,8 @@ void Server::handlePollEvent(EventPoll &eventPoll, int i, Server& defaultServer)
     // Handle writable events
     if (currentPollFd.revents & POLLOUT) {
         try {
-            if (event_fd != client->getSocket()) {
-                // client->writeToCgi();
+            if (event_fd != client->getSocket() && event_fd == client->getCgiWrite()) {
+                client->writeToCgi();
             } else {
                 if (client->writeToSocket() > 0) {
 					client->closeConnection(eventPoll);
