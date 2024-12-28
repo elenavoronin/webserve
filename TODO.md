@@ -21,10 +21,7 @@ TODO When Anna is back:
 6. fix the download thing without us telling it to do so (anna)
 7. set the fields as private variables in HTTPRequest (djoyke) so I don't copy the strings all the time
 8. parse root, index and so on from config in handle request
-9. do we accept HTTP/1.0?
 10. do we need broadcast message?
-11. Rename methods with CamelCase - done?
-12. replace buffer size with READ_SIZE in utils.hpp
 13. add charset 8 for Content type
 14. handleGet check extension (img. html ..) instead cgi-bin
 15. add timeout struct pollfd pfd = { _clientSocket, POLLIN | POLLOUT, 0 };
