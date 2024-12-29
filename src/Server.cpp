@@ -36,17 +36,17 @@ int Server::getListenerSocket(){
 	hints.ai_socktype = SOCK_STREAM; // tells the system to use TCP
 	hints.ai_flags = AI_PASSIVE; //makes the program automatically fill in the IP 
 	if ((status = getaddrinfo(NULL, getPortStr().c_str(), &hints, &servinfo)) != 0){
-		std::cout << "Error get Address information" << std::endl;
+		//std::cout << "Error get Address information" << std::endl;
 		return 1;
 	}
 	for (newConnect = servinfo; newConnect != NULL; newConnect= newConnect->ai_next){
 		if ((serverSocket = socket(servinfo->ai_family, servinfo->ai_socktype, servinfo->ai_protocol)) == -1){ //creates a socket
-			// std::cout << "Create server socket " << serverSocket << std::endl;
+			// //std::cout << "Create server socket " << serverSocket << std::endl;
 			continue;
 		}
 		setsockopt(serverSocket, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)); //allows the program to reuse the address
 		if (bind(serverSocket, newConnect->ai_addr, newConnect->ai_addrlen) == -1){ //associates the socket with an address (IP and port).
-			std::cout << "Bind error" << std::endl;
+			//std::cout << "Bind error" << std::endl;
 			close(serverSocket);
 			continue;
 		}
@@ -57,7 +57,7 @@ int Server::getListenerSocket(){
 		exit(1);
 	if (listen(serverSocket, BACKLOG) == -1) //tells the socket to listen for incoming connections
 		return -1;
-	// std::cout << "serverSocket " << serverSocket << std::endl;
+	// //std::cout << "serverSocket " << serverSocket << std::endl;
 	return serverSocket;
 }
 
@@ -100,13 +100,13 @@ void Server::handleNewConnection(EventPoll &eventPoll){
         return;
     }
 
-    std::cout << "New connection accepted on fd: " << new_fd << std::endl;
+    std::cout << "OPEN!!! New connection accepted on fd: " << new_fd << std::endl;
 
     // Add the new client directly to the clients vector
     _clients.emplace_back(new_fd, eventPoll);
     eventPoll.addPollFdEventQueue(new_fd, POLLIN);
 
-    std::cout << "Added new client to EventPoll with fd: " << new_fd << std::endl;
+    //std::cout << "Added new client to EventPoll with fd: " << new_fd << std::endl;
 }
 
 /**
@@ -130,7 +130,9 @@ void Server::handlePollEvent(EventPoll &eventPoll, int i, Server& defaultServer)
 
     // Find the client associated with the file descriptor
     for (auto &c : _clients) {
-        if (c.getSocket() == event_fd || c.getCgiRead() == event_fd || c.getCgiWrite() == event_fd) {
+        if (c.getSocket() == event_fd || 
+			c.getCgiRead() == event_fd || 
+			c.getCgiWrite() == event_fd) {
             client = &c;
             break;
         }
@@ -138,16 +140,15 @@ void Server::handlePollEvent(EventPoll &eventPoll, int i, Server& defaultServer)
 
     if (!client) {
         std::cerr << "Client not found for fd: " << event_fd << std::endl;
-        eventPoll.ToremovePollEventFd(event_fd, POLLIN | POLLOUT);
-        close(event_fd);
-		eraseClient(event_fd); // Additional cleanup, if needed.
+		client->closeConnection(eventPoll);
+		eraseClient(event_fd);
         return;
     }
 
     // Handle readable events
     if (currentPollFd.revents & POLLIN) {
         try {
-            if (event_fd != client->getSocket()) {
+            if (event_fd != client->getSocket() && event_fd == client->getCgiRead()) {
                 client->readFromCgi();
             } else {
                 client->readFromSocket(this, defaultServer);
@@ -161,8 +162,8 @@ void Server::handlePollEvent(EventPoll &eventPoll, int i, Server& defaultServer)
     // Handle writable events
     if (currentPollFd.revents & POLLOUT) {
         try {
-            if (event_fd != client->getSocket()) {
-                // client->writeToCgi();
+            if (event_fd != client->getSocket() && event_fd == client->getCgiWrite()) {
+                client->writeToCgi();
             } else {
                 if (client->writeToSocket() > 0) {
 					client->closeConnection(eventPoll);
@@ -178,6 +179,7 @@ void Server::handlePollEvent(EventPoll &eventPoll, int i, Server& defaultServer)
 
     // Handle hangup or disconnection events
     if (currentPollFd.revents & (POLLHUP | POLLRDHUP)) {
+		std::cout << "does this happen" << std::endl;
         client->closeConnection(eventPoll);
 		eraseClient(event_fd);
     }
@@ -248,7 +250,7 @@ void Server::checkLocations(std::string path, Server &defaultServer) {
  * @return The HTTP status code indicating the result of the request processing.
  */
 int Server::processClientRequest(Client &client, const std::string& request, HttpRequest* HttpRequest, Server &defaultServer) {
-	std::cout <<" This is request "<< request << std::endl;
+	//std::cout <<" This is request "<< request << std::endl;
 	HttpRequest->readRequest(request);
 
 	std::string method = HttpRequest->getMethod();
@@ -269,7 +271,6 @@ int Server::processClientRequest(Client &client, const std::string& request, Htt
 		return handleDeleteRequest(client, HttpRequest);
 	HttpResponse response;
 	response.buildResponse();
-	// check poll if I can write?
 	return 0;
 }
 
@@ -365,7 +366,7 @@ std::string Server::readFileContent(const std::string& filepath) {
     std::ostringstream buffer;
     buffer << file.rdbuf(); //read file by bytes, go back to poll, check if finished reading
 	//request->_readyToSendBack = true;
-	std::cout.flush();
+	//std::cout.flush();
     return buffer.str();
 }
 
@@ -489,12 +490,41 @@ int Server::handlePostRequest(Client &client, HttpRequest* Http) {
 }
 
 
-void	Server::eraseClient(int event_fd) {
-	auto it = std::remove_if(_clients.begin(), _clients.end(), [&](const Client &c) {
-        return c.getSocket() == event_fd;
-    });
-	if (it != _clients.end()) {
-        std::cout << "Removing client with fd: " << event_fd << std::endl;
-        _clients.erase(it, _clients.end());
+/**
+ * @brief Erase a client from the server's list of active clients.
+ *
+ * This function is used to remove a client from the server's list of active clients.
+ * It takes the file descriptor of the socket associated with the client as an argument.
+ *
+ * @param[in] event_fd The file descriptor of the socket associated with the client to be removed.
+ *
+ * @return Nothing.
+ */
+void Server::eraseClient(int event_fd) {
+    // Find all clients in _clients where the socket matches event_fd.
+    auto it = std::find_if(_clients.begin(), _clients.end(), [&](const Client &c) {
+            // Log each comparison for debugging
+            std::cout << "Checking client with socket FD: " << c.getSocket()
+                      << " against target FD: " << event_fd << std::endl;
+            
+            // Return true if this client should be removed
+            return c.getSocket() == event_fd;
+        }
+    );
+
+    // Check if any clients were marked for removal
+    if (it != _clients.end()) {
+        // Log removal
+        std::cout << "Removing client with FD: " << event_fd 
+                  << ". Total clients before removal: " << _clients.size() << std::endl;
+
+        // Physically remove the clients from the container
+        _clients.erase(it);
+
+        // Log success
+        std::cout << "Client removed. Total clients after removal: " << _clients.size() << std::endl;
+    } else {
+        // Log if no matching client was found
+        std::cerr << "Warning: No client found with FD: " << event_fd << std::endl;
     }
 }

@@ -17,8 +17,10 @@ Client::~Client(){
     close(_clientSocket);
     delete _HttpRequest;
     delete _HttpResponse;
+    delete _CGI;
     _HttpRequest = nullptr;
     _HttpResponse = nullptr;
+    _CGI = nullptr;
 }
 
 /**
@@ -63,7 +65,7 @@ Client& Client::operator=(const Client& copy) {
     delete _CGI;
 
     // Copy resources
-    _clientSocket = -1; // Prevent socket conflicts
+    _clientSocket = copy._clientSocket; // this messes things up
     _HttpRequest = copy._HttpRequest ? new HttpRequest(*copy._HttpRequest) : nullptr;
     _HttpResponse = copy._HttpResponse ? new HttpResponse(*copy._HttpResponse) : nullptr;
     _CGI = nullptr; // Reset CGI in the assigned instance
@@ -164,8 +166,13 @@ int Client::getCgiWrite(){
 void Client::startCgi(HttpRequest *request) {
 	if (this->_CGI != NULL)
 		throw std::runtime_error("already initialized");
+        
 	this->_CGI = new CGI(request);
     _eventPoll->addPollFdEventQueue(_CGI->getReadFd(), POLLIN);
+    _eventPoll->addPollFdEventQueue(_CGI->getWriteFd(), POLLOUT);
+
+    std::cerr   << "CGI process started. Read FD: " << _CGI->getReadFd()
+                << ", Write FD: " << _CGI->getWriteFd() << std::endl;
 }
 
 /**
@@ -203,7 +210,7 @@ void Client::readFromCgi() {
             // Send the final chunk and terminate the CGI process
             send(_clientSocket, "0\r\n\r\n", 5, 0);
             kill(_CGI->getPid(), SIGTERM); // Send signal to terminate the process
-            _CGI->markCgiComplete();
+            // _CGI->markCgiComplete();
             prepareFileResponse();
         }
     } catch (const std::exception& e) {
@@ -212,7 +219,6 @@ void Client::readFromCgi() {
         // close(_clientSocket); // Optionally close the connection
     }
 }
-
 
 /**
  * @brief Reads data from the client socket and appends it to the HTTP request buffer.
@@ -273,6 +279,7 @@ void Client::readFromSocket(Server *server, Server &defaultServer) {
  */
 int Client::writeToSocket() {
     unsigned long bytesToWrite = WRITE_SIZE;
+    // unsigned long bytesToWrite = 10000;
     unsigned long bytesWritten = 0;
 
     if (bytesToWrite > _HttpResponse->getFullResponse().size() - _responseIndex) {
@@ -286,9 +293,9 @@ int Client::writeToSocket() {
 
     if (_responseIndex >= _HttpResponse->getFullResponse().size()) {
         _eventPoll->ToremovePollEventFd(_clientSocket, POLLOUT);
-        closeConnection(*_eventPoll); // Close connection when done
         return 1;
     }
+    // std::cout << "STATUSSSS: " << _HttpResponse->getStatusCode() << std::endl;
     return 0;
 }
 
@@ -304,11 +311,16 @@ int Client::writeToSocket() {
 void Client::closeConnection(EventPoll &eventPoll) {
     // Remove socket from event poll
     eventPoll.ToremovePollEventFd(_clientSocket, POLLIN | POLLOUT);
+
+    if (_CGI) {
+        eventPoll.ToremovePollEventFd(_CGI->getReadFd(), POLLIN);
+        delete _CGI;
+        _CGI = nullptr;
+    }
     
     // Close the client socket
     if (_clientSocket >= 0) {
         close(_clientSocket);
-        // _clientSocket = -1; // Mark as invalid
     }
 }
 
@@ -342,9 +354,29 @@ void Client::prepareFileResponse() {
     }
 
     _HttpResponse->buildResponse();
-    std::cout << "Preparing file response for client socket: " << _clientSocket << std::endl;
+    //std::cout << "Preparing file response for client socket: " << _clientSocket << std::endl;
     _eventPoll->ToremovePollEventFd(_clientSocket, POLLIN);
     _eventPoll->addPollFdEventQueue(_clientSocket, POLLOUT);
-    std::cout << "Added POLLOUT for client socket: " << _clientSocket << std::endl;
+    //std::cout << "Added POLLOUT for client socket: " << _clientSocket << std::endl;
 
+}
+
+
+
+/**
+ * @brief Writes the client's input to the CGI process via the pipe.
+ *
+ * This function should be called when the client connection has been fully handled
+ * and the input should be written to the CGI process. It delegates the write operation
+ * to the CGI object.
+ *
+ * @throws std::runtime_error if the CGI object is not initialized.
+ */
+void Client::writeToCgi() {
+    if (!_CGI) {
+        throw std::runtime_error("CGI object is not initialized.");
+    }
+
+    // Delegate the write operation to the CGI object
+    _CGI->writeCgiInput();
 }
