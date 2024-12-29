@@ -19,9 +19,9 @@ Config::~Config() {}
 
 bool Config::validateParsedData(Server &server) {
     printInfoServer(server);
-    std::cout << "getPortStr: " <<server.getPortStr() << std::endl;
-    std::cout << "getRoot: " <<server.getRoot() << std::endl;
-    std::cout << "getIndex: " <<server.getIndex() << std::endl;
+    //std::cout << "getPortStr: " <<server.getPortStr() << std::endl;
+    //std::cout << "getRoot: " <<server.getRoot() << std::endl;
+    //std::cout << "getIndex: " <<server.getIndex() << std::endl;
 
     if (server.getPortStr().empty())
         return false;
@@ -270,15 +270,18 @@ void Config::pollLoop() {
 
         std::vector<pollfd> &pfds = _eventPoll.getPollEventFd();
         int pollResult = poll(pfds.data(), pfds.size(), 5000);
-
+        std::cout << "size of pollfds" << pfds.size() << std::endl; 
         if (pollResult == -1) {
             throw std::runtime_error("Poll failed!");
         }
 
         // Iterate over the pollfds to handle events
         for (size_t i = 0; i < pfds.size(); i++) {
+
+            std::cout << pfds[i].revents << std::endl;
             if (pfds[i].revents & POLLIN || pfds[i].revents & POLLOUT || pfds[i].revents & POLLHUP || pfds[i].revents & POLLRDHUP) {
                 int fd = pfds[i].fd;
+                std::cout << fd << std::endl;
 
                 for (Server &currentServer : _servers) {
                     Server &defaultServer = currentServer;

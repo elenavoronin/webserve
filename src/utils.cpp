@@ -44,14 +44,14 @@ for (std::vector<Server>::const_iterator serverIt = servers.begin(); serverIt !=
     printInfoServer(*serverIt);
     std::map<std::string, std::vector<Location>> locations = serverIt->getLocations();
     for (std::map<std::string, std::vector<Location>>::const_iterator locIt = locations.begin(); locIt != locations.end(); ++locIt) {
-        std::cout << "Location Path: " << locIt->first << std::endl; // Print the path
+        //std::cout << "Location Path: " << locIt->first << std::endl; // Print the path
         const std::vector<Location>& locationVector = locIt->second;
             for (std::vector<Location>::const_iterator vecIt = locationVector.begin(); vecIt != locationVector.end(); ++vecIt) {
                 printInfoLocations(*vecIt); // Print information about the location
             }
 }
 }
-std::cout << "---------------------------" << std::endl;
+//std::cout << "---------------------------" << std::endl;
 }
 
 /**
@@ -62,14 +62,14 @@ std::cout << "---------------------------" << std::endl;
  * separator. The last string is not followed by a comma space separator.
  */
 void printTokens(const std::vector<std::string>& tokens) {
-    std::cout << "Tokens: ";
+    //std::cout << "Tokens: ";
     for (size_t i = 0; i < tokens.size(); ++i) {
-        std::cout << tokens[i];
+        //std::cout << tokens[i];
         if (i != tokens.size() - 1) {
-            std::cout << ", ";
+            //std::cout << ", ";
         }
     }
-    std::cout << std::endl;
+    //std::cout << std::endl;
 }
 
 /**
@@ -90,27 +90,27 @@ void printTokens(const std::vector<std::string>& tokens) {
  */
 
 void printInfoServer(const Server &server) {
-    std::cout << "Server Name: " << server.getServerName() << std::endl;
-    std::cout << "Port: " << server.getPortStr() << std::endl;
-    std::cout << "Root: " << server.getRoot() << std::endl;
-    std::cout << "MaxBodySize: " << server.getMaxBodySize() << std::endl;
-    std::cout << "Index: " << server.getIndex() << std::endl;
+    //std::cout << "Server Name: " << server.getServerName() << std::endl;
+    //std::cout << "Port: " << server.getPortStr() << std::endl;
+    //std::cout << "Root: " << server.getRoot() << std::endl;
+    //std::cout << "MaxBodySize: " << server.getMaxBodySize() << std::endl;
+    //std::cout << "Index: " << server.getIndex() << std::endl;
 
     // Store the result of getAllowedMethods() to avoid dangling references
     const std::vector<std::string>& allowedMethods = server.getAllowedMethods();
-    std::cout << "Allowed Methods: ";
+    //std::cout << "Allowed Methods: ";
     for (std::vector<std::string>::const_iterator it = allowedMethods.begin(); it != allowedMethods.end(); ++it) {
-        std::cout << *it << " ";
+        //std::cout << *it << " ";
     }
-    std::cout << std::endl;
+    //std::cout << std::endl;
 
     // Store the result of getErrorPage() to avoid dangling references
     const std::vector<std::string>& errorPages = server.getErrorPage();
-    std::cout << "Error Pages: ";
+    //std::cout << "Error Pages: ";
     for (std::vector<std::string>::const_iterator it = errorPages.begin(); it != errorPages.end(); ++it) {
-        std::cout << *it << " ";
+        //std::cout << *it << " ";
     }
-    std::cout << std::endl;
+    //std::cout << std::endl;
 }
 
 /**
@@ -118,31 +118,31 @@ void printInfoServer(const Server &server) {
  * @param[in] location The Location object to print information about
  */
 void printInfoLocations(const Location &location) {
-    std::cout << "    Root: " << location.getRoot() << std::endl;
-    std::cout << "    Index: " << location.getIndex() << std::endl;
-    std::cout << "    Redirect: " << location.getRedirect() << std::endl;
-    std::cout << "    MaxBodySize: " << location.getMaxBodySize() << std::endl;
-    std::cout << "    Return: " << location.getReturn() << std::endl;
-    std::cout << "    Autoindex: " << (location.getAutoindex() ? "on" : "off") << std::endl;
+    //std::cout << "    Root: " << location.getRoot() << std::endl;
+    //std::cout << "    Index: " << location.getIndex() << std::endl;
+    //std::cout << "    Redirect: " << location.getRedirect() << std::endl;
+    //std::cout << "    MaxBodySize: " << location.getMaxBodySize() << std::endl;
+    //std::cout << "    Return: " << location.getReturn() << std::endl;
+    //std::cout << "    Autoindex: " << (location.getAutoindex() ? "on" : "off") << std::endl;
 
     // Store the result of getAllowedMethods() to avoid dangling references
     const std::vector<std::string>& allowedMethods = location.getAllowedMethods();
-    std::cout << "    Allowed methods: ";
+    //std::cout << "    Allowed methods: ";
     for (std::vector<std::string>::const_iterator it = allowedMethods.begin(); it != allowedMethods.end(); ++it) {
-        std::cout << *it << " ";
+        //std::cout << *it << " ";
     }
-    std::cout << std::endl;
+    //std::cout << std::endl;
 
     const std::vector<std::string>& errorPages = location.getErrorPages();
-    std::cout << "    Error Pages: ";
+    //std::cout << "    Error Pages: ";
     for (std::vector<std::string>::const_iterator it = errorPages.begin(); it != errorPages.end(); ++it) {
-        std::cout << *it << " ";
+        //std::cout << *it << " ";
     }
-    std::cout << std::endl;
+    //std::cout << std::endl;
 
-    std::cout << "    CGI pass: " << location.getCgiPass() << std::endl;
-    std::cout << "    CGI path: " << location.getCgiPath() << std::endl;
-    std::cout << std::endl;
+    //std::cout << "    CGI pass: " << location.getCgiPass() << std::endl;
+    //std::cout << "    CGI path: " << location.getCgiPath() << std::endl;
+    //std::cout << std::endl;
 }
 
 bool isEmpty(const Location& location) {

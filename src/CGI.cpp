@@ -56,10 +56,10 @@ void CGI::parseQueryString(HttpRequest* request) {
             return;
         }
         else {
-            std::cout << "Request path: " << _path << std::endl;
+            //std::cout << "Request path: " << _path << std::endl;
         }
-        std::cout << "Extracted query string: " << _queryParams << std::endl;  // Debug
-        std::cout << "Parsing query string in process with PID: " << getpid() << std::endl;
+        //std::cout << "Extracted query string: " << _queryParams << std::endl;  // Debug
+        //std::cout << "Parsing query string in process with PID: " << getpid() << std::endl;
 
     }
 }
@@ -97,7 +97,7 @@ void CGI::initializeEnvVars(HttpRequest* request) {
     } else if (_method == "DELETE") {
         parseQueryString(request);
         _envVars.push_back("QUERY_STRING=" + _queryParams);
-        std::cout << "QUERY_STRING: " << _queryParams << std::endl;
+        //std::cout << "QUERY_STRING: " << _queryParams << std::endl;
     } else {
         std::cerr << "Unsupported HTTP method: " << _method << std::endl;
         return;  // Or send an HTTP 405 response
@@ -138,7 +138,7 @@ void CGI::executeCgi() {
 	std::string cgiProgramString = "./www/html" + _path;
     const char* cgiProgram = cgiProgramString.c_str();
 
-    std::cout << "Executing CGI script: " << cgiProgram << std::endl;
+    //std::cout << "Executing CGI script: " << cgiProgram << std::endl;
     // const std::string &cgiPass = server._location.get_cgi_pass();
     const char* argv[] = {"/usr/bin/python3", cgiProgram, nullptr};
 

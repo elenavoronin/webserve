@@ -65,7 +65,7 @@ Client& Client::operator=(const Client& copy) {
     delete _CGI;
 
     // Copy resources
-    _clientSocket = -1; // Prevent socket conflicts
+    _clientSocket = copy._clientSocket; // this messes things up
     _HttpRequest = copy._HttpRequest ? new HttpRequest(*copy._HttpRequest) : nullptr;
     _HttpResponse = copy._HttpResponse ? new HttpResponse(*copy._HttpResponse) : nullptr;
     _CGI = nullptr; // Reset CGI in the assigned instance
@@ -279,6 +279,7 @@ void Client::readFromSocket(Server *server, Server &defaultServer) {
  */
 int Client::writeToSocket() {
     unsigned long bytesToWrite = WRITE_SIZE;
+    // unsigned long bytesToWrite = 10000;
     unsigned long bytesWritten = 0;
 
     if (bytesToWrite > _HttpResponse->getFullResponse().size() - _responseIndex) {
@@ -292,9 +293,9 @@ int Client::writeToSocket() {
 
     if (_responseIndex >= _HttpResponse->getFullResponse().size()) {
         _eventPoll->ToremovePollEventFd(_clientSocket, POLLOUT);
-        closeConnection(*_eventPoll); // Close connection when done
         return 1;
     }
+    // std::cout << "STATUSSSS: " << _HttpResponse->getStatusCode() << std::endl;
     return 0;
 }
 
@@ -320,7 +321,6 @@ void Client::closeConnection(EventPoll &eventPoll) {
     // Close the client socket
     if (_clientSocket >= 0) {
         close(_clientSocket);
-        // _clientSocket = -1; // Mark as invalid
     }
 }
 
@@ -354,10 +354,10 @@ void Client::prepareFileResponse() {
     }
 
     _HttpResponse->buildResponse();
-    std::cout << "Preparing file response for client socket: " << _clientSocket << std::endl;
+    //std::cout << "Preparing file response for client socket: " << _clientSocket << std::endl;
     _eventPoll->ToremovePollEventFd(_clientSocket, POLLIN);
     _eventPoll->addPollFdEventQueue(_clientSocket, POLLOUT);
-    std::cout << "Added POLLOUT for client socket: " << _clientSocket << std::endl;
+    //std::cout << "Added POLLOUT for client socket: " << _clientSocket << std::endl;
 
 }
 
