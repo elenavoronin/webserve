@@ -44,3 +44,41 @@ curl -X POST --data-binary "@large_file_1.txt" http://localhost:8080/endpoint
 curl -X POST --data-binary "@large_file_2.txt" http://localhost:8080/endpoint
 # In terminal 3
 curl -X POST --data-binary "@large_file_3.txt" http://localhost:8080/endpoint
+
+
+
+To kill a process, you can use the kill command in Linux or macOS. Follow these steps:
+
+1. Find the Process ID (PID)
+Use a command like ps or top to identify the process you want to kill.
+
+Using ps:
+
+bash
+Copy code
+ps aux | grep <process_name>
+Replace <process_name> with the name of the process, such as webserv.
+
+Using top: Press q to quit once you've noted the PID.
+
+Using lsof: If the process is tied to a specific port or file:
+
+bash
+Copy code
+lsof -i :8080
+2. Kill the Process
+Once you have the PID, use the kill command:
+
+Graceful Kill (SIGTERM)
+bash
+Copy code
+kill <PID>
+This sends the SIGTERM signal, allowing the process to shut down cleanly.
+
+Force Kill (SIGKILL)
+If the process doesn’t terminate with SIGTERM, use SIGKILL:
+
+bash
+Copy code
+kill -9 <PID>
+This forces the process to terminate immediately.
