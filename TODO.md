@@ -34,6 +34,8 @@ if (ret == 0) {
 }
 
 
+Basic Siege command for testing localhost:8080:
+siege -c 10 -t 10S http://localhost:8080
 
 to test non blocking:
 # In terminal 1

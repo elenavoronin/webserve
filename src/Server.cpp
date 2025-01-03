@@ -180,7 +180,7 @@ void Server::handlePollEvent(EventPoll &eventPoll, int i, Server& defaultServer)
 
     // Handle hangup or disconnection events
     if (currentPollFd.revents & (POLLHUP | POLLRDHUP)) {
-		std::cout << "does this happen" << std::endl;
+		// std::cout << "does this happen" << std::endl;
         client->closeConnection(eventPoll);
 		eraseClient(event_fd);
     }
@@ -527,7 +527,7 @@ void Server::eraseClient(int event_fd) {
         // Log success
         // std::cout << "We are removing this fd: "<< event_fd << " Client removed. Total clients after removal: " << _clients.size() << std::endl;
         // std::cout << "Client capacity after removal: " << _clients.capacity() << std::endl;
-		printClientsVector(_clients);
+		// printClientsVector(_clients);
     } else {
         // Log if no matching client was found
         // std::cerr << "Warning: No client found with FD: " << event_fd << std::endl;

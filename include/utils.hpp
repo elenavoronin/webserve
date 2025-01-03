@@ -15,7 +15,7 @@ class Client;
 # define READ 0
 # define WRITE 1
 # define WRITE_SIZE 10
-# define READ_SIZE 10000
+# define READ_SIZE 10
 # define BACKLOG 10
 
 std::string             getStatusMessage(int statusCode);
