@@ -14,7 +14,6 @@ Client::Client(int clientSocket, EventPoll& eventPoll) :
  * @todo add deletes in here.
  */
 Client::~Client(){
-    close(_clientSocket);
     delete _HttpRequest;
     delete _HttpResponse;
     delete _CGI;
@@ -59,7 +58,6 @@ Client& Client::operator=(const Client& copy) {
     if (this == &copy) return *this; // Handle self-assignment
 
     // Cleanup existing resources
-    close(_clientSocket);
     delete _HttpRequest;
     delete _HttpResponse;
     delete _CGI;
