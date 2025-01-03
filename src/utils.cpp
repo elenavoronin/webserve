@@ -151,3 +151,11 @@ bool isEmpty(const Location& location) {
         && location.getAllowedMethods().empty() && location.getCgiPass().empty() 
         && location.getCgiPath().empty() && location.getMaxBodySize() == 0;
 }
+
+void printClientsVector(const std::vector<Client>& Clients) {
+    for (unsigned long i = 0; i < Clients.size(); i++) {
+        std::cout << "client socket: " << Clients[i].getSocket() << std::endl;
+    }
+    std::cout << std::endl;
+
+}

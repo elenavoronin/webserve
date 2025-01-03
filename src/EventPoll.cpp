@@ -67,15 +67,22 @@ void	EventPoll::updateEventList( void )
 	while (!_pollfdsToRemoveQueue.empty()) {
         t_pollfdToRemove fdToRemove = _pollfdsToRemoveQueue.back();
         _pollfdsToRemoveQueue.pop_back();
-        std::cout << "removing fd: " << fdToRemove.fd << "\n";
 
         auto it = std::find_if(_pollfds.begin(), _pollfds.end(),
                                [&](const pollfd& p) {
                                    return p.fd == fdToRemove.fd && p.events == fdToRemove.eventType;
                                });
         if (it != _pollfds.end()) {
-            //std::cout << "REMOVED POLL EVENT " << fdToRemove.fd << std::endl;
+            std::cout << "fd to remove: " << fdToRemove.fd << "\n";
+            std::cout << "REMOVED POLL EVENT " << fdToRemove.fd << std::endl;
+           
             _pollfds.erase(it);
+            _pollfds.shrink_to_fit();
+            std::cout << "EventPoll after removing: ";
+            for (unsigned long i = 0; i < _pollfds.size(); i++) {
+                std::cout << _pollfds[i].fd << " ";
+            }
+            std::cout << std::endl;
         }
     }
 

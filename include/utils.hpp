@@ -5,10 +5,12 @@
 #include "../include/Server.hpp"
 #include "../include/Location.hpp"
 #include "../include/Config.hpp"
+#include "../include/Client.hpp"
 
 class Server;
 class Location;
 class Config;
+class Client;
 
 # define READ 0
 # define WRITE 1
@@ -22,3 +24,4 @@ void                    printInfoServer(const Server &server);
 void                    printInfoLocations(const Location &location);
 void                    printTokens(const std::vector<std::string>& tokens);
 bool                    isEmpty(const Location& location);
+void                    printClientsVector(const std::vector<Client>& Clients);

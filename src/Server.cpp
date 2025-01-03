@@ -99,11 +99,12 @@ void Server::handleNewConnection(EventPoll &eventPoll){
         perror("Error accepting new connection");
         return;
     }
-
+	
     std::cout << "OPEN!!! New connection accepted on fd: " << new_fd << std::endl;
 
+	Client newClient(new_fd, eventPoll);
     // Add the new client directly to the clients vector
-    _clients.emplace_back(new_fd, eventPoll);
+    _clients.push_back(newClient);
     eventPoll.addPollFdEventQueue(new_fd, POLLIN);
 
     //std::cout << "Added new client to EventPoll with fd: " << new_fd << std::endl;
@@ -184,6 +185,7 @@ void Server::handlePollEvent(EventPoll &eventPoll, int i, Server& defaultServer)
 		eraseClient(event_fd);
     }
 }
+
 
 /**
  * @brief Checks and updates the server's root based on the given path.
@@ -520,9 +522,12 @@ void Server::eraseClient(int event_fd) {
 
         // Physically remove the clients from the container
         _clients.erase(it);
+		_clients.shrink_to_fit();
 
         // Log success
-        std::cout << "Client removed. Total clients after removal: " << _clients.size() << std::endl;
+        std::cout << "We are removing this fd: "<< event_fd << " Client removed. Total clients after removal: " << _clients.size() << std::endl;
+        std::cout << "Client capacity after removal: " << _clients.capacity() << std::endl;
+		printClientsVector(_clients);
     } else {
         // Log if no matching client was found
         std::cerr << "Warning: No client found with FD: " << event_fd << std::endl;

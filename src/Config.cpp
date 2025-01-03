@@ -269,22 +269,25 @@ void Config::pollLoop() {
         _eventPoll.updateEventList();
 
         std::vector<pollfd> &pfds = _eventPoll.getPollEventFd();
-        int pollResult = poll(pfds.data(), pfds.size(), 5000);
-        std::cout << "size of pollfds" << pfds.size() << std::endl; 
+        int pollResult = poll(pfds.data(), pfds.size(), 50000);
+        // std::cout << "size of pollfds" << pfds.size() << std::endl; 
         if (pollResult == -1) {
             throw std::runtime_error("Poll failed!");
+        }
+        if (pollResult == 0) {
+            throw std::runtime_error("Poll timed out!");
         }
 
         // Iterate over the pollfds to handle events
         for (size_t i = 0; i < pfds.size(); i++) {
-            std::cout <<  pfds[i].revents << " " << POLLRDHUP << std::endl;
+            // std::cout <<  pfds[i].revents << " " << POLLRDHUP << std::endl;
             if (pfds[i].revents & POLLERR) {
 
-                std::cout << "HIIIIIIII" << std::endl;
+                // std::cout << "HIIIIIIII" << std::endl;
             }
             if (pfds[i].revents & POLLIN || pfds[i].revents & POLLOUT || pfds[i].revents & POLLHUP || pfds[i].revents & POLLRDHUP) {
                 int fd = pfds[i].fd;
-                std::cout << fd << std::endl;
+                // std::cout << fd << std::endl;
 
                 for (Server &currentServer : _servers) {
                     Server &defaultServer = currentServer;

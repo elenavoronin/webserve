@@ -14,6 +14,7 @@ Client::Client(int clientSocket, EventPoll& eventPoll) :
  * @todo add deletes in here.
  */
 Client::~Client(){
+    // std::cout << "Client destructor called: " << getSocket() << std::endl;
     delete _HttpRequest;
     delete _HttpResponse;
     delete _CGI;
