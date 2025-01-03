@@ -506,8 +506,8 @@ void Server::eraseClient(int event_fd) {
     // Find all clients in _clients where the socket matches event_fd.
     auto it = std::find_if(_clients.begin(), _clients.end(), [&](const Client &c) {
             // Log each comparison for debugging
-            std::cout << "Checking client with socket FD: " << c.getSocket()
-                      << " against target FD: " << event_fd << std::endl;
+            // std::cout << "Checking client with socket FD: " << c.getSocket()
+            //           << " against target FD: " << event_fd << std::endl;
             
             // Return true if this client should be removed
             return c.getSocket() == event_fd;
@@ -517,19 +517,19 @@ void Server::eraseClient(int event_fd) {
     // Check if any clients were marked for removal
     if (it != _clients.end()) {
         // Log removal
-        std::cout << "Removing client with FD: " << event_fd 
-                  << ". Total clients before removal: " << _clients.size() << std::endl;
+        // std::cout << "Removing client with FD: " << event_fd 
+        //           << ". Total clients before removal: " << _clients.size() << std::endl;
 
         // Physically remove the clients from the container
         _clients.erase(it);
 		_clients.shrink_to_fit();
 
         // Log success
-        std::cout << "We are removing this fd: "<< event_fd << " Client removed. Total clients after removal: " << _clients.size() << std::endl;
-        std::cout << "Client capacity after removal: " << _clients.capacity() << std::endl;
+        // std::cout << "We are removing this fd: "<< event_fd << " Client removed. Total clients after removal: " << _clients.size() << std::endl;
+        // std::cout << "Client capacity after removal: " << _clients.capacity() << std::endl;
 		printClientsVector(_clients);
     } else {
         // Log if no matching client was found
-        std::cerr << "Warning: No client found with FD: " << event_fd << std::endl;
+        // std::cerr << "Warning: No client found with FD: " << event_fd << std::endl;
     }
 }
