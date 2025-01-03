@@ -171,22 +171,15 @@ void CGI::readCgiOutput() {
         std::cerr << "Finished reading CGI output. Marking as complete." << std::endl;
         return;
     }
-    else {
-        _cgiOutput.append(buffer, bytes_read);
-        std::cerr << "Read " << bytes_read << " bytes from CGI output." << std::endl;
-    }
+    _cgiOutput.append(buffer, bytes_read);
+    std::cerr << "Read " << bytes_read << " bytes from CGI output." << std::endl;
+    
     // Parse headers if not sent
     if (!_headersSent && _cgiOutput.find("\r\n\r\n") != std::string::npos) {
         auto headers_end = _cgiOutput.find("\r\n\r\n");
         _headersSent = true;
         _cgiOutput = _cgiOutput.substr(headers_end + 4);
-    }
-    // try {
-    //     _cgiOutput.append(buffer, bytes_read);
-    // } catch (const std::exception& e) {
-    //     std::cerr << "Error reading CGI output: " << e.what() << std::endl;
-    //     markCgiComplete();
-    // }    
+    }    
 }
 
 /**
