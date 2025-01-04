@@ -39,8 +39,10 @@ class CGI {
 		// int 						_status;				// Store the exit status of the CGI script
 		int 						_fromCgiPipe[2];		// Pipe for the parent process to read CGI responses
 		int 						_toCgiPipe[2];			// Pipe for the parent process to send data to CGI
-		bool 						_headersSent = false;   // Tracks if headers were sent
-    	bool 						_cgiComplete = false;   // Tracks if CGI process is complete
+		bool 						_headersSent;   		// Tracks if headers were sent
+    	bool 						_cgiComplete;   		// Tracks if CGI process is complete
+		unsigned long				_contentLength = 0;
+		unsigned long				_receivedBodySize = 0;
 
 	public:
 		CGI(HttpRequest* request);
@@ -60,6 +62,7 @@ class CGI {
 		void				markHeadersSent();
 		bool				isCgiComplete() const;
 		void				markCgiComplete();
+		void				parseHeaders(const std::string& headers);
 		//make endCGI() 
 
 		int 				getReadFd() const;

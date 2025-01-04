@@ -148,6 +148,7 @@ void Server::handlePollEvent(EventPoll &eventPoll, int i, Server& defaultServer)
 
     // Handle readable events
     if (currentPollFd.revents & POLLIN) {
+		std::cout << "POLLIN" << std::endl;
         try {
             if (event_fd != client->getSocket() && event_fd == client->getCgiRead()) {
                 client->readFromCgi();
@@ -162,6 +163,7 @@ void Server::handlePollEvent(EventPoll &eventPoll, int i, Server& defaultServer)
     }
     // Handle writable events
     if (currentPollFd.revents & POLLOUT) {
+		std::cout << "POLLOUT" << std::endl;
         try {
             if (event_fd != client->getSocket() && event_fd == client->getCgiWrite()) {
                 client->writeToCgi();

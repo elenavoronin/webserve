@@ -191,21 +191,11 @@ void Client::readFromCgi() {
     try {
         // Read data from the CGI process
         _CGI->readCgiOutput();
-
-        // Check if headers have been sent
-        if (!_CGI->areHeadersSent()) {
-            // Send HTTP headers
-            HttpResponse response;
-            response.setStatus(200, "OK");
-            response.setHeader("Content-Type", "text/html");
-            response.setHeader("Transfer-Encoding", "chunked");
-
-            std::string headers = response.getHeadersOnly();
-            _CGI->markHeadersSent();
-        }
+        std::cout << "CGI completed? " << _CGI->isCgiComplete() << std::endl;
 
         // Check if the CGI process is done writing output
         if (_CGI->isCgiComplete()) {
+            std::cerr << "CGI process completed. Preparing response." << std::endl;
             // Send the final chunk and terminate the CGI process
             send(_clientSocket, "0\r\n\r\n", 5, 0);
             kill(_CGI->getPid(), SIGTERM); // Send signal to terminate the process
