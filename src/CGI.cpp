@@ -4,9 +4,14 @@
  * @brief       Constructor for the CGI class.
  */
 CGI::CGI(HttpRequest *request) {
-    _cgiInput = request->getField("body"); //can we just put this as a variable
+    _cgiInput = request->getField("body"); // May be empty for GET requests
     _inputIndex = 0;
+    _cgiComplete = false;
+    _headersSent = false;
 
+    // Debugging output
+    std::cout << "CGI input is: " << _cgiInput << std::endl;
+    std::cout << "Request Method: " << request->getField("method") << std::endl;
     if (!setupPipes()) 
         return;
 
@@ -27,7 +32,13 @@ CGI::CGI(HttpRequest *request) {
 /**
  * @brief       Destructor for the CGI class.
  */
-CGI::~CGI(){}
+CGI::~CGI(){
+    std::cout << "destructor called" << std::endl;
+    close(_toCgiPipe[WRITE]);
+    close(_toCgiPipe[READ]);
+    close(_fromCgiPipe[WRITE]);
+    close(_fromCgiPipe[READ]); 
+}
 
 /**
  * @brief       Parses the query string from the HTTP request path if the request method is GET.
@@ -41,26 +52,14 @@ CGI::~CGI(){}
  *              - Add error handling in case the query string is malformed.
  */
 void CGI::parseQueryString(HttpRequest* request) {
-
     if (_method == "GET") {
         _path = request->getField("path");
         std::size_t startPos = _path.find("?");
         if (startPos != std::string::npos) {
             _queryParams = _path.substr(startPos + 1);
-        } 
-        else {
+        } else {
             _queryParams = "";
         }
-        if (_path.empty()) {
-            std::cerr << "Error: Path is empty. Cannot extract query string." << std::endl;
-            return;
-        }
-        else {
-            //std::cout << "Request path: " << _path << std::endl;
-        }
-        //std::cout << "Extracted query string: " << _queryParams << std::endl;  // Debug
-        //std::cout << "Parsing query string in process with PID: " << getpid() << std::endl;
-
     }
 }
 
@@ -77,7 +76,6 @@ void CGI::parseQueryString(HttpRequest* request) {
  *              - Ensure proper memory management for `_env` in case of re-initialization.
  */
 void CGI::initializeEnvVars(HttpRequest* request) {
-
     _method = request->getField("method");
     _envVars.push_back("REQUEST_METHOD=" + _method);
 
@@ -88,30 +86,23 @@ void CGI::initializeEnvVars(HttpRequest* request) {
         std::string contentLength = request->getField("Content-Length");
         if (!contentLength.empty()) {
             _envVars.push_back("CONTENT_LENGTH=" + contentLength);
-            //needs body?
         }
         std::string body = request->getField("body");
         if (!body.empty()) {
             _envVars.push_back("BODY=" + body);
         }
-    } else if (_method == "DELETE") {
-        parseQueryString(request);
-        _envVars.push_back("QUERY_STRING=" + _queryParams);
-        //std::cout << "QUERY_STRING: " << _queryParams << std::endl;
-    } else {
-        std::cerr << "Unsupported HTTP method: " << _method << std::endl;
-        return;  // Or send an HTTP 405 response
     }
 
-    // Add other common environment variables, such as SCRIPT_NAME
+    // Additional standard CGI variables
     _envVars.push_back("SCRIPT_NAME=" + request->getField("script_name"));
+    _envVars.push_back("SERVER_PROTOCOL=HTTP/1.1");
+    _envVars.push_back("GATEWAY_INTERFACE=CGI/1.1");
 
     for (const auto& var : _envVars) {
         _env.push_back(const_cast<char*>(var.c_str()));
     }
-    _env.push_back(nullptr);
+    _env.push_back(nullptr); // End the environment variable list
 }
-
 
 /**
  * @brief       Executes the CGI script with the specified environment variables.
@@ -152,7 +143,11 @@ void CGI::executeCgi() {
     close(_fromCgiPipe[READ]);
     close(_fromCgiPipe[WRITE]);
 
-    std::cerr << "Executing: " << argv[0] << " " << argv[1] << std::endl;
+    // std::cerr << "Executing: " << argv[0] << " " << argv[1] << std::endl;
+    std::cerr << "Executing CGI script with execve: " << argv[0] << " " << argv[1] << std::endl;
+    for (const auto& envVar : _envVars) {
+        std::cerr << "Env: " << envVar << std::endl;
+    }
     execve(argv[0], const_cast<char* const*>(argv), _env.data());	
 	perror("execve failed"); // save status code somewhere
 
@@ -178,16 +173,99 @@ void CGI::readCgiOutput() {
     if (bytes_read < 0) {
         throw std::runtime_error("Error reading from pipe");
     }
-    if (bytes_read == 0) {
+    else if (bytes_read == 0) {
+        std::cout << "EOF reached mark complete" << std::endl;
         markCgiComplete(); // EOF
-        std::cerr << "Finished reading CGI output. Marking as complete." << std::endl;
+        std::cerr << "Finished reading CGI output. Marking as complete." << _cgiComplete << std::endl;
         return;
     }
-    else {
-        _cgiOutput.append(buffer, bytes_read);
-        std::cerr << "Read " << bytes_read << " bytes from CGI output." << std::endl;
+    // Append data to output
+    _cgiOutput.append(buffer, bytes_read);
+    std::cerr << "Read " << bytes_read << " bytes from CGI output. Total output size: " 
+              << _cgiOutput.size() << " bytes."
+              << "Current CGI output: " << _cgiOutput << std::endl;
+              
+    // Parse headers if not sent
+    if (!_headersSent) {
+
+        auto headers_end = _cgiOutput.find("\r\n\r\n");
+        if (headers_end == std::string::npos) {
+            headers_end = _cgiOutput.find("\n\n");
+        }
+
+        if (headers_end == std::string::npos) {
+            std::cerr << "Headers not yet complete. Waiting for more data." << std::endl;
+            return; // Wait for more data in the next read
+        }
+        else if (headers_end != std::string::npos) {
+            // _cgiOutput = "Content-Type: text/html\r\n\r\n" + _cgiOutput;
+            _headersSent = true;
+
+            // Extract headers
+            std::string headers = _cgiOutput.substr(0, headers_end);
+            parseHeaders(headers);
+
+            // Remove headers from _cgiOutput, leaving only the body
+            _cgiOutput = _cgiOutput.substr(headers_end + 4);
+
+            // Reset `_receivedBodySize` to account only for body data
+            _receivedBodySize = _cgiOutput.size();
+
+            std::cerr << "Headers received and parsed. Content-Length: " 
+                << _contentLength << std::endl;
+        }
+        else {
+            // Increment body size only after headers are parsed
+            _receivedBodySize += bytes_read;
+        }
     }
-    
+
+    // Check if the body size matches Content-Length
+    if (_headersSent) {
+        _receivedBodySize += bytes_read;
+        if (_receivedBodySize >= _contentLength) {
+        std::cerr << "Body size matches Content-Length. Marking as complete." << std::endl;
+        markCgiComplete();
+        std::cerr << "Body fully received. Marking CGI as complete." << _cgiComplete << std::endl;
+        }
+    }
+}
+
+
+void CGI::parseHeaders(const std::string& headers) {
+    std::istringstream headerStream(headers);
+    std::string line;
+    while (std::getline(headerStream, line)) {
+        std::cout << "line contains: " << line << std::endl;
+        if (line.back() == '\r') {
+            line.pop_back();
+        }
+
+        // if (line.find("Content-Length:") == 0) {
+        //     std::string contentLenghtStr = line.substr(15);
+        //     try {
+        //         _contentLength = std::stoi(contentLenghtStr);
+        //     } 
+        //     catch (const std::exception& e) {
+        //         throw std::runtime_error("Invalid Content-Length value");
+        //     }
+        //     break;
+        // }
+            if (line.find("Content-Length:") == 0) {
+                std::string contentLengthStr = line.substr(15);
+            try {
+                _contentLength = std::stoi(contentLengthStr);
+                std::cerr << "Content-Length extracted: " << _contentLength << std::endl;
+            } 
+            catch (const std::exception& e) {
+                std::cerr << "Invalid Content-Length header: " << contentLengthStr << std::endl;
+                throw std::runtime_error("Invalid Content-Length value");
+            }
+            return;
+        }
+    }
+    std::cerr << "Content-Length header not found in headers." << std::endl;
+    throw std::runtime_error("Missing Content-Length header");
 }
 
 /**
@@ -200,6 +278,7 @@ void CGI::readCgiOutput() {
  * @todo        - Implement error handling if something goes wrong with the write
  */
 void CGI::writeCgiInput() {
+
     if (_inputIndex >= _cgiInput.size()) {
         close(_toCgiPipe[WRITE]); // Signal EOF to the CGI process
         std::cerr << "Finished writing to CGI. Closed write pipe." << std::endl;
@@ -208,6 +287,12 @@ void CGI::writeCgiInput() {
 
     unsigned long bytesToWrite = WRITE_SIZE;
     unsigned long bytesWritten = 0;
+    
+    std::cerr << "Writing to CGI: " << bytesToWrite << " bytes at index " << _inputIndex 
+          << " (total size: " << _cgiInput.size() << ")" << std::endl;
+
+    std::cout << "----------Writing to CGI---------" << std::endl;
+    std::cout << " INPUT index is : " << _inputIndex << std::endl;
 
     if (bytesToWrite > _cgiInput.size() - _inputIndex) {
         bytesToWrite = _cgiInput.size() - _inputIndex;
@@ -219,7 +304,7 @@ void CGI::writeCgiInput() {
         perror("Error writing to CGI pipe");
         throw std::runtime_error("Failed to write to CGI process");
     }
-    _cgiInput += bytesWritten;
+    _inputIndex += bytesWritten;
 }
 
 /**
