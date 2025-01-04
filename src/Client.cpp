@@ -184,6 +184,7 @@ void Client::startCgi(HttpRequest *request) {
  * CGI process.
  */
 void Client::readFromCgi() {
+     std::cout << "CGI completed? " << _CGI->isCgiComplete() << std::endl;
     if (!_CGI) {
         throw std::runtime_error("CGI object is not initialized.");
     }
@@ -191,8 +192,6 @@ void Client::readFromCgi() {
     try {
         // Read data from the CGI process
         _CGI->readCgiOutput();
-        std::cout << "CGI completed? " << _CGI->isCgiComplete() << std::endl;
-
         // Check if the CGI process is done writing output
         if (_CGI->isCgiComplete()) {
             std::cerr << "CGI process completed. Preparing response." << std::endl;
