@@ -480,39 +480,42 @@ Error (500 Internal Server Error): If something went wrong on the server side.
 Decide whether to close the connection or keep it alive (based on HTTP version or a Connection header).
 */
 int Server::handlePostRequest(Client &client, HttpRequest* Http) {
- 	std::string requestBody = Http->getBody();
-    std::string contentType = Http->getHeader("Content-Type");
-    std::string contentLength = Http->getHeader("Content-Length");
 
-    // Validate content length
-    if (requestBody.empty() || contentLength.empty()) {
-        sendErrorResponse(client.getSocket(), 400, "Bad Request: No body provided");
-        return 400;
-    }
+    (void)client;
+    (void)Http;
+//  	std::string requestBody = Http->getBody();
+//     std::string contentType = Http->getHeader("Content-Type");
+//     std::string contentLength = Http->getHeader("Content-Length");
 
-    // Check if request body size exceeds max allowed size
-    if (requestBody.size() > this->_maxBodySize) {
-        sendErrorResponse(client.getSocket(), 413, "Payload Too Large");
-        return 413;
-    }
+//     // Validate content length
+//     if (requestBody.empty() || contentLength.empty()) {
+//         sendErrorResponse(client.getSocket(), 400, "Bad Request: No body provided");
+//         return 400;
+//     }
 
-    // Determine if it's a file upload
-    if (contentType.find("multipart/form-data") != std::string::npos) {
-        return handleFileUpload(client, Http);
-    }
+//     // Check if request body size exceeds max allowed size
+//     if (requestBody.size() > this->_maxBodySize) {
+//         sendErrorResponse(client.getSocket(), 413, "Payload Too Large");
+//         return 413;
+//     }
 
-    // Save request body to a file (for example, logs)
-    std::string filePath = "www/uploads/post_data.txt";
-    std::ofstream outFile(filePath, std::ios::app);
-    if (!outFile) {
-        sendErrorResponse(client.getSocket(), 500, "Internal Server Error: Cannot write to file");
-        return 500;
-    }
-    outFile << requestBody << std::endl;
-    outFile.close();
+//     // Determine if it's a file upload
+//     if (contentType.find("multipart/form-data") != std::string::npos) {
+//         return handleFileUpload(client, Http);
+//     }
 
-    // Send success response
-    sendSuccessResponse(client.getSocket(), 201, "Created");
+//     // Save request body to a file (for example, logs)
+//     std::string filePath = "www/uploads/post_data.txt";
+//     std::ofstream outFile(filePath, std::ios::app);
+//     if (!outFile) {
+//         sendErrorResponse(client.getSocket(), 500, "Internal Server Error: Cannot write to file");
+//         return 500;
+//     }
+//     outFile << requestBody << std::endl;
+//     outFile.close();
+
+//     // Send success response
+//     sendSuccessResponse(client.getSocket(), 201, "Created");
     return 201; // HTTP 201 Created
 }
 
