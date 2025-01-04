@@ -191,6 +191,7 @@ void Client::readFromCgi() {
     try {
         // Read data from the CGI process
         _CGI->readCgiOutput();
+        std::cout << "CGI completed? " << _CGI->isCgiComplete() << std::endl;
 
         // Check if the CGI process is done writing output
         if (_CGI->isCgiComplete()) {
@@ -198,7 +199,7 @@ void Client::readFromCgi() {
             // Send the final chunk and terminate the CGI process
             send(_clientSocket, "0\r\n\r\n", 5, 0);
             kill(_CGI->getPid(), SIGTERM); // Send signal to terminate the process
-            _CGI->markCgiComplete();
+            // _CGI->markCgiComplete();
             prepareFileResponse();
         }
     } catch (const std::exception& e) {
