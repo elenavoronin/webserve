@@ -249,6 +249,8 @@ void Client::readFromSocket(Server *server, Server &defaultServer) {
     }
 
     if (_HttpRequest->isHeaderReceived()) {
+		_HttpRequest->parseBody(_HttpRequest->getStrReceived());
+		_HttpRequest->parseHeaders(_HttpRequest->getStrReceived());
         server->processClientRequest(*this, _HttpRequest->getStrReceived(), _HttpRequest, defaultServer);
         _HttpRequest->setHeaderReceived(false);
         _HttpRequest->clearStrReceived();
