@@ -199,7 +199,7 @@ void Client::readFromCgi() {
             send(_clientSocket, "0\r\n\r\n", 5, 0);
             kill(_CGI->getPid(), SIGTERM); // Send signal to terminate the process
             // _CGI->markCgiComplete();
-            prepareFileResponse();
+            prepareFileResponse("");
         }
     } catch (const std::exception& e) {
         std::cerr << "Error while reading from CGI: " << e.what() << std::endl;
@@ -323,32 +323,60 @@ void Client::closeConnection(EventPoll &eventPoll) {
  * @todo add response status code
  * @todo add timeout?
  */
-void Client::prepareFileResponse() {
+void Client::prepareFileResponse(std::string errorContent) {
     std::string requestedFile = _HttpRequest->getFullPath();
     //read file
     std::ifstream file(requestedFile);
     if (!file.is_open()) {
-        throw std::runtime_error("File not found 1: " + requestedFile);
-        return ;
-        // Handle 404 response
+		
+        _HttpResponse->setStatus(404, "Not Found");
+        _HttpResponse->setHeader("Content-Type", "text/html");
+        _HttpResponse->setBody(errorContent);
+        _HttpResponse->buildResponse();
+
+        std::cerr << "File not found: " << requestedFile << std::endl;
+
+        // Prepare to send the 404 response
+        _eventPoll->ToremovePollEventFd(_clientSocket, POLLIN);
+        _eventPoll->addPollFdEventQueue(_clientSocket, POLLOUT);
+
+        return;
     } else {
         std::stringstream buffer;
         buffer << file.rdbuf();
         file.close();
-        // Send the file content as response
-        _HttpResponse->setBody(buffer.str());
-        _HttpResponse->setHeader("Content-Type", "text/html");
-        // _HttpResponse->setStatusCode(200); //replace by actual status code
-    }
+		
+		// Set the response headers and body
+		_HttpResponse->setStatus(200, "OK");
+		_HttpResponse->setHeader("Content-Type", "text/html");
+		_HttpResponse->setBody(buffer.str());
+		_HttpResponse->buildResponse();
 
-    _HttpResponse->buildResponse();
-    //std::cout << "Preparing file response for client socket: " << _clientSocket << std::endl;
-    _eventPoll->ToremovePollEventFd(_clientSocket, POLLIN);
-    _eventPoll->addPollFdEventQueue(_clientSocket, POLLOUT);
-    //std::cout << "Added POLLOUT for client socket: " << _clientSocket << std::endl;
+		// Prepare the client socket for writing the response
+		_eventPoll->ToremovePollEventFd(_clientSocket, POLLIN);
+		_eventPoll->addPollFdEventQueue(_clientSocket, POLLOUT);
 
+		// std::cout << "Prepared response for: " << requestedFile << " with Content-Type: " << contentType << std::endl;
+	}
 }
 
+void Client::sendData(const std::string &response) {
+    // Send the complete HTTP response to the client socket
+    ssize_t bytesSent = send(_clientSocket, response.c_str(), response.size(), 0);
+
+    if (bytesSent == -1) {
+        // Log an error if sending fails
+        std::cerr << "Error: Failed to send response to client socket " << _clientSocket << ". Error: " << strerror(errno) << std::endl;
+    } else if (static_cast<size_t>(bytesSent) < response.size()) {
+        // Log a warning if only part of the response was sent
+        std::cerr << "Warning: Partial response sent to client socket " << _clientSocket 
+                  << ". Sent " << bytesSent << " of " << response.size() << " bytes." << std::endl;
+    } else {
+        // Log success if the entire response was sent
+        std::cout << "Response successfully sent to client socket " << _clientSocket 
+                  << ". Sent " << bytesSent << " bytes." << std::endl;
+    }
+}
 
 
 /**

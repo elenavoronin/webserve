@@ -300,7 +300,7 @@ void CGI::writeCgiInput() {
     std::cerr << "Writing to CGI: " << _cgiInput.substr(_inputIndex, bytesToWrite) << std::endl;
     //data + offset inputindex 
     bytesWritten = write(_toCgiPipe[WRITE], _cgiInput.data() + _inputIndex, bytesToWrite);
-    if (bytesWritten < 0) {
+    if (bytesWritten <= 0) { //TODO omparison of unsigned expression < 0 is always false so set to <= instead of 0 to compile
         perror("Error writing to CGI pipe");
         throw std::runtime_error("Failed to write to CGI process");
     }

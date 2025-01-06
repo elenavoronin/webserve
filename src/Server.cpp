@@ -295,7 +295,7 @@ int Server::processClientRequest(Client &client, const std::string& request, Htt
  * @todo writing needs to go through the poll loop not working yet
  */
 int Server::handleGetRequest(Client &client, HttpRequest* request) {
-	
+	HttpResponse response;
 	std::string filepath = this->getRoot() + request->getPath();
 	request->setFullPath(filepath);
 
@@ -315,16 +315,31 @@ int Server::handleGetRequest(Client &client, HttpRequest* request) {
         }
 
         // Proceed with sending the file response
-        client.prepareFileResponse();
+        client.prepareFileResponse("");
+		client.sendData(client.getHttpResponse()->getFullResponse());
+		response.buildResponse();
+
         return 200;
 
     } catch (const std::runtime_error& e) {
-        std::cerr << e.what() << std::endl;
-        sendFileResponse(client.getSocket(), "www/html/404.html", 404);
+        std::string errorPagePath = "www/html/404.html";
+        std::ifstream errorFile(errorPagePath, std::ios::binary);
+        std::string errorContent;
+
+        if (errorFile.is_open()) {
+            std::stringstream buffer;
+            buffer << errorFile.rdbuf();
+            errorContent = buffer.str();
+            errorFile.close();
+        } else {
+            // Fallback if the 404 page itself is missing
+            errorContent = "<html><body><h1>404 - Page Not Found</h1></body></html>";
+        }
+        client.prepareFileResponse(errorContent);
+		client.sendData(client.getHttpResponse()->getFullResponse());
+		response.buildResponse();
         return 404;
-    }
-	// sendFileResponse(client.getSocket(), filepath, 200);//needs to be set respionse because need to go back to poll loop
-	return 200;
+	}
 }
 
 /**

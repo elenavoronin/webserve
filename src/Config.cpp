@@ -26,10 +26,8 @@ bool Config::validateParsedData(Server &server) {
     if (server.getPortStr().empty())
         return false;
 
-    bool isNumeric = true;
     for (char c : server.getPortStr()) {
     if (!std::isdigit(c)) {
-        isNumeric = false;
         return false;
     } }
     if (server.getRoot().empty())
