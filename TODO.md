@@ -3,13 +3,11 @@ POll decides what we're doing not the server
 
 1. reconnect cgi to poll loop (djoyke)
 2. use throw instead of std cout or std cerr and have a catch somewhere (lena, djoyke)
-3. integrate locations into CGI (lena)
-4. validate data while parsing (lena) - need to check with djoyke and anna what else needs validating
-5. link throw to http response, and display correct page (djoyke, lena)
-6. handling null characters for requesting images eg assets/nebula.jpg dont handle it like a string (lena)
-7. should we assert more? (all)
-8. close pipe when something goes wrong reading or writing (djoyke)
-9. test config file with 2 servers
+3. link throw to http response, and display correct page (djoyke, lena) - only for DELETE method still pending
+4. handling null characters for requesting images eg assets/nebula.jpg dont handle it like a string (lena)
+5. should we assert more? (all)
+6. close pipe when something goes wrong reading or writing (djoyke)
+7. test config file with 2 servers
 
 WE USE UTILS... DO NOT REMOVE, love you!
 
@@ -21,17 +19,10 @@ TODO When Anna is back:
 4. eval sheet misery (jan)
 5. unit test (all, jan)
 6. fix the download thing without us telling it to do so (anna)
-7. set the fields as private variables in HTTPRequest (djoyke) so I don't copy the strings all the time
-8. parse root, index and so on from config in handle request
-9. do we need broadcast message?
-10. add charset 8 for Content type
-11. handleGet check extension (img. html ..) instead cgi-bin
-12. add timeout struct pollfd pfd = { _clientSocket, POLLIN | POLLOUT, 0 };
-int ret = poll(&pfd, 1, 5000); // Timeout after 5000ms
-if (ret == 0) {
-    std::cerr << "Timeout on socket: " << _clientSocket << std::endl;
-    close(_clientSocket);
-}
+7. do we need broadcast message?
+8. add charset 8 for Content type
+9. handleGet check extension (img. html ..) instead cgi-bin
+
 
 
 Basic Siege command for testing localhost:8080:
@@ -45,6 +36,16 @@ curl -X POST --data-binary "@large_file_2.txt" http://localhost:8080/endpoint
 # In terminal 3
 curl -X POST --data-binary "@large_file_3.txt" http://localhost:8080/endpoint
 
+
+test POST request:
+curl -X POST http://localhost:8080/your-endpoint \
+     -H "Content-Type: application/x-www-form-urlencoded" \
+     -d "name=John&age=30"
+
+curl -X POST http://localhost:8080/your-endpoint \
+     -F "file=@path/to/your/file.txt"
+
+curl -X POST http://localhost:8080/your-endpoint -d "name=John&age=30"
 
 
 To kill a process, you can use the kill command in Linux or macOS. Follow these steps:
