@@ -83,7 +83,6 @@ class Server  {
 		void 											setLocation(const std::string& path, const Location& location) {_locations[path].push_back(location);}
 		void											setListenerFd(int listener_fd) {_listener_fd = listener_fd;}
 
-
 		std::map<std::string, std::vector<Location>> 	getLocations() const {return _locations;}
 		std::string 									getPortStr() const {return this->_portString;}
 		std::string 									getIndex() const {return this->_index;}

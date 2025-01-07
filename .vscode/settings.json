@@ -86,6 +86,7 @@
 		"stack": "cpp",
 		"__verbose_abort": "cpp",
 		"charconv": "cpp",
-		"variant": "cpp"
+		"variant": "cpp",
+		"filesystem": "cpp"
 	}
 }

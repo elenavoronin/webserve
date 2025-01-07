@@ -46,8 +46,8 @@ class Client {
 		int 				writeToSocket();
 		void 				readFromSocket(Server *server, Server &defaultServer);
 		void 				closeConnection(EventPoll &eventPoll);
-		void				prepareFileResponse();
-
+		void				prepareFileResponse(std::string errorContent);
+		void				sendData(const std::string &response);
 		//CGI calling methods
 		int 				getCgiRead();
 		int 				getCgiWrite();

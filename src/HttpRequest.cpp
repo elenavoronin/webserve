@@ -5,7 +5,7 @@
  * 
  * @details     Initializes an empty HttpRequest object with no fields or received data.
  */
-HttpRequest::HttpRequest(){
+HttpRequest::HttpRequest() : _headers() {
 	_strReceived = "";
 }
 
@@ -60,6 +60,10 @@ void	HttpRequest::setVersion(std::string version) {
 	_version = version;
 }
 
+void HttpRequest::setBody(std::string& body) {
+	_body = body;
+}
+
 /**
  * @brief       Returns the path of the HTTP request.
  * 
@@ -95,6 +99,18 @@ std::string	HttpRequest::getMethod() {
  */
 std::string	HttpRequest::getVersion() {
 	return _version;
+}
+
+std::string HttpRequest::getBody() {
+	return _body;
+}
+
+std::string HttpRequest::getHeader(const std::string& key) {
+	auto it = _headers.find(key);
+    if (it != _headers.end()) {
+        return it->second; // Return the value if the header exists
+    }
+    return ""; // Return an empty string if the header is not found
 }
 
 /**
@@ -229,4 +245,42 @@ int HttpRequest::findContentLength(std::string request){
  */
 void HttpRequest::setStrReceived(std::string input) {
 	_strReceived = input;
+}
+
+void HttpRequest::parseBody(const std::string& rawRequest) {
+    // Find the double CRLF that separates headers and body
+    size_t headerEnd = rawRequest.find("\r\n\r\n");
+    if (headerEnd == std::string::npos) {
+        throw std::runtime_error("Invalid HTTP request: Missing headers and body separator");
+    }
+
+    // Extract the body (if any)
+    size_t bodyStart = headerEnd + 4;  // Skip over "\r\n\r\n"
+    if (bodyStart < rawRequest.size()) {
+        _body = rawRequest.substr(bodyStart);
+    } else {
+        _body.clear();  // No body
+    }
+}
+
+void HttpRequest::parseHeaders(const std::string& rawRequest) {
+    size_t headerEnd = rawRequest.find("\r\n\r\n");
+    if (headerEnd == std::string::npos) {
+        throw std::runtime_error("Invalid HTTP request: Missing headers");
+    }
+
+    std::istringstream headerStream(rawRequest.substr(0, headerEnd));
+    std::string line;
+    while (std::getline(headerStream, line) && !line.empty()) {
+        size_t delimiter = line.find(":");
+        if (delimiter != std::string::npos) {
+            std::string key = line.substr(0, delimiter);
+            std::string value = line.substr(delimiter + 1);
+            _headers[key] = value;
+        }
+    }
+}
+
+const std::map<std::string, std::string>& HttpRequest::getAllHeaders() const {
+    return _headers;
 }

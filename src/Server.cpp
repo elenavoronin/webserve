@@ -148,7 +148,7 @@ void Server::handlePollEvent(EventPoll &eventPoll, int i, Server& defaultServer)
 
     // Handle readable events
     if (currentPollFd.revents & POLLIN) {
-		std::cout << "POLLIN" << std::endl;
+		// std::cout << "POLLIN" << std::endl;
         try {
             if (event_fd != client->getSocket() && event_fd == client->getCgiRead()) {
                 client->readFromCgi();
@@ -163,7 +163,7 @@ void Server::handlePollEvent(EventPoll &eventPoll, int i, Server& defaultServer)
     }
     // Handle writable events
     if (currentPollFd.revents & POLLOUT) {
-		std::cout << "POLLOUT" << std::endl;
+		// std::cout << "POLLOUT" << std::endl;
         try {
             if (event_fd != client->getSocket() && event_fd == client->getCgiWrite()) {
                 client->writeToCgi();
@@ -295,7 +295,7 @@ int Server::processClientRequest(Client &client, const std::string& request, Htt
  * @todo writing needs to go through the poll loop not working yet
  */
 int Server::handleGetRequest(Client &client, HttpRequest* request) {
-	
+	HttpResponse response;
 	std::string filepath = this->getRoot() + request->getPath();
 	request->setFullPath(filepath);
 
@@ -303,7 +303,7 @@ int Server::handleGetRequest(Client &client, HttpRequest* request) {
 		filepath = this->getRoot() + '/' + this->getIndex();
 		request->setFullPath(filepath);
 	}
-	if (request->getPath().rfind("/cgi-bin/", 0) == 0) { //change to config
+	if (request->getPath().rfind(_index, 0) == 0) { //changed to config
 		request->setFullPath(filepath);
 		client.startCgi(request);
 		return 0;
@@ -315,16 +315,31 @@ int Server::handleGetRequest(Client &client, HttpRequest* request) {
         }
 
         // Proceed with sending the file response
-        client.prepareFileResponse();
+        client.prepareFileResponse("");
+		client.sendData(client.getHttpResponse()->getFullResponse());
+		response.buildResponse();
+
         return 200;
 
     } catch (const std::runtime_error& e) {
-        std::cerr << e.what() << std::endl;
-        sendFileResponse(client.getSocket(), "www/html/404.html", 404);
+        std::string errorPagePath = "www/html/404.html";
+        std::ifstream errorFile(errorPagePath, std::ios::binary);
+        std::string errorContent;
+
+        if (errorFile.is_open()) {
+            std::stringstream buffer;
+            buffer << errorFile.rdbuf();
+            errorContent = buffer.str();
+            errorFile.close();
+        } else {
+            // Fallback if the 404 page itself is missing
+            errorContent = "<html><body><h1>404 - Page Not Found</h1></body></html>";
+        }
+        client.prepareFileResponse(errorContent);
+		client.sendData(client.getHttpResponse()->getFullResponse());
+		response.buildResponse();
         return 404;
-    }
-	// sendFileResponse(client.getSocket(), filepath, 200);//needs to be set respionse because need to go back to poll loop
-	return 200;
+	}
 }
 
 /**
@@ -479,18 +494,61 @@ Error (400 Bad Request): If there was a problem with the data.
 Error (500 Internal Server Error): If something went wrong on the server side.
 Decide whether to close the connection or keep it alive (based on HTTP version or a Connection header).
 */
-int Server::handlePostRequest(Client &client, HttpRequest* Http) {
-	
-	(void)client;
-	(void)Http;
+int Server::handlePostRequest(Client &client, HttpRequest* request) {
+ 	HttpResponse response;
+    try {
+        // Get the request body
+        std::string requestBody = request->getBody();
+        // Validate the Content-Length header
+		std::cout << "body of http request: " << requestBody << std::endl;
+        std::string contentLengthHeader = request->getHeader("Content-Length");
+		std::cout << "content length header: " << contentLengthHeader << std::endl;
+		if (contentLengthHeader.empty()) {
+    		throw std::runtime_error("Missing Content-Length header in POST request");
+		}
+        if (contentLengthHeader.empty()) {
+            throw std::runtime_error("Missing Content-Length header in POST request");
+        }
 
-	// if (!Http->findContentLength(Http->_strReceived) || Http->findContentLength(Http->_strReceived) <= 0) //Can be equal to 0?
-	// 	return 400;
-	// // if (Http->findContentLength(Http->_strReceived) > this->getMaxlength()) //add after parsing
-	// // 	return 413;
-	// if (Http->getField("Content-type") == "application/x-www-form-urlencoded")
+        size_t contentLength = std::stoul(contentLengthHeader);
+        if (requestBody.size() != contentLength) {
+            throw std::runtime_error("Content-Length mismatch: Received " +
+                                     std::to_string(requestBody.size()) +
+                                     ", expected " + contentLengthHeader);
+        }
 
-	return 0;
+        // Example: Process the data (e.g., save to file, database, etc.)
+        std::string filename = "received_data.txt";
+        std::string savePath = getUploadStore() + filename;
+        std::ofstream outFile(savePath, std::ios::app);
+        if (!outFile.is_open()) {
+            throw std::runtime_error("Failed to open file for writing: " + savePath);
+        }
+        outFile << requestBody << std::endl;
+        outFile.close();
+
+        // Set success response
+        response.setStatus(201, "Created");
+        response.setHeader("Content-Type", "text/plain");
+        response.setBody("Data received and stored successfully.");
+        response.buildResponse();
+
+        // Send the response
+        client.sendData(response.getFullResponse());
+        return 201;
+
+    } catch (const std::exception &e) {
+        // Handle errors and return a 500 Internal Server Error
+        std::cerr << "Error handling POST request: " << e.what() << std::endl;
+
+        response.setStatus(500, "Internal Server Error");
+        response.setHeader("Content-Type", "text/plain");
+        response.setBody("Error processing the POST request.");
+        response.buildResponse();
+
+        client.sendData(response.getFullResponse());
+        return 500;
+    }
 }
 
 

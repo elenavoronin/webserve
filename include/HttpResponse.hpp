@@ -37,4 +37,6 @@ class HttpResponse {
 		void 				buildResponse();
 		void 				redirect(const std::string& location, int status_code, const std::string& message);
 		std::string			getHeadersOnly() const;
+
+		std::string 		getBody() { return this->_body; };
 };

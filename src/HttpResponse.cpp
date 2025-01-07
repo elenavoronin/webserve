@@ -125,7 +125,7 @@ void HttpResponse::buildResponse() {
 	// Build the full response
 	_fullResponse = _headersOnly;
 	if (!_body.empty()) {
-		_fullResponse += _body;
+		_fullResponse += _body;	
 	}
 	// //std::cout << _fullResponse << std::endl; // Debug output
 }
