@@ -25,6 +25,7 @@ class HttpRequest {
 		std::string									_version;
 		std::string 								_body;
 		std::map<std::string, std::string> 			_headers;
+		std::string									_fileName;
 
 	public:
 		bool 										_readyToSendBack = false; // Flag indicating whether the request is ready to send a response.

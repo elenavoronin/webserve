@@ -28,16 +28,12 @@ bool Config::validateParsedData(Server &server) {
     if (server.getUploadStore().empty()) {
         std::string path = "./www/upload/";
         struct stat info;
+        server.setUploadStore(path);
         if (stat(path.c_str(), &info) != 0) {    
-            server.setUploadStore(path);
             if (mkdir(path.c_str(), 0777) == -1) {
             throw std::runtime_error("Failed to create directory: " + path);
             }
-        } 
-        else if (!(info.st_mode & S_IFDIR)) {
-        // Path exists but is not a directory
-        throw std::runtime_error(path + " exists but is not a directory");
-    }
+        }
     }
     for (char c : server.getPortStr()) {
     if (!std::isdigit(c)) {

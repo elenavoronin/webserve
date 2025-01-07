@@ -56,10 +56,25 @@ void	HttpRequest::setMethod(std::string method) {
  * 
  * @return      The assigned version value.
  */
+
+/**
+ * @brief       Sets the version field of the HttpRequest object.
+ * 
+ * @param       version  The value to assign to the version field.
+ * 
+ * @return      The assigned version value.
+ */
 void	HttpRequest::setVersion(std::string version) {
 	_version = version;
 }
 
+/**
+ * @brief       Sets the body field of the HttpRequest object.
+ * 
+ * @param       body    The value to assign to the body field.
+ * 
+ * @return      The assigned body value.
+ */
 void HttpRequest::setBody(std::string& body) {
 	_body = body;
 }
@@ -101,10 +116,24 @@ std::string	HttpRequest::getVersion() {
 	return _version;
 }
 
+
+/**
+ * @brief       Retrieves the body of the HTTP request.
+ * 
+ * @return      The body of the request as a string.
+ */
+
 std::string HttpRequest::getBody() {
 	return _body;
 }
 
+/**
+ * @brief       Retrieves the value associated with a specific header name.
+ * 
+ * @param       key         The header name to look up.
+ * 
+ * @return      The value of the header if it exists, or an empty string if it does not.
+ */
 std::string HttpRequest::getHeader(const std::string& key) {
 	auto it = _headers.find(key);
     if (it != _headers.end()) {
@@ -279,8 +308,4 @@ void HttpRequest::parseHeaders(const std::string& rawRequest) {
             _headers[key] = value;
         }
     }
-}
-
-const std::map<std::string, std::string>& HttpRequest::getAllHeaders() const {
-    return _headers;
 }

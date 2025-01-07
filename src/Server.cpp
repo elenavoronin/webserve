@@ -500,9 +500,8 @@ int Server::handlePostRequest(Client &client, HttpRequest* request) {
         // Get the request body
         std::string requestBody = request->getBody();
         // Validate the Content-Length header
-		std::cout << "body of http request: " << requestBody << std::endl;
+		// std::cout << "body of http request: " << requestBody << std::endl;
         std::string contentLengthHeader = request->getHeader("Content-Length");
-		std::cout << "content length header: " << contentLengthHeader << std::endl;
 		if (contentLengthHeader.empty()) {
     		throw std::runtime_error("Missing Content-Length header in POST request");
 		}
@@ -518,8 +517,9 @@ int Server::handlePostRequest(Client &client, HttpRequest* request) {
         }
 
         // Example: Process the data (e.g., save to file, database, etc.)
-        std::string filename = "received_data.txt";
+        std::string filename = "data_upload.txt";
         std::string savePath = getUploadStore() + filename;
+        std::cout << "save path: " << savePath << std::endl;
         std::ofstream outFile(savePath, std::ios::app);
         if (!outFile.is_open()) {
             throw std::runtime_error("Failed to open file for writing: " + savePath);
