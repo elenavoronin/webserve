@@ -518,7 +518,8 @@ int Server::handlePostRequest(Client &client, HttpRequest* request) {
         }
 
         // Example: Process the data (e.g., save to file, database, etc.)
-        std::string savePath = "data/received_data.txt";
+        std::string filename = "received_data.txt";
+        std::string savePath = getUploadStore() + filename;
         std::ofstream outFile(savePath, std::ios::app);
         if (!outFile.is_open()) {
             throw std::runtime_error("Failed to open file for writing: " + savePath);

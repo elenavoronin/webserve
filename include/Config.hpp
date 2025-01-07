@@ -19,6 +19,8 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <poll.h>
+#include <filesystem>
+#include <sys/stat.h>
 
 class Server;
 

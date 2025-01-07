@@ -25,7 +25,20 @@ bool Config::validateParsedData(Server &server) {
 
     if (server.getPortStr().empty())
         return false;
-
+    if (server.getUploadStore().empty()) {
+        std::string path = "./www/upload/";
+        struct stat info;
+        if (stat(path.c_str(), &info) != 0) {    
+            server.setUploadStore(path);
+            if (mkdir(path.c_str(), 0777) == -1) {
+            throw std::runtime_error("Failed to create directory: " + path);
+            }
+        } 
+        else if (!(info.st_mode & S_IFDIR)) {
+        // Path exists but is not a directory
+        throw std::runtime_error(path + " exists but is not a directory");
+    }
+    }
     for (char c : server.getPortStr()) {
     if (!std::isdigit(c)) {
         return false;
@@ -205,8 +218,10 @@ std::vector<Server> Config::parseConfig(std::ifstream &file) {
                         currentServer.setRoot(value);
                     } else if (key == "server_name") {
                         currentServer.setServerName(value);
-                    } else if (key == "index") {
+                    } else if (key == "index") { 
                         currentServer.setIndex(value);
+                    } else if (key == "upload_path") {
+                        currentServer.setUploadStore(value); 
                     } else if (key == "max_body_size") {
                         value = value.substr(0, value.size() - 1);
                         size_t maxSize = std::stoul(value);
