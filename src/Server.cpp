@@ -479,21 +479,25 @@ int Server::handleDeleteRequest(Client &client, HttpRequest* Http) {
 	return 0;
 }
 
-/*Extract the HTTP headers to understand what type of data is being sent (e.g., Content-Type, Content-Length).
-If the body size exceeds a predefined limit (for example, from a config file), return an error like 413 Request Too Large.
-Ensure that the Content-Length header is present and valid. This will tell you how much data to expect in the body.
-Read the body of the request from the socket. You might need to handle partial reads (i.e., the body could arrive in chunks).
-Form Data: If Content-Type is application/x-www-form-urlencoded, parse the form fields and their values.
-JSON Data: If the request contains application/json, you can parse the JSON data and extract the necessary information.
-File Uploads: If the Content-Type is multipart/form-data, handle file uploads (you'll need to parse the file boundaries and save the file to disk).
-Form Submission: Save data to a database, perform an action, or return a response to confirm the form was submitted.
-File Upload: Save the file to a specific directory and generate a success/failure response.
-Once processing is complete, send an appropriate response to the client. 
-Success (200 OK): If the request was processed successfully.
-Error (400 Bad Request): If there was a problem with the data.
-Error (500 Internal Server Error): If something went wrong on the server side.
-Decide whether to close the connection or keep it alive (based on HTTP version or a Connection header).
-*/
+
+/**
+ * @brief Handles an HTTP POST request from a client.
+ *
+ * This function processes the body of a POST request, validates the
+ * Content-Length header, and ensures the received data matches the expected
+ * content length. If the validation is successful, it processes the data
+ * by saving it to a file or performing other actions as needed. Upon
+ * successful processing, a 201 Created response is sent to the client.
+ * In case of any errors, a 500 Internal Server Error response is sent.
+ *
+ * @param client The client object associated with the request.
+ * @param request The HttpRequest object containing the details of the POST request.
+ * @return The HTTP status code indicating the result of the request processing.
+ * @todo check if body size exceeds a predefined limit (error 413 Request Too Large)
+ * @todo You might need to handle partial reads (i.e., the body could arrive in chunks).
+ * @todo Error (400 Bad Request): If there was a problem with the data.
+ */
+
 int Server::handlePostRequest(Client &client, HttpRequest* request) {
  	HttpResponse response;
     try {
