@@ -118,39 +118,29 @@ void CGI::initializeEnvVars(HttpRequest* request) {
  *              - Implement dynamic script path generation based on server configuration??
  *              - Use Server object to set up the environment variables when properly configured
  *              - Check if the script path should be dynamically generated based on the server configuration.
+ *              - Todo save status code somewhere
  */
 void CGI::executeCgi() {
     // Remove query string from _path
     std::size_t queryPos = _path.find("?");
     if (queryPos != std::string::npos) {
-        _path = _path.substr(0, queryPos);  // Extract only the script path
+        _path = _path.substr(0, queryPos);
     }
 
 	std::string cgiProgramString = "./www/html" + _path;
     const char* cgiProgram = cgiProgramString.c_str();
-
-    //std::cout << "Executing CGI script: " << cgiProgram << std::endl;
-    // const std::string &cgiPass = server._location.get_cgi_pass();
     const char* argv[] = {"/usr/bin/python3", cgiProgram, nullptr};
-
-    // const char* cgi_program = "./www/html/cgi-bin/hello.py";
-    // const char* argv[] = {"/usr/bin/python3", cgi_program, nullptr};
-
-    // std::string cgi_pass = server.getCgiPass();
-    // std::string cgi_path = server.getCgiPath();
 
     dup2(_fromCgiPipe[WRITE], STDOUT_FILENO);
     close(_fromCgiPipe[READ]);
     close(_fromCgiPipe[WRITE]);
 
-    // std::cerr << "Executing: " << argv[0] << " " << argv[1] << std::endl;
-    std::cerr << "Executing CGI script with execve: " << argv[0] << " " << argv[1] << std::endl;
-    for (const auto& envVar : _envVars) {
-        std::cerr << "Env: " << envVar << std::endl;
-    }
+    // std::cerr << "Executing CGI script with execve: " << argv[0] << " " << argv[1] << std::endl;
+    // for (const auto& envVar : _envVars) {
+    //     std::cerr << "Env: " << envVar << std::endl;
+    // }
     execve(argv[0], const_cast<char* const*>(argv), _env.data());	
-	perror("execve failed"); // save status code somewhere
-
+	perror("execve failed");
 	exit(EXIT_FAILURE);
 }
 
@@ -164,7 +154,7 @@ void CGI::executeCgi() {
  *                      - handle 
  *                      - implement error handling 
  *                      - maybe use vector of characters to have less trouble with images
- * 
+ *                      - remove comments
  */
 void CGI::readCgiOutput() {
     char buffer[READ_SIZE];
@@ -175,54 +165,45 @@ void CGI::readCgiOutput() {
     }
     else if (bytes_read == 0) {
         std::cout << "EOF reached mark complete" << std::endl;
-        markCgiComplete(); // EOF
+        markCgiComplete();
         std::cerr << "Finished reading CGI output. Marking as complete." << _cgiComplete << std::endl;
         return;
     }
     // Append data to output
     _cgiOutput.append(buffer, bytes_read);
     std::cerr << "Read " << bytes_read << " bytes from CGI output. Total output size: " 
-              << _cgiOutput.size() << " bytes."
-              << "Current CGI output: " << _cgiOutput << std::endl;
+              << _cgiOutput.size() << " bytes." << std::endl;
+    std::cerr << "BYTES RECIEVED " << _receivedBodySize << std::endl;
+            //   << "Current CGI output: " << _cgiOutput << std::endl;
               
     // Parse headers if not sent
     if (!_headersSent) {
 
         auto headers_end = _cgiOutput.find("\r\n\r\n");
         if (headers_end == std::string::npos) {
-            headers_end = _cgiOutput.find("\n\n");
-        }
-
-        if (headers_end == std::string::npos) {
             std::cerr << "Headers not yet complete. Waiting for more data." << std::endl;
             return; // Wait for more data in the next read
         }
         else if (headers_end != std::string::npos) {
-            // _cgiOutput = "Content-Type: text/html\r\n\r\n" + _cgiOutput;
             _headersSent = true;
 
             // Extract headers
             std::string headers = _cgiOutput.substr(0, headers_end);
+            std::cout << headers << std::endl;
             parseHeaders(headers);
-
-            // Remove headers from _cgiOutput, leaving only the body
-            _cgiOutput = _cgiOutput.substr(headers_end + 4);
-
-            // Reset `_receivedBodySize` to account only for body data
-            _receivedBodySize = _cgiOutput.size();
+            _receivedBodySize = _cgiOutput.size() - headers.size() - 5;
 
             std::cerr << "Headers received and parsed. Content-Length: " 
                 << _contentLength << std::endl;
         }
         else {
-            // Increment body size only after headers are parsed
             _receivedBodySize += bytes_read;
         }
     }
-
     // Check if the body size matches Content-Length
-    if (_headersSent) {
+    else {
         _receivedBodySize += bytes_read;
+        std::cerr << "BYTES RECIEVED " << _receivedBodySize << std::endl;
         if (_receivedBodySize >= _contentLength) {
         std::cerr << "Body size matches Content-Length. Marking as complete." << std::endl;
         markCgiComplete();
@@ -231,7 +212,19 @@ void CGI::readCgiOutput() {
     }
 }
 
-
+/**
+ * @brief       Parses HTTP headers to extract the Content-Length.
+ * 
+ * @param       headers     A string containing the HTTP headers to be parsed.
+ * 
+ * @details     This function reads through the given HTTP headers line by line,
+ *              searching for the "Content-Length" header. If found, it extracts
+ *              the value, converts it to an integer, and assigns it to `_contentLength`.
+ *              If the "Content-Length" header is missing or malformed, it throws
+ *              a `std::runtime_error`.
+ * 
+ * @throws      std::runtime_error if "Content-Length" header is missing or invalid.
+ */
 void CGI::parseHeaders(const std::string& headers) {
     std::istringstream headerStream(headers);
     std::string line;
@@ -240,28 +233,17 @@ void CGI::parseHeaders(const std::string& headers) {
         if (line.back() == '\r') {
             line.pop_back();
         }
-
-        // if (line.find("Content-Length:") == 0) {
-        //     std::string contentLenghtStr = line.substr(15);
-        //     try {
-        //         _contentLength = std::stoi(contentLenghtStr);
-        //     } 
-        //     catch (const std::exception& e) {
-        //         throw std::runtime_error("Invalid Content-Length value");
-        //     }
-        //     break;
-        // }
-            if (line.find("Content-Length:") == 0) {
-                std::string contentLengthStr = line.substr(15);
-            try {
-                _contentLength = std::stoi(contentLengthStr);
-                std::cerr << "Content-Length extracted: " << _contentLength << std::endl;
-            } 
-            catch (const std::exception& e) {
-                std::cerr << "Invalid Content-Length header: " << contentLengthStr << std::endl;
-                throw std::runtime_error("Invalid Content-Length value");
-            }
-            return;
+        if (line.find("Content-Length:") == 0) {
+            std::string contentLengthStr = line.substr(15);
+        try {
+            _contentLength = std::stoi(contentLengthStr);
+            std::cerr << "Content-Length extracted: " << _contentLength << std::endl;
+        } 
+        catch (const std::exception& e) {
+            std::cerr << "Invalid Content-Length header: " << contentLengthStr << std::endl;
+            throw std::runtime_error("Invalid Content-Length value");
+        }
+        return;
         }
     }
     std::cerr << "Content-Length header not found in headers." << std::endl;
@@ -298,37 +280,12 @@ void CGI::writeCgiInput() {
         bytesToWrite = _cgiInput.size() - _inputIndex;
     }
     std::cerr << "Writing to CGI: " << _cgiInput.substr(_inputIndex, bytesToWrite) << std::endl;
-    //data + offset inputindex 
     bytesWritten = write(_toCgiPipe[WRITE], _cgiInput.data() + _inputIndex, bytesToWrite);
     if (bytesWritten <= 0) { //TODO omparison of unsigned expression < 0 is always false so set to <= instead of 0 to compile
         perror("Error writing to CGI pipe");
         throw std::runtime_error("Failed to write to CGI process");
     }
     _inputIndex += bytesWritten;
-}
-
-/**
- * @brief Sends the HTTP response to the client, using the CGI output as the body.
- * 
- * @param client_socket The socket to write the response to.
- * @param cgi_output The content generated by the CGI script.
- * 
- * @todo use buildResponse() ??
- * @todo check if output includes headers
- */
-void CGI::sendResponse(int client_socket, const std::string& cgi_output) {
-    HttpResponse response;
-    // response.buildResponse();
-    response.setStatus(200, "OK");
-    response.setHeader("Content-Type", "text/html");
-    response.setBody(cgi_output);
-
-    std::string response_str = response.getFullResponse();
-    ssize_t bytes_written = write(client_socket, response_str.c_str(), response_str.size());
-    if (bytes_written == -1) {
-        std::cerr << "Error: failed to write response to client socket" << std::endl;
-    }
-    close(client_socket);
 }
 
 /**
@@ -365,7 +322,6 @@ void CGI::handleChildProcess(HttpRequest* request) {
     executeCgi();
 }
 
-
 /**
  * @brief Handles CGI processing in the parent process by closing the write end of the pipe to the CGI process and the read end of the pipe from the CGI process.
  * 
@@ -377,7 +333,6 @@ void CGI::handleParentProcess() {
     //set everthing in HTTPresponse object
 }
 
-
 /**
  * @brief Gets the file descriptor for the read end of the pipe used for communication with the CGI process.
  * 
@@ -386,7 +341,6 @@ void CGI::handleParentProcess() {
 int CGI::getReadFd() const {
     return _fromCgiPipe[READ];
 }
-
 /**
  * @brief Gets the file descriptor for the write end of the pipe used for communication with the CGI process.
  * 

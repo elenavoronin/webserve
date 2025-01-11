@@ -169,6 +169,7 @@ void Client::startCgi(HttpRequest *request) {
 	this->_CGI = new CGI(request);
     _eventPoll->addPollFdEventQueue(_CGI->getReadFd(), POLLIN);
     _eventPoll->addPollFdEventQueue(_CGI->getWriteFd(), POLLOUT);
+    _eventPoll->ToremovePollEventFd(_clientSocket, POLLIN);
 
     std::cerr   << "CGI process started. Read FD: " << _CGI->getReadFd()
                 << ", Write FD: " << _CGI->getWriteFd() << std::endl;
@@ -184,27 +185,24 @@ void Client::startCgi(HttpRequest *request) {
  * CGI process.
  */
 void Client::readFromCgi() {
-     std::cout << "CGI completed? " << _CGI->isCgiComplete() << std::endl;
+    std::cout << "CGI completed? " << _CGI->isCgiComplete() << std::endl;
     if (!_CGI) {
         throw std::runtime_error("CGI object is not initialized.");
     }
-
     try {
-        // Read data from the CGI process
         _CGI->readCgiOutput();
-        // Check if the CGI process is done writing output
         if (_CGI->isCgiComplete()) {
             std::cerr << "CGI process completed. Preparing response." << std::endl;
-            // Send the final chunk and terminate the CGI process
-            send(_clientSocket, "0\r\n\r\n", 5, 0);
-            kill(_CGI->getPid(), SIGTERM); // Send signal to terminate the process
-            // _CGI->markCgiComplete();
-            prepareFileResponse("");
+            std::cerr << _CGI->getCgiOutput() << std::endl;
+            _HttpResponse->setFullResponse(_CGI->getCgiOutput());
+            _eventPoll->addPollFdEventQueue(_clientSocket, POLLOUT);
+            _eventPoll->ToremovePollEventFd(_CGI->getReadFd(), POLLIN);
+            _eventPoll->ToremovePollEventFd(_CGI->getWriteFd(), POLLOUT);
+            kill(_CGI->getPid(), SIGTERM);
         }
     } catch (const std::exception& e) {
         std::cerr << "Error while reading from CGI: " << e.what() << std::endl;
         // Handle cleanup or error response
-        // close(_clientSocket); // Optionally close the connection
     }
 }
 
@@ -269,7 +267,6 @@ void Client::readFromSocket(Server *server, Server &defaultServer) {
  */
 int Client::writeToSocket() {
     unsigned long bytesToWrite = WRITE_SIZE;
-    // unsigned long bytesToWrite = 10000;
     unsigned long bytesWritten = 0;
 
     if (bytesToWrite > _HttpResponse->getFullResponse().size() - _responseIndex) {
@@ -285,7 +282,6 @@ int Client::writeToSocket() {
         _eventPoll->ToremovePollEventFd(_clientSocket, POLLOUT);
         return 1;
     }
-    // std::cout << "STATUSSSS: " << _HttpResponse->getStatusCode() << std::endl;
     return 0;
 }
 
@@ -299,16 +295,14 @@ int Client::writeToSocket() {
  * @param eventPoll The EventPoll object to remove the client socket from.
  */
 void Client::closeConnection(EventPoll &eventPoll) {
-    // Remove socket from event poll
-    eventPoll.ToremovePollEventFd(_clientSocket, POLLIN | POLLOUT);
 
+    eventPoll.ToremovePollEventFd(_clientSocket, POLLIN | POLLOUT);
     if (_CGI) {
         eventPoll.ToremovePollEventFd(_CGI->getReadFd(), POLLIN);
         delete _CGI;
         _CGI = nullptr;
     }
-    
-    // Close the client socket
+
     if (_clientSocket >= 0) {
         close(_clientSocket);
     }
@@ -327,7 +321,11 @@ void Client::closeConnection(EventPoll &eventPoll) {
  */
 void Client::prepareFileResponse(std::string errorContent) {
     std::string requestedFile = _HttpRequest->getFullPath();
-    //read file
+    size_t position = requestedFile.find('?');
+    if (position != std::string::npos) {
+        requestedFile = requestedFile.substr(0, position);   
+    }
+    // //read file
     std::ifstream file(requestedFile);
     if (!file.is_open()) {
 		
@@ -394,7 +392,5 @@ void Client::writeToCgi() {
     if (!_CGI) {
         throw std::runtime_error("CGI object is not initialized.");
     }
-
-    // Delegate the write operation to the CGI object
     _CGI->writeCgiInput();
 }

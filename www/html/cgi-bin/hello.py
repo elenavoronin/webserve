@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 
 import cgi
+
+# print("hello")
 import os
 
 # Generate the HTML body
@@ -38,9 +40,10 @@ body += """
 content_length = len(body.encode('utf-8'))
 
 # Send the HTTP headers
-print(f"Content-Type: text/html")
-print(f"Content-Length: {content_length}")
-print()  # Blank line to indicate the end of the headers
+print(f"HTTP/1.1 200 OK\r") # TODO add to this file or in method?
+print(f"Content-Type: text/html\r")
+print(f"Content-Length: {content_length}\r")
+print("\r")  # Blank line to indicate the end of the headers
 
 # Send the HTML body
 print(body)

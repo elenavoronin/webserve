@@ -169,3 +169,7 @@ std::string &HttpResponse::getFullResponse() {
 std::string HttpResponse::getHeadersOnly() const {
     return _headersOnly;
 }
+
+void HttpResponse::setFullResponse(const std::string& response) {
+	_fullResponse = response;
+}

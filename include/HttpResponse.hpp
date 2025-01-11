@@ -30,6 +30,7 @@ class HttpResponse {
 		void 				setStatus(int code, const std::string& message);
 		void 				setHeader(const std::string& key, const std::string& value);
 		void 				setBody(const std::string& content);
+		void				setFullResponse(const std::string& response);
 		std::string 		getHeader(const std::string& key) const;
 		std::string 		getStatusMessage() const;
 		int 				getStatusCode() const;

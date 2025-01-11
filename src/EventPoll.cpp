@@ -31,9 +31,13 @@ void	EventPoll::addPollFdEventQueue(int fd, int eventType)
 	pollfd	newEvent;
 
 	newEvent.fd = fd;
+    std::cout << "ADDDINH " << fd << std::endl;
 	newEvent.events = eventType;
 	newEvent.revents = 0;
+    std::cout << _pollfdsToAddQueue.size() << std::endl;
+
 	_pollfdsToAddQueue.push_back(newEvent);
+    std::cout << _pollfdsToAddQueue.size() << std::endl;
 }
 
 /**
@@ -65,6 +69,7 @@ void	EventPoll::updateEventList( void )
 {
 
 	while (!_pollfdsToRemoveQueue.empty()) {
+
         t_pollfdToRemove fdToRemove = _pollfdsToRemoveQueue.back();
         _pollfdsToRemoveQueue.pop_back();
 
@@ -73,21 +78,17 @@ void	EventPoll::updateEventList( void )
                                    return p.fd == fdToRemove.fd && p.events == fdToRemove.eventType;
                                });
         if (it != _pollfds.end()) {
-            // std::cout << "fd to remove: " << fdToRemove.fd << "\n";
-            // std::cout << "REMOVED POLL EVENT " << fdToRemove.fd << std::endl;
-           
             _pollfds.erase(it);
             _pollfds.shrink_to_fit();
-            // std::cout << "EventPoll after removing: ";
-        //     for (unsigned long i = 0; i < _pollfds.size(); i++) {
-        //         std::cout << _pollfds[i].fd << " ";
-        //     }
-        //     std::cout << std::endl;
         }
+        std::cout << "REMOVED POLL EVENT " << fdToRemove.fd << std::endl;
     }
 
     // Add every fd from the addition list
+    // std::cout << _pollfdsToAddQueue.size() << std::endl;
+
     while (!_pollfdsToAddQueue.empty()) {
+        std::cout << "this is " <<  _pollfdsToAddQueue.size() << std::endl;
         pollfd newEvent = _pollfdsToAddQueue.back();
         _pollfdsToAddQueue.pop_back();
 
@@ -96,7 +97,7 @@ void	EventPoll::updateEventList( void )
                                [&](const pollfd& p) { return p.fd == newEvent.fd; });
         if (it == _pollfds.end()) {
             _pollfds.push_back(newEvent);
-            //std::cout << "ADDED POLL EVENT " << newEvent.fd << std::endl;
+            std::cout << "ADDED POLL EVENT " << newEvent.fd << std::endl;
         }
     }
 }

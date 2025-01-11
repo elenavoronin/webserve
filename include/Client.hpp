@@ -48,6 +48,7 @@ class Client {
 		void 				closeConnection(EventPoll &eventPoll);
 		void				prepareFileResponse(std::string errorContent);
 		void				sendData(const std::string &response);
+		
 		//CGI calling methods
 		int 				getCgiRead();
 		int 				getCgiWrite();
@@ -55,4 +56,4 @@ class Client {
 		void 				readFromCgi();
 		void 				writeToCgi();
 };
-	// int processClientRequest(const std::string& request, HttpRequest* Http); ????
+

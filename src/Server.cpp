@@ -163,7 +163,7 @@ void Server::handlePollEvent(EventPoll &eventPoll, int i, Server& defaultServer)
     }
     // Handle writable events
     if (currentPollFd.revents & POLLOUT) {
-		// std::cout << "POLLOUT" << std::endl;
+
         try {
             if (event_fd != client->getSocket() && event_fd == client->getCgiWrite()) {
                 client->writeToCgi();
@@ -298,12 +298,14 @@ int Server::handleGetRequest(Client &client, HttpRequest* request) {
 	HttpResponse response;
 	std::string filepath = this->getRoot() + request->getPath();
 	request->setFullPath(filepath);
+    std::cout << "filepath: " << filepath << std::endl;
 
 	if (request->getPath() == "/") {
 		filepath = this->getRoot() + '/' + this->getIndex();
 		request->setFullPath(filepath);
 	}
-	if (request->getPath().rfind(_index, 0) == 0) { //changed to config
+    size_t position = filepath.find("/cgi-bin"); //todo change this to config
+    if (position != std::string::npos) { 
 		request->setFullPath(filepath);
 		client.startCgi(request);
 		return 0;
@@ -358,7 +360,7 @@ void Server::sendFileResponse(int clientSocket, const std::string& filepath, int
 	std::string fileContent = readFileContent(filepath);
 	if (fileContent.empty()) {
 		sendHeaders(clientSocket, 404, "text/html");
-		sendBody(clientSocket, "<html><body>404 - File Not Found</body></html>");
+		sendBody(clientSocket, "<html><body>404 - File Not Found</body></html>"); //TODO change error pages to server stuff
 	} else {
 		sendHeaders(clientSocket, statusCode, "text/html");
 		sendBody(clientSocket, fileContent);
