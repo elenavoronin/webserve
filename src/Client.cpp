@@ -171,7 +171,6 @@ void Client::startCgi(HttpRequest *request) {
     _eventPoll->addPollFdEventQueue(_CGI->getWriteFd(), POLLOUT);
     _eventPoll->ToremovePollEventFd(_clientSocket, POLLIN);
 
-
     std::cerr   << "CGI process started. Read FD: " << _CGI->getReadFd()
                 << ", Write FD: " << _CGI->getWriteFd() << std::endl;
 }
@@ -268,7 +267,6 @@ void Client::readFromSocket(Server *server, Server &defaultServer) {
  */
 int Client::writeToSocket() {
     unsigned long bytesToWrite = WRITE_SIZE;
-    // unsigned long bytesToWrite = 10000;
     unsigned long bytesWritten = 0;
 
     if (bytesToWrite > _HttpResponse->getFullResponse().size() - _responseIndex) {
@@ -284,7 +282,6 @@ int Client::writeToSocket() {
         _eventPoll->ToremovePollEventFd(_clientSocket, POLLOUT);
         return 1;
     }
-    // std::cout << "STATUSSSS: " << _HttpResponse->getStatusCode() << std::endl;
     return 0;
 }
 
@@ -298,16 +295,14 @@ int Client::writeToSocket() {
  * @param eventPoll The EventPoll object to remove the client socket from.
  */
 void Client::closeConnection(EventPoll &eventPoll) {
-    // Remove socket from event poll
-    eventPoll.ToremovePollEventFd(_clientSocket, POLLIN | POLLOUT);
 
+    eventPoll.ToremovePollEventFd(_clientSocket, POLLIN | POLLOUT);
     if (_CGI) {
         eventPoll.ToremovePollEventFd(_CGI->getReadFd(), POLLIN);
         delete _CGI;
         _CGI = nullptr;
     }
-    
-    // Close the client socket
+
     if (_clientSocket >= 0) {
         close(_clientSocket);
     }
@@ -397,7 +392,5 @@ void Client::writeToCgi() {
     if (!_CGI) {
         throw std::runtime_error("CGI object is not initialized.");
     }
-
-    // Delegate the write operation to the CGI object
     _CGI->writeCgiInput();
 }
