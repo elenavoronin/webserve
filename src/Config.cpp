@@ -274,6 +274,7 @@ void Config::addPollFds() {
  */
 void Config::pollLoop() {
     while (true) {
+        // std::cout << "HIIIIIIII" << std::endl;
         // Update the event list from the add/remove queues
         _eventPoll.updateEventList();
 
@@ -292,7 +293,6 @@ void Config::pollLoop() {
             // std::cout <<  pfds[i].revents << " " << POLLRDHUP << std::endl;
             if (pfds[i].revents & POLLERR) {
 
-                // std::cout << "HIIIIIIII" << std::endl;
             }
             if (pfds[i].revents & POLLIN || pfds[i].revents & POLLOUT || pfds[i].revents & POLLHUP || pfds[i].revents & POLLRDHUP) {
                 int fd = pfds[i].fd;

@@ -182,47 +182,39 @@ void CGI::readCgiOutput() {
     // Append data to output
     _cgiOutput.append(buffer, bytes_read);
     std::cerr << "Read " << bytes_read << " bytes from CGI output. Total output size: " 
-              << _cgiOutput.size() << " bytes."
-              << "Current CGI output: " << _cgiOutput << std::endl;
+              << _cgiOutput.size() << " bytes." << std::endl;
+    std::cerr << "BYTES RECIEVED " << _receivedBodySize << std::endl;
+            //   << "Current CGI output: " << _cgiOutput << std::endl;
               
     // Parse headers if not sent
     if (!_headersSent) {
 
         auto headers_end = _cgiOutput.find("\r\n\r\n");
         if (headers_end == std::string::npos) {
-            headers_end = _cgiOutput.find("\n\n");
-        }
-
-        if (headers_end == std::string::npos) {
             std::cerr << "Headers not yet complete. Waiting for more data." << std::endl;
             return; // Wait for more data in the next read
         }
         else if (headers_end != std::string::npos) {
-            // _cgiOutput = "Content-Type: text/html\r\n\r\n" + _cgiOutput;
             _headersSent = true;
 
             // Extract headers
             std::string headers = _cgiOutput.substr(0, headers_end);
+            std::cout << headers << std::endl;
             parseHeaders(headers);
-
-            // Remove headers from _cgiOutput, leaving only the body
-            _cgiOutput = _cgiOutput.substr(headers_end + 4);
-
-            // Reset `_receivedBodySize` to account only for body data
-            _receivedBodySize = _cgiOutput.size();
+            std::cout << "HEADER SIZE IS: " << headers.size() << std::endl;
+            _receivedBodySize = _cgiOutput.size() - headers.size() - 5; //why 5?
 
             std::cerr << "Headers received and parsed. Content-Length: " 
                 << _contentLength << std::endl;
         }
         else {
-            // Increment body size only after headers are parsed
             _receivedBodySize += bytes_read;
         }
     }
-
     // Check if the body size matches Content-Length
-    if (_headersSent) {
+    else {
         _receivedBodySize += bytes_read;
+        std::cerr << "BYTES RECIEVED " << _receivedBodySize << std::endl;
         if (_receivedBodySize >= _contentLength) {
         std::cerr << "Body size matches Content-Length. Marking as complete." << std::endl;
         markCgiComplete();
@@ -240,28 +232,17 @@ void CGI::parseHeaders(const std::string& headers) {
         if (line.back() == '\r') {
             line.pop_back();
         }
-
-        // if (line.find("Content-Length:") == 0) {
-        //     std::string contentLenghtStr = line.substr(15);
-        //     try {
-        //         _contentLength = std::stoi(contentLenghtStr);
-        //     } 
-        //     catch (const std::exception& e) {
-        //         throw std::runtime_error("Invalid Content-Length value");
-        //     }
-        //     break;
-        // }
-            if (line.find("Content-Length:") == 0) {
-                std::string contentLengthStr = line.substr(15);
-            try {
-                _contentLength = std::stoi(contentLengthStr);
-                std::cerr << "Content-Length extracted: " << _contentLength << std::endl;
-            } 
-            catch (const std::exception& e) {
-                std::cerr << "Invalid Content-Length header: " << contentLengthStr << std::endl;
-                throw std::runtime_error("Invalid Content-Length value");
-            }
-            return;
+        if (line.find("Content-Length:") == 0) {
+            std::string contentLengthStr = line.substr(15);
+        try {
+            _contentLength = std::stoi(contentLengthStr);
+            std::cerr << "Content-Length extracted: " << _contentLength << std::endl;
+        } 
+        catch (const std::exception& e) {
+            std::cerr << "Invalid Content-Length header: " << contentLengthStr << std::endl;
+            throw std::runtime_error("Invalid Content-Length value");
+        }
+        return;
         }
     }
     std::cerr << "Content-Length header not found in headers." << std::endl;
@@ -386,7 +367,6 @@ void CGI::handleParentProcess() {
 int CGI::getReadFd() const {
     return _fromCgiPipe[READ];
 }
-
 /**
  * @brief Gets the file descriptor for the write end of the pipe used for communication with the CGI process.
  * 
