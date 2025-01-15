@@ -324,7 +324,7 @@ int Server::handleGetRequest(Client &client, HttpRequest* request) {
         return 200;
 
     } catch (const std::runtime_error& e) {
-        std::string errorPagePath = "www/html/404.html";
+        std::string errorPagePath = "www/html/404.html"; // TODO fix this to not be hardcoded
         std::ifstream errorFile(errorPagePath, std::ios::binary);
         std::string errorContent;
 
@@ -474,11 +474,56 @@ If there was an issue, return a corresponding error code:
 It’s often useful to log the deletion operation for auditing purposes, especially if your server manages important data.
 As with the POST request, decide whether to close the connection or keep it alive based on the HTTP version or the Connection header.
 */
-int Server::handleDeleteRequest(Client &client, HttpRequest* Http) {
-	(void)client;
-	(void)Http;
+int Server::handleDeleteRequest(Client &client, HttpRequest* request) {
+    HttpResponse response;
+    try {
+        std::string pathToDelete =  request->getPathToDelete(request->getRawRequest());
+        if (pathToDelete.empty()) {
+            response.setStatus(404, getStatusMessage(404));
+            response.setHeader("Content-Type", "text/plain");
+            response.setBody("Content to be deleted not found");
+            response.buildResponse();
+            return 404;
+        }
+      
+       // Check if the file exists
+       std::ifstream file(pathToDelete);
+        if (!file.is_open()) {
+            throw std::runtime_error("File not found: " + pathToDelete);
+        }
 
-	return 0;
+        // Check if the file is accessible and writable
+        if (access(pathToDelete.c_str(), W_OK) != 0) {
+            throw std::runtime_error("File cannot be deleted: " + pathToDelete);
+        }
+
+        // Delete the file
+        if (std::remove(pathToDelete.c_str()) != 0) {
+            throw std::runtime_error("Error deleting file '" + pathToDelete);
+        }
+    
+        // Set success response
+        response.setStatus(200, getStatusMessage(200));
+        response.setHeader("Content-Type", "text/plain");
+        response.setBody("Data deleted successfully.");
+        response.buildResponse();
+        std::cout << "SUCCESS DELETED FILE" << std::endl;
+        // Send the response
+        client.sendData(response.getFullResponse());
+        return 200;
+
+    } catch (const std::exception &e) {
+        // Handle errors and return a 500 Internal Server Error
+        std::cerr << "Error handling Delete request: " << e.what() << std::endl;
+
+        response.setStatus(500, getStatusMessage(500));
+        response.setHeader("Content-Type", "text/plain");
+        response.setBody("Error processing the DELETE request.");
+        response.buildResponse();
+
+        client.sendData(response.getFullResponse());
+        return 500;
+    }
 }
 
 
@@ -534,7 +579,7 @@ int Server::handlePostRequest(Client &client, HttpRequest* request) {
         outFile.close();
 
         // Set success response
-        response.setStatus(201, "Created");
+        response.setStatus(201, getStatusMessage(201));
         response.setHeader("Content-Type", "text/plain");
         response.setBody("Data received and stored successfully.");
         response.buildResponse();
@@ -547,7 +592,7 @@ int Server::handlePostRequest(Client &client, HttpRequest* request) {
         // Handle errors and return a 500 Internal Server Error
         std::cerr << "Error handling POST request: " << e.what() << std::endl;
 
-        response.setStatus(500, "Internal Server Error");
+        response.setStatus(500, getStatusMessage(500));
         response.setHeader("Content-Type", "text/plain");
         response.setBody("Error processing the POST request.");
         response.buildResponse();

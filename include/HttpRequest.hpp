@@ -57,6 +57,8 @@ class HttpRequest {
 		std::string											getVersion();
 		std::string 										getBody();
 		std::string 										getHeader(const std::string& key);
+		std::string											getRawRequest();
+		std::string											getPathToDelete(const std::string& rawRequest);
 		
 		void 												parseHeaders(const std::string& rawRequest);
 		void												parseBody(const std::string& rawRequest);

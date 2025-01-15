@@ -176,6 +176,33 @@ std::string& HttpRequest::getStrReceived(){
 	return _strReceived;
 }
 
+
+/**
+ * @brief       Retrieves the raw received HTTP request as a string.
+ * 
+ * @details     This method returns the exact string received from the client, without any parsing or processing.
+ * 
+ * @return      The raw received HTTP request as a string.
+ */
+std::string HttpRequest::getRawRequest(){
+	return _strReceived;
+}
+
+
+
+std::string HttpRequest::getPathToDelete(const std::string& rawRequest) {
+	
+	readRequest(rawRequest);
+	if (_path.empty()) {
+		throw std::runtime_error("Path to resource not found");
+	}
+	std::string path = "." + _path;
+	std::cout << "path from Delete: " << _path << std::endl;
+
+	return path;
+}
+
+
 /**
  * @brief       Clears the _strReceived string.
  * 
