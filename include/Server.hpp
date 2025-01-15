@@ -25,6 +25,8 @@
 #include <netdb.h>
 #include "HttpResponse.hpp"
 #include "CGI.hpp"
+#include <filesystem>
+#include <stdexcept>
 
 class Client; 
 // class Location;
@@ -63,7 +65,7 @@ class Server  {
 		int 											processClientRequest(Client &client, const std::string& request, HttpRequest* Http, Server &defaultServer);
 		int 											handleGetRequest(Client &client, HttpRequest* request);
 		int 											handlePostRequest(Client &client, HttpRequest* Http);
-		int 											handleDeleteRequest(Client &client, HttpRequest* Http);
+		int 											handleDeleteRequest(Client &client, HttpRequest* request);
 		void 											checkLocations(std::string path, Server &defaultServer);
 		void 											sendFileResponse(int clientSocket, const std::string& filepath, int statusCode);
 		std::string 									readFileContent(const std::string& filepath);
