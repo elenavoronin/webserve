@@ -1,28 +1,25 @@
 Server makes sure everything is parsed
 POll decides what we're doing not the server
 
-1. reconnect cgi to poll loop (djoyke)
-2. use throw instead of std cout or std cerr and have a catch somewhere (lena, djoyke)
-3. link throw to http response, and display correct page (djoyke, lena) - only for DELETE method still pending
-4. handling null characters for requesting images eg assets/nebula.jpg dont handle it like a string (lena)
-5. should we assert more? (all)
-6. close pipe when something goes wrong reading or writing (djoyke)
-7. test config file with 2 servers
+1. use throw instead of std cout or std cerr and have a catch somewhere (lena, djoyke)
+2. handling null characters for requesting images eg assets/nebula.jpg dont handle it like a string (lena)
+3. should we assert more? (all)
+4. close pipe when something goes wrong reading or writing (djoyke)
+5. test config file with 2 servers
+6. add CGI scripts for post and delete (djoyke)
+7. make ugly button not ugly in html (djoyke)
+8. eval sheet misery (jan)
+9. unit test (all, jan)
+10. fix the download thing without us telling it to do so (anna)
+11. do we need broadcast message?
+12. add charset 8 for Content type
+13. handleGet check extension (img. html ..) instead cgi-bin
+14. Redirections (Lena)
+15. Directory listing (Lena)
+16. Cgi - infinite loops handling and error handling (Djoyke)
+17. Test locations (Lena)
 
 WE USE UTILS... DO NOT REMOVE, love you!
-
-
-TODO When Anna is back:
-1. create post and delete (djoyke, anna)
-2. add CGI scripts for post and delete (djoyke)
-3. make ugly button not ugly in html (djoyke)
-4. eval sheet misery (jan)
-5. unit test (all, jan)
-6. fix the download thing without us telling it to do so (anna)
-7. do we need broadcast message?
-8. add charset 8 for Content type
-9. handleGet check extension (img. html ..) instead cgi-bin
-
 
 
 Basic Siege command for testing localhost:8080:
