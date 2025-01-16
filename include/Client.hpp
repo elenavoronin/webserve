@@ -45,7 +45,7 @@ class Client {
 		void 				setHttpResponse(HttpResponse* httpResponse);
 		int 				writeToSocket();
 		void 				readFromSocket(Server *server, Server &defaultServer);
-		void 				closeConnection(EventPoll &eventPoll);
+		void 				closeConnection(EventPoll& eventPoll, int currentPollFd);
 		void				prepareFileResponse(std::string errorContent);
 		void				sendData(const std::string &response);
 		

@@ -294,9 +294,12 @@ int Client::writeToSocket() {
  *
  * @param eventPoll The EventPoll object to remove the client socket from.
  */
-void Client::closeConnection(EventPoll &eventPoll) {
+void Client::closeConnection(EventPoll& eventPoll, int currentPollFd) {
 
-    eventPoll.ToremovePollEventFd(_clientSocket, POLLIN | POLLOUT);
+    if (currentPollFd != 0)
+    {
+        eventPoll.ToremovePollEventFd(currentPollFd, POLLIN | POLLOUT);
+    }
     if (_CGI) {
         eventPoll.ToremovePollEventFd(_CGI->getReadFd(), POLLIN);
         delete _CGI;

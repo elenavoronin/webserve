@@ -31,7 +31,7 @@ void	EventPoll::addPollFdEventQueue(int fd, int eventType)
 	pollfd	newEvent;
 
 	newEvent.fd = fd;
-    std::cout << "ADDDINH " << fd << std::endl;
+    // std::cout << "ADDDINH " << fd << std::endl;
 	newEvent.events = eventType;
 	newEvent.revents = 0;
     std::cout << _pollfdsToAddQueue.size() << std::endl;
@@ -53,9 +53,10 @@ void	EventPoll::ToremovePollEventFd(int fd, int eventType)
 {
 	t_pollfdToRemove	tmp;
 
+
 	tmp.fd = fd;
 	tmp.eventType = eventType;
-	_pollfdsToRemoveQueue.push_back(tmp);
+    _pollfdsToRemoveQueue.push_back(tmp);
 }
 
 /**
@@ -81,14 +82,14 @@ void	EventPoll::updateEventList( void )
             _pollfds.erase(it);
             _pollfds.shrink_to_fit();
         }
-        std::cout << "REMOVED POLL EVENT " << fdToRemove.fd << std::endl;
+        // std::cout << "REMOVED POLL EVENT " << fdToRemove.fd << std::endl;
     }
 
     // Add every fd from the addition list
     // std::cout << _pollfdsToAddQueue.size() << std::endl;
 
     while (!_pollfdsToAddQueue.empty()) {
-        std::cout << "this is " <<  _pollfdsToAddQueue.size() << std::endl;
+        // std::cout << "this is " <<  _pollfdsToAddQueue.size() << std::endl;
         pollfd newEvent = _pollfdsToAddQueue.back();
         _pollfdsToAddQueue.pop_back();
 
@@ -97,7 +98,7 @@ void	EventPoll::updateEventList( void )
                                [&](const pollfd& p) { return p.fd == newEvent.fd; });
         if (it == _pollfds.end()) {
             _pollfds.push_back(newEvent);
-            std::cout << "ADDED POLL EVENT " << newEvent.fd << std::endl;
+            // std::cout << "ADDED POLL EVENT " << newEvent.fd << std::endl;
         }
     }
 }

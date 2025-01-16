@@ -6,9 +6,9 @@
 #include <vector>
 #include <iostream>
 
-Location::Location() : _root(), _index(), _return(), _errorPages(), _redirect(),
+Location::Location() : _root(), _index(),  _errorPages(), 
       _allowedMethods(), _autoindex(false), _cgiPass(), _cgiPath(),
-      _maxBodySize(0), _cgiExtension(){}
+      _maxBodySize(0), _cgiExtension(), _redirect(){}
 Location::~Location() {}
 
 void Location::setRoot(const std::string& root) {
@@ -39,9 +39,6 @@ void Location::setIndex(const std::string& index) {
     _index = index;
 }
 
-void Location::setRedirect(const std::string& redirect) {
-    _redirect = redirect;
-}
 
 void Location::setErrorPages(const std::vector<std::string>& errorPages) {
     _errorPages = errorPages;
@@ -51,6 +48,31 @@ void Location::setMaxBodySize(const size_t& maxBodySize) {
     _maxBodySize = maxBodySize;
 }
 
-void Location::setReturn(const std::string& returns) {
-    _return = returns;
+void Location::setRedirect(const std::string& statusCode, const std::string& redirectPath) {
+   if (statusCode.empty() || redirectPath.empty()) {
+        _redirect.first = 0;
+        _redirect.second = "";
+        return;
+    }
+   for (char c : statusCode) {
+        if (!std::isdigit(c)) {
+            throw std::invalid_argument("Status code must contain only digits");
+        }
+   }
+    _redirect.first = std::stoi(statusCode);
+    _redirect.second = redirectPath;
+}
+
+void Location::clearLocation() {
+    _root.clear();                 // Clear the root path
+    _index.clear();                // Clear the index
+    _return.clear();               // Clear the return path
+    _errorPages.clear();           // Clear the error pages vector
+    _allowedMethods.clear();       // Clear the allowed methods vector
+    _autoindex = false;            // Reset autoindex to default (false)
+    _cgiPass.clear();              // Clear the CGI pass path
+    _cgiPath.clear();              // Clear the CGI path
+    _maxBodySize = 0;              // Reset max body size to default (0)
+    _cgiExtension.clear();         // Clear the CGI extension
+    _redirect = std::make_pair(0, ""); // Reset the redirect pair
 }
