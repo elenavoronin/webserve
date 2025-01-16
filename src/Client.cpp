@@ -193,7 +193,7 @@ void Client::readFromCgi() {
         _CGI->readCgiOutput();
         if (_CGI->isCgiComplete()) {
             std::cerr << "CGI process completed. Preparing response." << std::endl;
-            std::cerr << _CGI->getCgiOutput() << std::endl;
+            // std::cerr << _CGI->getCgiOutput() << std::endl;
             _HttpResponse->setFullResponse(_CGI->getCgiOutput());
             _eventPoll->addPollFdEventQueue(_clientSocket, POLLOUT);
             _eventPoll->ToremovePollEventFd(_CGI->getReadFd(), POLLIN);

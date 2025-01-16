@@ -10,8 +10,8 @@ CGI::CGI(HttpRequest *request) {
     _headersSent = false;
 
     // Debugging output
-    std::cout << "CGI input is: " << _cgiInput << std::endl;
-    std::cout << "Request Method: " << request->getField("method") << std::endl;
+    // std::cout << "CGI input is: " << _cgiInput << std::endl;
+    // std::cout << "Request Method: " << request->getField("method") << std::endl;
     if (!setupPipes()) 
         return;
 
@@ -229,7 +229,7 @@ void CGI::parseHeaders(const std::string& headers) {
     std::istringstream headerStream(headers);
     std::string line;
     while (std::getline(headerStream, line)) {
-        std::cout << "line contains: " << line << std::endl;
+        // std::cout << "line contains: " << line << std::endl;
         if (line.back() == '\r') {
             line.pop_back();
         }
