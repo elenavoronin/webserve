@@ -133,7 +133,10 @@ void Config::parseLocationTokens(const std::vector<std::string>& tokens, Locatio
         } else if (key == "cgi_path") {
             newLocation.setCgiPath(value);
         } else if (key == "return") {
-            newLocation.setRedirect(tokens[1], tokens[2]);
+            if (!tokens[1].empty() && !tokens[2].empty())
+                newLocation.setRedirect(tokens[1], tokens[2]);
+            else
+                newLocation.setRedirect("0", "");
         } else if (key == "max_body_size") {
             value = value.substr(0, value.size() - 1);
             size_t maxSize = std::stoul(value);
@@ -225,7 +228,10 @@ std::vector<Server> Config::parseConfig(std::ifstream &file) {
                     } else if (key == "upload_path") {
                         currentServer.setUploadStore(value); 
                     } else if (key == "return") {
-                        currentServer.setRedirect(tokens[1], tokens[2]); 
+                        if (!tokens[1].empty() && !tokens[2].empty())
+                            currentServer.setRedirect(tokens[1], tokens[2]);
+                        else
+                            currentServer.setRedirect("0", "");
                     } else if (key == "max_body_size") {
                         value = value.substr(0, value.size() - 1);
                         size_t maxSize = std::stoul(value);

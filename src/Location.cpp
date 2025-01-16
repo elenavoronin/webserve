@@ -49,12 +49,7 @@ void Location::setMaxBodySize(const size_t& maxBodySize) {
 }
 
 void Location::setRedirect(const std::string& statusCode, const std::string& redirectPath) {
-   if (statusCode.empty() || redirectPath.empty()) {
-        _redirect.first = 0;
-        _redirect.second = "";
-        return;
-    }
-   for (char c : statusCode) {
+    for (char c : statusCode) {
         if (!std::isdigit(c)) {
             throw std::invalid_argument("Status code must contain only digits");
         }
@@ -66,7 +61,6 @@ void Location::setRedirect(const std::string& statusCode, const std::string& red
 void Location::clearLocation() {
     _root.clear();                 // Clear the root path
     _index.clear();                // Clear the index
-    _return.clear();               // Clear the return path
     _errorPages.clear();           // Clear the error pages vector
     _allowedMethods.clear();       // Clear the allowed methods vector
     _autoindex = false;            // Reset autoindex to default (false)
