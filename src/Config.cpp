@@ -116,7 +116,7 @@ bool Config::isFileEmpty(const std::string& fileName) {
 void Config::parseLocationTokens(const std::vector<std::string>& tokens, Location& newLocation)
 
 {
-    if (tokens.size() >= 2) {
+    if (tokens.size() >= 3) {
         std::string key = tokens[0];
         std::string value = tokens[1];
 
@@ -170,6 +170,7 @@ std::vector<Server> Config::parseConfig(std::ifstream &file) {
     std::string line;
     currentServer.getLocations()["keys"].reserve(100);
     Location newLocation;
+    std::string pathName;
     std::vector<std::string> errorPages;
     bool insideServerBlock = false;
     bool insideLocationBlock = false;
@@ -186,6 +187,7 @@ std::vector<Server> Config::parseConfig(std::ifstream &file) {
                 continue;
             }
             if (insideServerBlock && tokens[0] == "location" && tokens[2] == "{") {
+                pathName= tokens[1];
                 insideLocationBlock = true;
                 continue;
             }
@@ -194,7 +196,7 @@ std::vector<Server> Config::parseConfig(std::ifstream &file) {
                 locationComplete = false;
                 if (validateParsedLocation(newLocation))
                 {
-                    currentServer.setLocation(tokens[1], newLocation);
+                    currentServer.setLocation(pathName, newLocation);
                     newLocation.clearLocation();
                 }
                 newLocation = Location();
