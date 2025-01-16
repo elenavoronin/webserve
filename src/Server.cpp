@@ -141,7 +141,7 @@ void Server::handlePollEvent(EventPoll &eventPoll, int i, Server& defaultServer)
 
     if (!client) {
         std::cerr << "Client not found for fd: " << event_fd << std::endl;
-		client->closeConnection(eventPoll);
+		client->closeConnection(eventPoll, currentPollFd.fd);
 		eraseClient(event_fd);
         return;
     }
@@ -157,7 +157,7 @@ void Server::handlePollEvent(EventPoll &eventPoll, int i, Server& defaultServer)
             }
         } catch (const std::runtime_error &e) {
             std::cerr << "Read error: " << e.what() << std::endl;
-            client->closeConnection(eventPoll);
+            client->closeConnection(eventPoll, currentPollFd.fd);
 			eraseClient(event_fd);
         }
     }
@@ -169,13 +169,13 @@ void Server::handlePollEvent(EventPoll &eventPoll, int i, Server& defaultServer)
                 client->writeToCgi();
             } else {
                 if (client->writeToSocket() > 0) {
-					client->closeConnection(eventPoll);
+					client->closeConnection(eventPoll, currentPollFd.fd);
 					eraseClient(event_fd);
 				}
             }
         } catch (const std::runtime_error &e) {
             std::cerr << "Write error: " << e.what() << std::endl;
-            client->closeConnection(eventPoll);
+            client->closeConnection(eventPoll, currentPollFd.fd);
 			eraseClient(event_fd);
         }
     }
@@ -183,7 +183,7 @@ void Server::handlePollEvent(EventPoll &eventPoll, int i, Server& defaultServer)
     // Handle hangup or disconnection events
     if (currentPollFd.revents & (POLLHUP | POLLRDHUP)) {
 		// std::cout << "does this happen" << std::endl;
-        client->closeConnection(eventPoll);
+        client->closeConnection(eventPoll, currentPollFd.fd);
 		eraseClient(event_fd);
     }
 }
@@ -211,6 +211,7 @@ void Server::checkLocations(std::string path, Server &defaultServer) {
 		this->setMaxBodySize(defaultServer.getMaxBodySize());
 		this->setUploadStore(defaultServer.getUploadStore());
 		this->setErrorPage(defaultServer.getErrorPage());
+        this->setRedirect(std::to_string((defaultServer.getRedirect().first)), defaultServer.getRedirect().second);
 		return;
 	}
 	for (const auto& location : this->getLocations()) {
@@ -229,6 +230,8 @@ void Server::checkLocations(std::string path, Server &defaultServer) {
 					this->setMaxBodySize(loc.getMaxBodySize());
 				if (!loc.getErrorPages().empty())
 					this->setErrorPage(loc.getErrorPages());
+                if (loc.getRedirect().first != 0)
+                    this->setRedirect(std::to_string((defaultServer.getRedirect().first)), defaultServer.getRedirect().second);
 				return;
 			}
 		}
@@ -254,7 +257,6 @@ void Server::checkLocations(std::string path, Server &defaultServer) {
  * @return The HTTP status code indicating the result of the request processing.
  */
 int Server::processClientRequest(Client &client, const std::string& request, HttpRequest* HttpRequest, Server &defaultServer) {
-	//std::cout <<" This is request "<< request << std::endl;
 	HttpRequest->readRequest(request);
 
 	std::string method = HttpRequest->getMethod();
@@ -262,11 +264,16 @@ int Server::processClientRequest(Client &client, const std::string& request, Htt
     std::string version = HttpRequest->getVersion();
 
 	checkLocations(path, defaultServer);
-	int status = validateRequest(method, version);
+    if (getRedirect().first != 0)
+        return handleRedirect(client, *HttpRequest);
+	
+    int status = validateRequest(method, version);
 	if (status != 200) {
 		sendFileResponse(client.getSocket(), "www/html/500.html", status);  //change to a config ones?
 		return status;
 	}
+    // if (redirect) // TODO handle redirect before handling any other methods
+
 	if (method == "GET" && std::find(this->_allowedMethods.begin(), this->_allowedMethods.end(), "GET") != this->_allowedMethods.end())
 		return handleGetRequest(client, HttpRequest); //?? what locations should be passed
 	if (method == "POST" && std::find(this->_allowedMethods.begin(), this->_allowedMethods.end(), "POST") != this->_allowedMethods.end())
@@ -292,7 +299,6 @@ int Server::processClientRequest(Client &client, const std::string& request, Htt
  * @param path The path of the GET request.
  * @param request The HttpRequest object associated with the client.
  * @return The HTTP status code indicating the result of the request processing.
- * @todo writing needs to go through the poll loop not working yet
  */
 int Server::handleGetRequest(Client &client, HttpRequest* request) {
 	HttpResponse response;
@@ -455,25 +461,21 @@ int Server::validateRequest(const std::string& method, const std::string& versio
 	return 200;
 }
 
-/*
-Extract the path from the request (usually the file or resource to be deleted).
-Check if the requested resource exists. If not, return a 404 Not Found response.
-For security reasons, it's essential to implement some form of authorization to ensure that only authorized users can delete resources.
-If the user isn't authorized, return a 401 Unauthorized or 403 Forbidden.
-Ensure the resource being deleted is a valid file, directory, or resource that can be deleted. For example, check if it’s a file in a specific directory on the server.
-Optionally, check if the file can be deleted (i.e., it’s not locked or in use).
-Perform the deletion. For files or directories, use appropriate system calls to delete the resource.
-If it’s a database entry or another type of resource, ensure the record is properly deleted from the data store.
-Check if there are any issues while deleting (e.g., file permissions, file not found, or resource is locked).
-If an error occurs during the deletion process, return a 500 Internal Server Error or a more specific status code.
-If the deletion was successful, send a 200 OK or 204 No Content response.
-If there was an issue, return a corresponding error code:
-403 Forbidden: If the user is not allowed to delete the resource.
-404 Not Found: If the file or resource does not exist.
-500 Internal Server Error: If there was an error during the deletion process.
-It’s often useful to log the deletion operation for auditing purposes, especially if your server manages important data.
-As with the POST request, decide whether to close the connection or keep it alive based on the HTTP version or the Connection header.
-*/
+
+/**
+ * @brief Handles an HTTP DELETE request from a client.
+ * 
+ * This function processes a DELETE request by determining the path of the resource
+ * to be deleted from the request. It checks if the resource exists and is writable,
+ * then attempts to delete it. If successful, a 200 OK response is sent back to the client.
+ * If the resource does not exist or any error occurs during deletion, an appropriate
+ * error response is sent, such as a 404 Not Found or 500 Internal Server Error.
+ * @param client The client object associated with the request.
+ * @param request The HttpRequest object associated with the client.
+ * @todo
+ * 
+ * @return The HTTP status code indicating the result of the request processing.
+ */
 int Server::handleDeleteRequest(Client &client, HttpRequest* request) {
     HttpResponse response;
     try {
@@ -541,7 +543,6 @@ int Server::handleDeleteRequest(Client &client, HttpRequest* request) {
  * @param request The HttpRequest object containing the details of the POST request.
  * @return The HTTP status code indicating the result of the request processing.
  * @todo check if body size exceeds a predefined limit (error 413 Request Too Large)
- * @todo You might need to handle partial reads (i.e., the body could arrive in chunks).
  * @todo Error (400 Bad Request): If there was a problem with the data.
  */
 
@@ -604,15 +605,58 @@ int Server::handlePostRequest(Client &client, HttpRequest* request) {
 
 
 /**
- * @brief Erase a client from the server's list of active clients.
+ * @brief Handles an HTTP redirect request.
  *
- * This function is used to remove a client from the server's list of active clients.
- * It takes the file descriptor of the socket associated with the client as an argument.
+ * @details This function will handle any redirects that are configured on the server.
+ *          It will set the appropriate status code and location for the redirect,
+ *          and provide an optional body if desired.
  *
- * @param[in] event_fd The file descriptor of the socket associated with the client to be removed.
+ * @param client The client connection to send the response to
+ * @param request The HTTP request (not used currently)
+ * @todo I still need to parse the request
  *
- * @return Nothing.
+ * @return The status code of the response
  */
+int Server::handleRedirect(Client& client, HttpRequest& request) {
+     HttpResponse response;
+    std::cout << " I AM DOING REDICRECTION" << std::endl;
+    (void)request;// TODO I still need to parse the request
+    try {
+        // Set the redirection status code and location
+        if (getRedirect().first == 301)
+            response.setStatus(301, getStatusMessage(301));
+        else
+            response.setStatus(302, getStatusMessage(302));
+        response.setHeader("Location", getRedirect().second);
+
+        // Provide an optional body for the redirection response
+        response.setHeader("Content-Type", "text/html");
+        std::string body = "<html><body><h1>Redirecting...</h1>"
+                           "<p>If you are not redirected automatically, "
+                           "<a href=\"" + getRedirect().second + "\">click here</a>.</p></body></html>";
+        response.setBody(body);
+
+        // Build and send the response
+        response.buildResponse();
+        client.sendData(response.getFullResponse());
+        std::cout << "Redirected to: " << getRedirect().second << " with status code: " << getRedirect().first << std::endl;
+
+        return getRedirect().first;
+
+    } catch (const std::exception &e) {
+        std::cerr << "Error handling redirection request: " << e.what() << std::endl;
+
+        // Handle errors and send a 500 Internal Server Error response
+        response.setStatus(500, getStatusMessage(500));
+        response.setHeader("Content-Type", "text/plain");
+        response.setBody("Error processing the redirection request.");
+        response.buildResponse();
+
+        client.sendData(response.getFullResponse());
+        return 500;
+    }
+}
+
 void Server::eraseClient(int event_fd) {
     // Find all clients in _clients where the socket matches event_fd.
     auto it = std::find_if(_clients.begin(), _clients.end(), [&](const Client &c) {
@@ -643,4 +687,21 @@ void Server::eraseClient(int event_fd) {
         // Log if no matching client was found
         // std::cerr << "Warning: No client found with FD: " << event_fd << std::endl;
     }
+}
+
+
+void Server::setRedirect(const std::string& statusCode, const std::string& redirectPath) {
+        if (statusCode.empty() || redirectPath.empty()) {
+        _redirect.first = 0;
+        _redirect.second = "";
+        return;
+    }
+       
+       for (char c : statusCode) {
+        if (!std::isdigit(c)) {
+            throw std::invalid_argument("Status code must contain only digits");
+        }
+   }
+    _redirect.first = std::stoi(statusCode);
+    _redirect.second = redirectPath;
 }
