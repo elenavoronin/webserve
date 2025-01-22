@@ -18,6 +18,21 @@ POll decides what we're doing not the server
 15. Directory listing (Lena)
 16. Cgi - infinite loops handling and error handling (Djoyke)
 17. Test locations (Lena)
+18. Check errno (Anna)
+19. Check HTTP response status codes(Anna)
+20. The first server for a host:port will be the default for this host:port (that means
+it will answer to all the requests that don’t belong to an other server). ?????
+21. Returning after CGI turns off the program
+23. Search for all read/recv/write/send on a socket and check that, if an error is returned, the client is removed.(Anna)
+24. Search for all read/recv/write/send and check if the returned value is correctly checked (checking only -1 or values is not enough, both should be checked).(Anna)
+25. Setup multiple servers with different ports.
+26. Setup multiple servers with different hostnames (use something like: curl --resolve example.com:80:127.0.0 http://example.com/ (http://example.com/)).
+27. Limit the client body (use: curl -X POST -H "Content-Type: plain/text" --data "BODY IS HERE write something shorter or longer than body limit").
+29. Upload some file to the server and get it back.
+30. In the configuration, try to setup the same port multiple times. It should not work
+31. Launch multiple servers at the same time with different configurations but with common ports. Does it work. If it does, ask why the server should work if one of the configurations isn't functional. 
+32. siege -c 10 -t 10S http://localhost:8080 doesn't work
+
 
 WE USE UTILS... DO NOT REMOVE, love you!
 
