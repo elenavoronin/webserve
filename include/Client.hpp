@@ -29,6 +29,7 @@ class Client {
 		CGI*			_CGI;
 		EventPoll*		_eventPoll;
 		unsigned long	_responseIndex;
+		bool 			_isClosed = false;
 
 	public:
 		Client(int clientSocket, EventPoll& eventPoll);
@@ -48,7 +49,9 @@ class Client {
 		void 				closeConnection(EventPoll& eventPoll, int currentPollFd);
 		void				prepareFileResponse(std::string errorContent);
 		void				sendData(const std::string &response);
-		
+
+		bool 				getClosedStatus() const;
+
 		//CGI calling methods
 		int 				getCgiRead();
 		int 				getCgiWrite();

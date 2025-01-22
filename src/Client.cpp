@@ -295,6 +295,7 @@ int Client::writeToSocket() {
  * @param eventPoll The EventPoll object to remove the client socket from.
  */
 void Client::closeConnection(EventPoll& eventPoll, int currentPollFd) {
+	_isClosed = true;
     if (currentPollFd >= 0)
     {
         eventPoll.ToremovePollEventFd(currentPollFd, POLLIN | POLLOUT);
@@ -398,4 +399,8 @@ void Client::writeToCgi() {
         throw std::runtime_error("CGI object is not initialized.");
     }
     _CGI->writeCgiInput();
+}
+
+bool Client::getClosedStatus() const {
+	return _isClosed;
 }

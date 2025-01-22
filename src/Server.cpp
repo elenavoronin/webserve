@@ -131,6 +131,7 @@ void Server::handlePollEvent(EventPoll &eventPoll, int i, Server& defaultServer)
 
     // Find the client associated with the file descriptor
     for (auto &c : _clients) {
+		std::cout << c.getSocket() << " " << c.getCgiRead() << " "  <<c.getCgiWrite() <<std::endl;
         if (c.getSocket() == event_fd || 
 			c.getCgiRead() == event_fd || 
 			c.getCgiWrite() == event_fd) {
@@ -141,10 +142,13 @@ void Server::handlePollEvent(EventPoll &eventPoll, int i, Server& defaultServer)
     if (!client) {
         std::cerr << "Client not found for fd: " << event_fd << std::endl;
 		//client->closeConnection(eventPoll, currentPollFd.fd);
-		//eraseClient(event_fd);
+		// eraseClient(event_fd);
         return;
     }
-
+	if (client->getClosedStatus()) {
+		std::cerr << "Client is closed, skipping event handling." << std::endl;
+		return;
+	}	
     // Handle readable events
     if (currentPollFd.revents & POLLIN) {
 		// std::cout << "POLLIN" << std::endl;
@@ -181,7 +185,7 @@ void Server::handlePollEvent(EventPoll &eventPoll, int i, Server& defaultServer)
 
     // Handle hangup or disconnection events
     if (currentPollFd.revents & (POLLHUP | POLLRDHUP)) {
-		// std::cout << "does this happen" << std::endl;
+		std::cout << "does this happen" << std::endl;
         client->closeConnection(eventPoll, currentPollFd.fd);
 		eraseClient(event_fd);
     }
@@ -303,7 +307,7 @@ int Server::handleGetRequest(Client &client, HttpRequest* request) {
 	HttpResponse response;
 	std::string filepath = this->getRoot() + request->getPath();
 	request->setFullPath(filepath);
-    //std::cout << "filepath: " << filepath << std::endl;
+    // std::cout << "filepath: " << filepath << std::endl;
 
 	if (request->getPath() == "/") {
 		filepath = this->getRoot() + '/' + this->getIndex();
