@@ -261,31 +261,36 @@ void CGI::parseHeaders(const std::string& headers) {
  */
 void CGI::writeCgiInput() {
 
-    if (_inputIndex >= _cgiInput.size()) {
-        close(_toCgiPipe[WRITE]); // Signal EOF to the CGI process
-        std::cerr << "Finished writing to CGI. Closed write pipe." << std::endl;
-        return;
-    }
+	try {
+		if (_inputIndex >= _cgiInput.size()) {
+			close(_toCgiPipe[WRITE]); // Signal EOF to the CGI process
+			std::cerr << "Finished writing to CGI. Closed write pipe." << std::endl;
+			return;
+		}
 
-    unsigned long bytesToWrite = WRITE_SIZE;
-    unsigned long bytesWritten = 0;
-    
-    std::cerr << "Writing to CGI: " << bytesToWrite << " bytes at index " << _inputIndex 
-          << " (total size: " << _cgiInput.size() << ")" << std::endl;
+		unsigned long bytesToWrite = WRITE_SIZE;
+		unsigned long bytesWritten = 0;
+		
+		std::cerr << "Writing to CGI: " << bytesToWrite << " bytes at index " << _inputIndex 
+			<< " (total size: " << _cgiInput.size() << ")" << std::endl;
 
-    std::cout << "----------Writing to CGI---------" << std::endl;
-    std::cout << " INPUT index is : " << _inputIndex << std::endl;
+		std::cout << "----------Writing to CGI---------" << std::endl;
+		std::cout << " INPUT index is : " << _inputIndex << std::endl;
 
-    if (bytesToWrite > _cgiInput.size() - _inputIndex) {
-        bytesToWrite = _cgiInput.size() - _inputIndex;
-    }
-    std::cerr << "Writing to CGI: " << _cgiInput.substr(_inputIndex, bytesToWrite) << std::endl;
-    bytesWritten = write(_toCgiPipe[WRITE], _cgiInput.data() + _inputIndex, bytesToWrite);
-    if (bytesWritten <= 0) { //TODO omparison of unsigned expression < 0 is always false so set to <= instead of 0 to compile
-        perror("Error writing to CGI pipe");
-        throw std::runtime_error("Failed to write to CGI process");
-    }
-    _inputIndex += bytesWritten;
+		if (bytesToWrite > _cgiInput.size() - _inputIndex) {
+			bytesToWrite = _cgiInput.size() - _inputIndex;
+		}
+		std::cerr << "Writing to CGI: " << _cgiInput.substr(_inputIndex, bytesToWrite) << std::endl;
+		bytesWritten = write(_toCgiPipe[WRITE], _cgiInput.data() + _inputIndex, bytesToWrite);
+		if (bytesWritten <= 0) { //TODO omparison of unsigned expression < 0 is always false so set to <= instead of 0 to compile
+			perror("Error writing to CGI pipe");
+			throw std::runtime_error("Failed to write to CGI process");
+		}
+		_inputIndex += bytesWritten;
+	}
+	catch (std::exception& e){
+		std::cerr << e.what() << std::endl;
+	}
 }
 
 /**

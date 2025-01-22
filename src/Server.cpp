@@ -138,11 +138,10 @@ void Server::handlePollEvent(EventPoll &eventPoll, int i, Server& defaultServer)
             break;
         }
     }
-
     if (!client) {
         std::cerr << "Client not found for fd: " << event_fd << std::endl;
-		client->closeConnection(eventPoll, currentPollFd.fd);
-		eraseClient(event_fd);
+		//client->closeConnection(eventPoll, currentPollFd.fd);
+		//eraseClient(event_fd);
         return;
     }
 
@@ -304,7 +303,7 @@ int Server::handleGetRequest(Client &client, HttpRequest* request) {
 	HttpResponse response;
 	std::string filepath = this->getRoot() + request->getPath();
 	request->setFullPath(filepath);
-    std::cout << "filepath: " << filepath << std::endl;
+    //std::cout << "filepath: " << filepath << std::endl;
 
 	if (request->getPath() == "/") {
 		filepath = this->getRoot() + '/' + this->getIndex();
@@ -658,6 +657,7 @@ int Server::handleRedirect(Client& client, HttpRequest& request) {
 }
 
 void Server::eraseClient(int event_fd) {
+	
     // Find all clients in _clients where the socket matches event_fd.
     auto it = std::find_if(_clients.begin(), _clients.end(), [&](const Client &c) {
             // Log each comparison for debugging

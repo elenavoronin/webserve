@@ -289,43 +289,48 @@ void Config::addPollFds() {
  * Events are handled by calling the appropriate handler functions on the servers.
  */
 void Config::pollLoop() {
-    while (true) {
-        // Update the event list from the add/remove queues
-        _eventPoll.updateEventList();
+	try {
+		while (true) {
+			// Update the event list from the add/remove queues
+			_eventPoll.updateEventList();
 
-        std::vector<pollfd> &pfds = _eventPoll.getPollEventFd();
-        int pollResult = poll(pfds.data(), pfds.size(), -1);
-        // std::cout << "size of pollfds" << pfds.size() << std::endl; 
-        if (pollResult == -1) {
-            throw std::runtime_error("Poll failed!");
-        }
-        if (pollResult == 0) {
-            throw std::runtime_error("Poll timed out!");
-        }
+			std::vector<pollfd> &pfds = _eventPoll.getPollEventFd();
+			int pollResult = poll(pfds.data(), pfds.size(), -1);
+			// std::cout << "size of pollfds" << pfds.size() << std::endl; 
+			if (pollResult == -1) {
+				throw std::runtime_error("Poll failed!");
+			}
+			if (pollResult == 0) {
+				throw std::runtime_error("Poll timed out!");
+			}
 
-        // Iterate over the pollfds to handle events
-        for (size_t i = 0; i < pfds.size(); i++) {
-            // std::cout <<  pfds[i].revents << " " << POLLRDHUP << std::endl;
-            if (pfds[i].revents & POLLERR) {
+			// Iterate over the pollfds to handle events
+			for (size_t i = 0; i < pfds.size(); i++) {
+				// std::cout <<  pfds[i].revents << " " << POLLRDHUP << std::endl;
+				if (pfds[i].revents & POLLERR) {
 
-            }
-            if (pfds[i].revents & POLLIN || pfds[i].revents & POLLOUT || pfds[i].revents & POLLHUP || pfds[i].revents & POLLRDHUP) {
-                int fd = pfds[i].fd;
+				}
+				if (pfds[i].revents & POLLIN || pfds[i].revents & POLLOUT || pfds[i].revents & POLLHUP || pfds[i].revents & POLLRDHUP) {
+					int fd = pfds[i].fd;
 
-                for (Server &currentServer : _servers) {
-                    Server &defaultServer = currentServer;
-                    std::cout << "My server is: " << currentServer.getPortStr() << std::endl;
-                    if (fd == currentServer.getListenerFd()) {
-                        // Handle new connection
-                        currentServer.handleNewConnection(_eventPoll);
-                    } else {
-                        // Handle events for existing connections
-                        currentServer.handlePollEvent(_eventPoll, i, defaultServer);
-                    }
-                }
-            }
-        }
-    }
+					for (Server &currentServer : _servers) {
+						Server &defaultServer = currentServer;
+						std::cout << "My server is: " << currentServer.getPortStr() << std::endl;
+						if (fd == currentServer.getListenerFd()) {
+							// Handle new connection
+							std::cout << "Found new connection " << fd << std::endl;
+							currentServer.handleNewConnection(_eventPoll);
+						} else {
+							// Handle events for existing connections
+							currentServer.handlePollEvent(_eventPoll, i, defaultServer);
+						}
+					}
+				}
+			}
+		}
+	} catch (const std::exception &e) {
+		std::cerr << "Exception: " << e.what() << std::endl;
+	}
 }
 
 /**
