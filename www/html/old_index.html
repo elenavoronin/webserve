@@ -1,9 +1,16 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <title>CGI POST Test</title>
 </head>
 <body>
-	Testing for the second server
+    <h2>Testing for the second server</h2>
+
+    <form action="/cgi-bin/test_script.py" method="POST">
+        <label for="username">Username:</label><br>
+        <input type="text" id="username" name="username"><br><br>
+        <input type="submit" value="Submit">
+    </form>
 </body>
 </html>
 <!-- 

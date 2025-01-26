@@ -452,6 +452,7 @@ void Server::sendBody(int clientSocket, const std::string& body) {
  * @return The HTTP status code indicating the result of the validation.
  */
 int Server::validateRequest(const std::string& method, const std::string& version) {
+	std::cout << "METHOD " << method << std::endl;
 	if (method != "GET" && method != "POST" && method != "DELETE") {
 		std::cerr << "Error: Unsupported HTTP method." << std::endl;
 		return 405; // Method Not Allowed
@@ -549,32 +550,41 @@ int Server::handleDeleteRequest(Client &client, HttpRequest* request) {
  * @todo Error (400 Bad Request): If there was a problem with the data.
  */
 
+
+RUN: f0r1s10% curl -X POST -F "file=@www/html/assets/cat.jpeg" -F "name=test_name" http://localhost:8080/upload
+Right now method - is somrthing gibberish
+
+
+
 int Server::handlePostRequest(Client &client, HttpRequest* request) {
- 	HttpResponse response;
+    HttpResponse response;
+	std::cout << "*********** Handling Post Request *******" << std::endl;
     try {
-        // Get the request body
-        std::string requestBody = request->getBody();
-        // Validate the Content-Length header
-		// std::cout << "body of http request: " << requestBody << std::endl;
+        std::string requestBody = request->getBody(); // Get the request body
+        size_t position = request->getFullPath().find("/cgi-bin"); // Check for CGI path
+
+        if (position != std::string::npos) {
+            std::cout << "*********** Start CGI in Post request *******" << std::endl;
+            CGI cgi(request);
+            client.startCgi(request);  // Start CGI for the request
+            return 0;  // Early exit if CGI is handled
+        }
+
+        // Validate the Content-Length header for POST request
         std::string contentLengthHeader = request->getHeader("Content-Length");
-		if (contentLengthHeader.empty()) {
-    		throw std::runtime_error("Missing Content-Length header in POST request");
-		}
         if (contentLengthHeader.empty()) {
             throw std::runtime_error("Missing Content-Length header in POST request");
         }
 
-        size_t contentLength = std::stoul(contentLengthHeader);
-        if (requestBody.size() != contentLength) {
-            throw std::runtime_error("Content-Length mismatch: Received " +
-                                     std::to_string(requestBody.size()) +
-                                     ", expected " + contentLengthHeader);
-        }
+        // size_t contentLength = std::stoul(contentLengthHeader);
+        // if (requestBody.size() != contentLength) {
+        //     throw std::runtime_error("Content-Length mismatch: Received " + std::to_string(requestBody.size()) +
+        //                              ", expected " + contentLengthHeader);
+        // }
 
-        // Example: Process the data (e.g., save to file, database, etc.)
+        // Save the received data to a file (e.g., data_upload.txt)
         std::string filename = "data_upload.txt";
         std::string savePath = getUploadStore() + filename;
-        std::cout << "save path: " << savePath << std::endl;
         std::ofstream outFile(savePath, std::ios::app);
         if (!outFile.is_open()) {
             throw std::runtime_error("Failed to open file for writing: " + savePath);
@@ -587,24 +597,22 @@ int Server::handlePostRequest(Client &client, HttpRequest* request) {
         response.setHeader("Content-Type", "text/plain");
         response.setBody("Data received and stored successfully.");
         response.buildResponse();
-
-        // Send the response
-        client.sendData(response.getFullResponse());
+        client.sendData(response.getFullResponse());  // Send success response
         return 201;
 
     } catch (const std::exception &e) {
-        // Handle errors and return a 500 Internal Server Error
+        // Error handling and return 500 Internal Server Error
         std::cerr << "Error handling POST request: " << e.what() << std::endl;
 
         response.setStatus(500, getStatusMessage(500));
         response.setHeader("Content-Type", "text/plain");
         response.setBody("Error processing the POST request.");
         response.buildResponse();
-
-        client.sendData(response.getFullResponse());
+        client.sendData(response.getFullResponse());  // Send error response
         return 500;
     }
 }
+
 
 
 /**

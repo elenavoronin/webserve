@@ -17,3 +17,11 @@ int main(int argc, char **argv) {
 	
     return 0;
 }
+
+
+/*
+CGI (Common Gateway Interface) is a standard for web servers to interact with external programs (called CGI scripts) to dynamically generate web content. 
+This means that instead of simply serving static files (like HTML), the web server can run a program (written in C++, Python, Perl, etc.), 
+pass the HTTP request data to it, and then use the program's output as the response for the client.
+
+*/
