@@ -289,6 +289,7 @@ void Config::addPollFds() {
  * Events are handled by calling the appropriate handler functions on the servers.
  */
 void Config::pollLoop() {
+	//signal(SIGPIPE, SIG_IGN); //TODO change it!!!!!
 	try {
 		while (true) {
 			// Update the event list from the add/remove queues
@@ -315,10 +316,10 @@ void Config::pollLoop() {
 
 					for (Server &currentServer : _servers) {
 						Server &defaultServer = currentServer;
-						std::cout << "My server is: " << currentServer.getPortStr() << std::endl;
 						if (fd == currentServer.getListenerFd()) {
+							std::cout << "My server is: " << currentServer.getPortStr() << "and my fd is " << fd << std::endl;
 							// Handle new connection
-							std::cout << "Found new connection " << fd << std::endl;
+							// std::cout << "Found new connection " << fd << std::endl;
 							currentServer.handleNewConnection(_eventPoll);
 						} else {
 							// Handle events for existing connections
@@ -358,7 +359,7 @@ int Config::checkConfig(const std::string &config_file) {
     }
     try {
         _servers = parseConfig(file);
-        // printConfigParse(_servers);
+        //printConfigParse(_servers);
         addPollFds();
     } catch (const std::exception &e) {
         std::cerr << "Configuration error: " << e.what() << std::endl;

@@ -227,7 +227,6 @@ void Client::readFromSocket(Server *server, Server &defaultServer) {
 
     // Try to receive data
     int received = recv(_clientSocket, buf, sizeof(buf), 0);
-
     if (received == 0) {
         throw std::runtime_error("Client closed connection");
     } 
@@ -339,10 +338,7 @@ void Client::prepareFileResponse(std::string errorContent) {
         _HttpResponse->setHeader("Content-Type", "text/html");
         _HttpResponse->setBody(errorContent);
         _HttpResponse->buildResponse();
-
         std::cerr << "File not found: " << requestedFile << std::endl;
-
-        // Prepare to send the 404 response
         _eventPoll->ToremovePollEventFd(_clientSocket, POLLIN);
         _eventPoll->addPollFdEventQueue(_clientSocket, POLLOUT);
 
@@ -404,3 +400,4 @@ void Client::writeToCgi() {
 bool Client::getClosedStatus() const {
 	return _isClosed;
 }
+

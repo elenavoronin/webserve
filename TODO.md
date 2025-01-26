@@ -48,6 +48,8 @@ curl -X POST --data-binary "@large_file_2.txt" http://localhost:8080/endpoint
 # In terminal 3
 curl -X POST --data-binary "@large_file_3.txt" http://localhost:8080/endpoint
 
+RUN: f0r1s10% curl -X POST -F "file=@www/html/assets/cat.jpeg" -F "name=test_name" http://localhost:8080/upload
+
 
 test POST request:
 curl -X POST http://localhost:8080/your-endpoint \
@@ -95,3 +97,16 @@ bash
 Copy code
 kill -9 <PID>
 This forces the process to terminate immediately.
+
+
+!!!!!!!!!!
+
+Use gdb ./webserv
+(gdb) backtrace
+
+
+
+Program received signal SIGPIPE, Broken pipe.
+0x00007ffff7b5a887 in __GI___libc_write (fd=6, buf=0x477fe3, nbytes=100) at ../sysdeps/unix/sysv/linux/write.c:26
+Download failed: Invalid argument.  Continuing without source file ./io/../sysdeps/unix/sysv/linux/write.c.
+26      ../sysdeps/unix/sysv/linux/write.c: No such file or directory.

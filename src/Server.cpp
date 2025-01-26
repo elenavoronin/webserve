@@ -23,6 +23,22 @@ Server::~Server(){}
  * @return The file descriptor for the created listener socket on success, 
  *         or -1 if an error occurs during listening setup.
  */
+
+// int checkPortAvailability(int port) {
+//     int sock = socket(AF_INET, SOCK_STREAM, 0);
+//     if (sock < 0) return -1;
+
+//     struct sockaddr_in addr;
+//     addr.sin_family = AF_INET;
+//     addr.sin_port = htons(port);
+//     addr.sin_addr.s_addr = INADDR_ANY;
+
+//     int result = bind(sock, (struct sockaddr*)&addr, sizeof(addr));
+//     close(sock);  // Close the socket after checking availability
+
+//     return result;
+// }
+
 int Server::getListenerSocket(){
 	int status;
 	struct addrinfo hints;
@@ -35,6 +51,12 @@ int Server::getListenerSocket(){
 	hints.ai_family = AF_UNSPEC; // allows either IPv4 or IPv6.
 	hints.ai_socktype = SOCK_STREAM; // tells the system to use TCP
 	hints.ai_flags = AI_PASSIVE; //makes the program automatically fill in the IP 
+	// int port = std::stoi(getPortStr());
+	// if (checkPortAvailability(port) != 0) {
+    //     std::cerr << "Port " << getPortStr() << " is already in use!" << std::endl;
+    //     return -1;  // Exit if the port is already in use
+    // }
+	
 	if ((status = getaddrinfo(NULL, getPortStr().c_str(), &hints, &servinfo)) != 0){
 		//std::cout << "Error get Address information" << std::endl;
 		return 1;
@@ -54,9 +76,11 @@ int Server::getListenerSocket(){
 	}
 	freeaddrinfo(servinfo);
 	if (newConnect == NULL) //If no address was successfully bound, the program exits with an error.
-		exit(1);
-	if (listen(serverSocket, BACKLOG) == -1) //tells the socket to listen for incoming connections
 		return -1;
+	if (listen(serverSocket, BACKLOG) == -1) { //tells the socket to listen for incoming connections
+		close(serverSocket);
+		return -1;
+	}
 	// //std::cout << "serverSocket " << serverSocket << std::endl;
 	return serverSocket;
 }
@@ -124,71 +148,71 @@ void Server::handleNewConnection(EventPoll &eventPoll){
  * @todo  divide into smaller functions doing one thing
  * @todo throw instead of error or cout
  */
+
+
+Client* Server::getClientByFd(int event_fd) {
+	for (auto &c : _clients) {
+		if (c.getSocket() == event_fd || c.getCgiRead() == event_fd || c.getCgiWrite() == event_fd) {
+			return &c;
+		}
+	}
+	return nullptr;
+}
+
 void Server::handlePollEvent(EventPoll &eventPoll, int i, Server& defaultServer) {
-    Client *client = nullptr;
-    pollfd &currentPollFd = eventPoll.getPollEventFd()[i];
-    int event_fd = currentPollFd.fd;
+	Client *client = getClientByFd(eventPoll.getPollEventFd()[i].fd);
+	if (!client) return;
+	if (eventPoll.getPollEventFd()[i].revents & POLLIN) {
+		handleReadEvent(eventPoll, *client, defaultServer, i); //Handle readable events
+	}
+	if (eventPoll.getPollEventFd()[i].revents & POLLOUT) {
+		handleWriteEvent(eventPoll, *client, i); //Handle writable events
+	}
+	if (eventPoll.getPollEventFd()[i].revents & (POLLHUP | POLLRDHUP | POLLERR)) {
+		handleDisconnection(eventPoll, *client, i);
+	}
+}
 
-    // Find the client associated with the file descriptor
-    for (auto &c : _clients) {
-		std::cout << c.getSocket() << " " << c.getCgiRead() << " "  <<c.getCgiWrite() <<std::endl;
-        if (c.getSocket() == event_fd || 
-			c.getCgiRead() == event_fd || 
-			c.getCgiWrite() == event_fd) {
-            client = &c;
-            break;
-        }
-    }
-    if (!client) {
-        std::cerr << "Client not found for fd: " << event_fd << std::endl;
-		//client->closeConnection(eventPoll, currentPollFd.fd);
-		// eraseClient(event_fd);
-        return;
-    }
-	if (client->getClosedStatus()) {
-		std::cerr << "Client is closed, skipping event handling." << std::endl;
-		return;
-	}	
-    // Handle readable events
-    if (currentPollFd.revents & POLLIN) {
-		// std::cout << "POLLIN" << std::endl;
-        try {
-            if (event_fd != client->getSocket() && event_fd == client->getCgiRead()) {
-                client->readFromCgi();
-            } else {
-                client->readFromSocket(this, defaultServer);
-            }
-        } catch (const std::runtime_error &e) {
-            std::cerr << "Read error: " << e.what() << std::endl;
-            client->closeConnection(eventPoll, currentPollFd.fd);
-			eraseClient(event_fd);
-        }
-    }
-    // Handle writable events
-    if (currentPollFd.revents & POLLOUT) {
+void Server::handleReadEvent(EventPoll &eventPoll, Client &client, Server &defaultServer, int i) {
+	try {
+		if (client.getSocket() == eventPoll.getPollEventFd()[i].fd) {
+			std::cout << "*********READING for " << i << std::endl;
+			client.readFromSocket(this, defaultServer);
+		} 
+		// else if (client.getCgiRead() == eventPoll.getPollEventFd()[i].fd) {
+		// 	client.readFromCgi();
+		// }
+	} catch (const std::runtime_error &e) {
+		std::cerr << "Read error: " << e.what() << std::endl;
+		client.closeConnection(eventPoll, eventPoll.getPollEventFd()[i].fd);
+		eraseClient(eventPoll.getPollEventFd()[i].fd);
+	}
+}
 
-        try {
-            if (event_fd != client->getSocket() && event_fd == client->getCgiWrite()) {
-                client->writeToCgi();
-            } else {
-                if (client->writeToSocket() > 0) {
-					client->closeConnection(eventPoll, currentPollFd.fd);
-					eraseClient(event_fd);
-				}
-            }
-        } catch (const std::runtime_error &e) {
-            std::cerr << "Write error: " << e.what() << std::endl;
-            client->closeConnection(eventPoll, currentPollFd.fd);
-			eraseClient(event_fd);
-        }
-    }
+void Server::handleWriteEvent(EventPoll &eventPoll, Client &client, int i) {
+	try {
+		if (client.getSocket() == eventPoll.getPollEventFd()[i].fd) {
+			if (client.writeToSocket() > 0) {
+				std::cout << "*********Writing, closing connection " << i << std::endl;
+				client.closeConnection(eventPoll, eventPoll.getPollEventFd()[i].fd);
+				eraseClient(eventPoll.getPollEventFd()[i].fd);
+			}
+			std::cout << "*********Writing for " << i << std::endl;
+		} 
+		// else if (client.getCgiWrite() == eventPoll.getPollEventFd()[i].fd) {
+		// 	client.writeToCgi();
+		// }
+	} catch (const std::runtime_error &e) {
+		std::cerr << "Write error: " << e.what() << std::endl;
+		client.closeConnection(eventPoll, eventPoll.getPollEventFd()[i].fd);
+		eraseClient(eventPoll.getPollEventFd()[i].fd);
+	}
+}
 
-    // Handle hangup or disconnection events
-    if (currentPollFd.revents & (POLLHUP | POLLRDHUP)) {
-		std::cout << "does this happen" << std::endl;
-        client->closeConnection(eventPoll, currentPollFd.fd);
-		eraseClient(event_fd);
-    }
+void Server::handleDisconnection(EventPoll &eventPoll, Client &client, int i) {
+	std::cout << "Connection closed or hang-up detected." << std::endl;
+	client.closeConnection(eventPoll, eventPoll.getPollEventFd()[i].fd);
+	eraseClient(eventPoll.getPollEventFd()[i].fd);
 }
 
 
@@ -551,8 +575,8 @@ int Server::handleDeleteRequest(Client &client, HttpRequest* request) {
  */
 
 
-RUN: f0r1s10% curl -X POST -F "file=@www/html/assets/cat.jpeg" -F "name=test_name" http://localhost:8080/upload
-Right now method - is somrthing gibberish
+// RUN: f0r1s10% curl -X POST -F "file=@www/html/assets/cat.jpeg" -F "name=test_name" http://localhost:8080/upload
+// Right now method - is somrthing gibberish
 
 
 
@@ -560,7 +584,7 @@ int Server::handlePostRequest(Client &client, HttpRequest* request) {
     HttpResponse response;
 	std::cout << "*********** Handling Post Request *******" << std::endl;
     try {
-        std::string requestBody = request->getBody(); // Get the request body
+        std::string requestBody = request->getBody();
         size_t position = request->getFullPath().find("/cgi-bin"); // Check for CGI path
 
         if (position != std::string::npos) {
@@ -569,20 +593,10 @@ int Server::handlePostRequest(Client &client, HttpRequest* request) {
             client.startCgi(request);  // Start CGI for the request
             return 0;  // Early exit if CGI is handled
         }
-
-        // Validate the Content-Length header for POST request
         std::string contentLengthHeader = request->getHeader("Content-Length");
         if (contentLengthHeader.empty()) {
             throw std::runtime_error("Missing Content-Length header in POST request");
         }
-
-        // size_t contentLength = std::stoul(contentLengthHeader);
-        // if (requestBody.size() != contentLength) {
-        //     throw std::runtime_error("Content-Length mismatch: Received " + std::to_string(requestBody.size()) +
-        //                              ", expected " + contentLengthHeader);
-        // }
-
-        // Save the received data to a file (e.g., data_upload.txt)
         std::string filename = "data_upload.txt";
         std::string savePath = getUploadStore() + filename;
         std::ofstream outFile(savePath, std::ios::app);
@@ -591,24 +605,20 @@ int Server::handlePostRequest(Client &client, HttpRequest* request) {
         }
         outFile << requestBody << std::endl;
         outFile.close();
-
-        // Set success response
         response.setStatus(201, getStatusMessage(201));
         response.setHeader("Content-Type", "text/plain");
         response.setBody("Data received and stored successfully.");
         response.buildResponse();
-        client.sendData(response.getFullResponse());  // Send success response
+        client.sendData(response.getFullResponse());
         return 201;
 
     } catch (const std::exception &e) {
-        // Error handling and return 500 Internal Server Error
         std::cerr << "Error handling POST request: " << e.what() << std::endl;
-
         response.setStatus(500, getStatusMessage(500));
         response.setHeader("Content-Type", "text/plain");
         response.setBody("Error processing the POST request.");
         response.buildResponse();
-        client.sendData(response.getFullResponse());  // Send error response
+        client.sendData(response.getFullResponse());
         return 500;
     }
 }

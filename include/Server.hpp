@@ -101,4 +101,10 @@ class Server  {
 		std::vector<std::string> 						getErrorPage() const {return this->_errorPage;}
 		int												getListenerFd() const {return this->_listener_fd;}
 		std::pair<int, std::string>						getRedirect() const { return this->_redirect;}
+
+		Client*											getClientByFd(int event_fd);
+		void 											handleReadEvent(EventPoll &eventPoll, Client &client, Server &defaultServer, int i);
+		void 											handleWriteEvent(EventPoll &eventPoll, Client &client, int i);
+		void 											handleDisconnection(EventPoll &eventPoll, Client &client, int i);
+
 };
