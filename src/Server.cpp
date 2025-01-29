@@ -179,9 +179,9 @@ void Server::handleReadEvent(EventPoll &eventPoll, Client &client, Server &defau
 			std::cout << "*********READING for " << i << std::endl;
 			client.readFromSocket(this, defaultServer);
 		} 
-		// else if (client.getCgiRead() == eventPoll.getPollEventFd()[i].fd) {
-		// 	client.readFromCgi();
-		// }
+		else if (client.getCgiRead() == eventPoll.getPollEventFd()[i].fd) {
+			client.readFromCgi();
+		}
 	} catch (const std::runtime_error &e) {
 		std::cerr << "Read error: " << e.what() << std::endl;
 		client.closeConnection(eventPoll, eventPoll.getPollEventFd()[i].fd);
@@ -199,9 +199,9 @@ void Server::handleWriteEvent(EventPoll &eventPoll, Client &client, int i) {
 			}
 			std::cout << "*********Writing for " << i << std::endl;
 		} 
-		// else if (client.getCgiWrite() == eventPoll.getPollEventFd()[i].fd) {
-		// 	client.writeToCgi();
-		// }
+		else if (client.getCgiWrite() == eventPoll.getPollEventFd()[i].fd) {
+			client.writeToCgi();
+		}
 	} catch (const std::runtime_error &e) {
 		std::cerr << "Write error: " << e.what() << std::endl;
 		client.closeConnection(eventPoll, eventPoll.getPollEventFd()[i].fd);

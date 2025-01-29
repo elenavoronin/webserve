@@ -289,7 +289,7 @@ void Config::addPollFds() {
  * Events are handled by calling the appropriate handler functions on the servers.
  */
 void Config::pollLoop() {
-	//signal(SIGPIPE, SIG_IGN); //TODO change it!!!!!
+	signal(SIGPIPE, SIG_IGN); //TODO change it!!!!!
 	try {
 		while (true) {
 			// Update the event list from the add/remove queues
