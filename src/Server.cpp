@@ -141,7 +141,7 @@ void Server::handlePollEvent(EventPoll &eventPoll, int i, Server& defaultServer)
 
     if (!client) {
         std::cerr << "Client not found for fd: " << event_fd << std::endl;
-		client->closeConnection(eventPoll);
+		//client->closeConnection(eventPoll);
 		eraseClient(event_fd);
         return;
     }
