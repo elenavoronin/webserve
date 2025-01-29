@@ -100,7 +100,7 @@ void Server::handleNewConnection(EventPoll &eventPoll){
         return;
     }
 	
-    std::cout << "OPEN!!! New connection accepted on fd: " << new_fd << std::endl;
+    // std::cout << "OPEN!!! New connection accepted on fd: " << new_fd << std::endl;
 
 	Client newClient(new_fd, eventPoll);
     // Add the new client directly to the clients vector
@@ -140,7 +140,7 @@ void Server::handlePollEvent(EventPoll &eventPoll, int i, Server& defaultServer)
     }
 
     if (!client) {
-        std::cerr << "Client not found for fd: " << event_fd << std::endl;
+        // std::cerr << "Client not found for fd: " << event_fd << std::endl;
 		    //client->closeConnection(eventPoll);
 		    eraseClient(event_fd);
         return;
@@ -273,7 +273,7 @@ int Server::processClientRequest(Client &client, const std::string& request, Htt
 		return status;
 	}
     // if (redirect) // TODO handle redirect before handling any other methods
-
+    std::cout << "Method: " << method << std::endl;
 	if (method == "GET" && std::find(this->_allowedMethods.begin(), this->_allowedMethods.end(), "GET") != this->_allowedMethods.end())
 		return handleGetRequest(client, HttpRequest); //?? what locations should be passed
 	if (method == "POST" && std::find(this->_allowedMethods.begin(), this->_allowedMethods.end(), "POST") != this->_allowedMethods.end())
@@ -545,52 +545,70 @@ int Server::handleDeleteRequest(Client &client, HttpRequest* request) {
  * @todo check if body size exceeds a predefined limit (error 413 Request Too Large)
  * @todo Error (400 Bad Request): If there was a problem with the data.
  */
-
 int Server::handlePostRequest(Client &client, HttpRequest* request) {
- 	HttpResponse response;
+    HttpResponse response;
+    std::cout << "Handling POST request" << std::endl;
+
     try {
-        // Get the request body
+        // Get request body
         std::string requestBody = request->getBody();
-        // Validate the Content-Length header
-		// std::cout << "body of http request: " << requestBody << std::endl;
-        std::string contentLengthHeader = request->getHeader("Content-Length");
-		if (contentLengthHeader.empty()) {
-    		throw std::runtime_error("Missing Content-Length header in POST request");
-		}
-        if (contentLengthHeader.empty()) {
-            throw std::runtime_error("Missing Content-Length header in POST request");
+        std::string contentType = request->getHeader("Content-Type");
+
+        if (contentType.find("multipart/form-data") == std::string::npos) {
+            throw std::runtime_error("Unsupported Content-Type: Only multipart/form-data is supported.");
         }
 
-        size_t contentLength = std::stoul(contentLengthHeader);
-        if (requestBody.size() != contentLength) {
-            throw std::runtime_error("Content-Length mismatch: Received " +
-                                     std::to_string(requestBody.size()) +
-                                     ", expected " + contentLengthHeader);
+        // Extract boundary from Content-Type
+        size_t boundaryPos = contentType.find("boundary=");
+        if (boundaryPos == std::string::npos) {
+            throw std::runtime_error("Malformed multipart/form-data request: Missing boundary.");
+        }
+        std::string boundary = "--" + contentType.substr(boundaryPos + 9); // Extract boundary string
+
+        // Split request body into parts
+        std::vector<std::string> parts;
+        std::stringstream bodyStream(requestBody);
+        std::string line;
+        std::string part;
+
+        while (std::getline(bodyStream, line)) {
+            if (line.find(boundary) != std::string::npos) {
+                if (!part.empty()) {
+                    parts.push_back(part);
+                    part.clear();
+                }
+            } else {
+                part += line + "\n";
+            }
         }
 
-        // Example: Process the data (e.g., save to file, database, etc.)
-        std::string filename = "data_upload.txt";
+        // Process uploaded file
+        std::string filename = "uploaded_image.jpg"; // Default filename
         std::string savePath = getUploadStore() + filename;
-        std::cout << "save path: " << savePath << std::endl;
-        std::ofstream outFile(savePath, std::ios::app);
+        std::ofstream outFile(savePath, std::ios::binary);
         if (!outFile.is_open()) {
             throw std::runtime_error("Failed to open file for writing: " + savePath);
         }
-        outFile << requestBody << std::endl;
+
+        for (const auto &p : parts) {
+            // Find start of binary data
+            size_t dataPos = p.find("\r\n\r\n");
+            if (dataPos != std::string::npos) {
+                outFile.write(p.data() + dataPos + 4, p.size() - dataPos - 4);
+            }
+        }
         outFile.close();
 
         // Set success response
         response.setStatus(201, getStatusMessage(201));
         response.setHeader("Content-Type", "text/plain");
-        response.setBody("Data received and stored successfully.");
+        response.setBody("File uploaded successfully.");
         response.buildResponse();
 
-        // Send the response
         client.sendData(response.getFullResponse());
         return 201;
 
     } catch (const std::exception &e) {
-        // Handle errors and return a 500 Internal Server Error
         std::cerr << "Error handling POST request: " << e.what() << std::endl;
 
         response.setStatus(500, getStatusMessage(500));
@@ -602,6 +620,64 @@ int Server::handlePostRequest(Client &client, HttpRequest* request) {
         return 500;
     }
 }
+
+// int Server::handlePostRequest(Client &client, HttpRequest* request) {
+//  	HttpResponse response;
+//     std::cout << "Handling POST request" << std::endl;
+//     try {
+//         // Get the request body
+//         std::string requestBody = request->getBody();
+//         // Validate the Content-Length header
+// 		// std::cout << "body of http request: " << requestBody << std::endl;
+//         std::string contentLengthHeader = request->getHeader("Content-Length");
+// 		if (contentLengthHeader.empty()) {
+//     		throw std::runtime_error("Missing Content-Length header in POST request");
+// 		}
+//         if (contentLengthHeader.empty()) {
+//             throw std::runtime_error("Missing Content-Length header in POST request");
+//         }
+
+//         size_t contentLength = std::stoul(contentLengthHeader);
+//         if (requestBody.size() != contentLength) {
+//             throw std::runtime_error("Content-Length mismatch: Received " +
+//                                      std::to_string(requestBody.size()) +
+//                                      ", expected " + contentLengthHeader);
+//         }
+
+//         // Example: Process the data (e.g., save to file, database, etc.)
+//         std::string filename = "data_upload.txt";
+//         std::string savePath = getUploadStore() + filename;
+//         std::cout << "save path: " << savePath << std::endl;
+//         std::ofstream outFile(savePath, std::ios::app);
+//         if (!outFile.is_open()) {
+//             throw std::runtime_error("Failed to open file for writing: " + savePath);
+//         }
+//         outFile << requestBody << std::endl;
+//         outFile.close();
+
+//         // Set success response
+//         response.setStatus(201, getStatusMessage(201));
+//         response.setHeader("Content-Type", "text/plain");
+//         response.setBody("Data received and stored successfully.");
+//         response.buildResponse();
+
+//         // Send the response
+//         client.sendData(response.getFullResponse());
+//         return 201;
+
+//     } catch (const std::exception &e) {
+//         // Handle errors and return a 500 Internal Server Error
+//         std::cerr << "Error handling POST request: " << e.what() << std::endl;
+
+//         response.setStatus(500, getStatusMessage(500));
+//         response.setHeader("Content-Type", "text/plain");
+//         response.setBody("Error processing the POST request.");
+//         response.buildResponse();
+
+//         client.sendData(response.getFullResponse());
+//         return 500;
+//     }
+// }
 
 
 /**

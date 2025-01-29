@@ -276,7 +276,7 @@ int Client::writeToSocket() {
 
     if (bytesWritten > 0) {
         _responseIndex += bytesWritten;
-        std::cout << "Response index: " << _responseIndex << std::endl;
+        // std::cout << "Response index: " << _responseIndex << std::endl;
     }
 
     if (_responseIndex >= _HttpResponse->getFullResponse().size()) {

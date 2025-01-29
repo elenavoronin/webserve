@@ -314,7 +314,7 @@ void Config::pollLoop() {
 
                 for (Server &currentServer : _servers) {
                     Server &defaultServer = currentServer;
-                    std::cout << "My server is: " << currentServer.getPortStr() << std::endl;
+                    // std::cout << "My server is: " << currentServer.getPortStr() << std::endl;
                     if (fd == currentServer.getListenerFd()) {
                         // Handle new connection
                         currentServer.handleNewConnection(_eventPoll);

@@ -9,9 +9,7 @@ CGI::CGI(HttpRequest *request) {
     _cgiComplete = false;
     _headersSent = false;
 
-    // Debugging output
-    // std::cout << "CGI input is: " << _cgiInput << std::endl;
-    // std::cout << "Request Method: " << request->getField("method") << std::endl;
+
     if (!setupPipes()) 
         return;
 
