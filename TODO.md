@@ -18,6 +18,20 @@ POll decides what we're doing not the server
 15. Directory listing (Lena)
 16. Cgi - infinite loops handling and error handling (Djoyke)
 17. Test locations (Lena)
+18. Check errno (Anna)
+19. Check HTTP response status codes(Anna)
+20. The first server for a host:port will be the default for this host:port (that means
+it will answer to all the requests that don’t belong to an other server). ?????
+21. Returning after CGI turns off the program
+23. Search for all read/recv/write/send on a socket and check that, if an error is returned, the client is removed.(Anna)
+24. Search for all read/recv/write/send and check if the returned value is correctly checked (checking only -1 or values is not enough, both should be checked).(Anna)
+25. Setup multiple servers with different ports.
+26. Setup multiple servers with different hostnames (use something like: curl --resolve example.com:80:127.0.0 http://example.com/ (http://example.com/)).
+27. Limit the client body (use: curl -X POST -H "Content-Type: plain/text" --data "BODY IS HERE write something shorter or longer than body limit").
+29. Upload some file to the server and get it back.
+30. In the configuration, try to setup the same port multiple times. It should not work
+31. Launch multiple servers at the same time with different configurations but with common ports. Does it work. If it does, ask why the server should work if one of the configurations isn't functional. 
+32. siege -c 10 -t 10S http://localhost:8080 doesn't work
 
 WE USE UTILS... DO NOT REMOVE, love you!
 
@@ -80,3 +94,25 @@ bash
 Copy code
 kill -9 <PID>
 This forces the process to terminate immediately.
+
+
+
+BOOOOOOO!!!!
+AddressSanitizer:DEADLYSIGNAL
+=================================================================
+==79619==ERROR: AddressSanitizer: SEGV on unknown address 0x000000000000 (pc 0x0000004ddb8d bp 0x7ffcefb5d570 sp 0x7ffcefb5d510 T0)
+==79619==The signal is caused by a READ memory access.
+==79619==Hint: address points to the zero page.
+    #0 0x4ddb8d in Client::closeConnection(EventPoll&) /home/dreijans/Documents/webserv/src/Client.cpp:300:35
+    #1 0x4ec697 in Server::handlePollEvent(EventPoll&, int, Server&) /home/dreijans/Documents/webserv/src/Server.cpp:144:11
+    #2 0x50c46b in Config::pollLoop() /home/dreijans/Documents/webserv/src/Config.cpp:308:39
+    #3 0x50bd85 in Config::addPollFds() /home/dreijans/Documents/webserv/src/Config.cpp:262:5
+    #4 0x50c873 in Config::checkConfig(std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > const&) /home/dreijans/Documents/webserv/src/Config.cpp:342:9
+    #5 0x4d27da in main /home/dreijans/Documents/webserv/src/start.cpp:14:16
+    #6 0x7fd4bf7a0d8f in __libc_start_call_main csu/../sysdeps/nptl/libc_start_call_main.h:58:16
+    #7 0x7fd4bf7a0e3f in __libc_start_main csu/../csu/libc-start.c:392:3
+    #8 0x423d84 in _start (/home/dreijans/Documents/webserv/webserv+0x423d84)
+
+AddressSanitizer can not provide additional info.
+SUMMARY: AddressSanitizer: SEGV /home/dreijans/Documents/webserv/src/Client.cpp:300:35 in Client::closeConnection(EventPoll&)
+==79619==ABORTING

@@ -307,7 +307,7 @@ void Config::pollLoop() {
         for (size_t i = 0; i < pfds.size(); i++) {
             // std::cout <<  pfds[i].revents << " " << POLLRDHUP << std::endl;
             if (pfds[i].revents & POLLERR) {
-
+                std::cerr << "Error in poll: " << std::endl;
             }
             if (pfds[i].revents & POLLIN || pfds[i].revents & POLLOUT || pfds[i].revents & POLLHUP || pfds[i].revents & POLLRDHUP) {
                 int fd = pfds[i].fd;
