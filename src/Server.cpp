@@ -160,59 +160,60 @@ Client* Server::getClientByFd(int event_fd) {
 }
 
 void Server::handlePollEvent(EventPoll &eventPoll, int i, Server& defaultServer) {
-	Client *client = getClientByFd(eventPoll.getPollEventFd()[i].fd);
-	if (!client) return;
-	if (eventPoll.getPollEventFd()[i].revents & POLLIN) {
-		handleReadEvent(eventPoll, *client, defaultServer, i); //Handle readable events
-	}
-	if (eventPoll.getPollEventFd()[i].revents & POLLOUT) {
-		handleWriteEvent(eventPoll, *client, i); //Handle writable events
-	}
-	if (eventPoll.getPollEventFd()[i].revents & (POLLHUP | POLLRDHUP | POLLERR)) {
-		handleDisconnection(eventPoll, *client, i);
-	}
-}
+    Client *client = nullptr;
+    pollfd &currentPollFd = eventPoll.getPollEventFd()[i];
+    int event_fd = currentPollFd.fd;
 
-void Server::handleReadEvent(EventPoll &eventPoll, Client &client, Server &defaultServer, int i) {
-	try {
-		if (client.getSocket() == eventPoll.getPollEventFd()[i].fd) {
-			std::cout << "*********READING for " << i << std::endl;
-			client.readFromSocket(this, defaultServer);
-		} 
-		else if (client.getCgiRead() == eventPoll.getPollEventFd()[i].fd) {
-			client.readFromCgi();
-		}
-	} catch (const std::runtime_error &e) {
-		std::cerr << "Read error: " << e.what() << std::endl;
-		client.closeConnection(eventPoll, eventPoll.getPollEventFd()[i].fd);
-		eraseClient(eventPoll.getPollEventFd()[i].fd);
-	}
-}
+    // Find the client associated with the file descriptor
+    for (auto &c : _clients) {
+        if (c.getSocket() == event_fd || 
+			c.getCgiRead() == event_fd || 
+			c.getCgiWrite() == event_fd) {
+            client = &c;
+            break;
+        }
+    }
 
-void Server::handleWriteEvent(EventPoll &eventPoll, Client &client, int i) {
-	try {
-		if (client.getSocket() == eventPoll.getPollEventFd()[i].fd) {
-			if (client.writeToSocket() > 0) {
-				std::cout << "*********Writing, closing connection " << i << std::endl;
-				client.closeConnection(eventPoll, eventPoll.getPollEventFd()[i].fd);
-				eraseClient(eventPoll.getPollEventFd()[i].fd);
-			}
-			std::cout << "*********Writing for " << i << std::endl;
-		} 
-		else if (client.getCgiWrite() == eventPoll.getPollEventFd()[i].fd) {
-			client.writeToCgi();
-		}
-	} catch (const std::runtime_error &e) {
-		std::cerr << "Write error: " << e.what() << std::endl;
-		client.closeConnection(eventPoll, eventPoll.getPollEventFd()[i].fd);
-		eraseClient(eventPoll.getPollEventFd()[i].fd);
-	}
-}
+    if (!client) {
+        std::cerr << "Client not found for fd: " << event_fd << std::endl;
+		    //client->closeConnection(eventPoll);
+		    eraseClient(event_fd);
+        return;
+    }
 
-void Server::handleDisconnection(EventPoll &eventPoll, Client &client, int i) {
-	std::cout << "Connection closed or hang-up detected." << std::endl;
-	client.closeConnection(eventPoll, eventPoll.getPollEventFd()[i].fd);
-	eraseClient(eventPoll.getPollEventFd()[i].fd);
+    // Handle readable events
+    if (currentPollFd.revents & POLLIN) {
+		// std::cout << "POLLIN" << std::endl;
+        try {
+            if (event_fd != client->getSocket() && event_fd == client->getCgiRead()) {
+                client->readFromCgi();
+            } else {
+                client->readFromSocket(this, defaultServer);
+            }
+        } catch (const std::runtime_error &e) {
+            std::cerr << "Read error: " << e.what() << std::endl;
+            client->closeConnection(eventPoll, currentPollFd.fd);
+			eraseClient(event_fd);
+        }
+    }
+    // Handle writable events
+    if (currentPollFd.revents & POLLOUT) {
+
+        try {
+            if (event_fd != client->getSocket() && event_fd == client->getCgiWrite()) {
+                client->writeToCgi();
+            } else {
+                if (client->writeToSocket() > 0) {
+					client->closeConnection(eventPoll, currentPollFd.fd);
+					eraseClient(event_fd);
+				}
+            }
+        } catch (const std::runtime_error &e) {
+            std::cerr << "Write error: " << e.what() << std::endl;
+            client->closeConnection(eventPoll, currentPollFd.fd);
+			eraseClient(event_fd);
+        }
+    }
 }
 
 

@@ -305,14 +305,14 @@ void Config::pollLoop() {
 				throw std::runtime_error("Poll timed out!");
 			}
 
-			// Iterate over the pollfds to handle events
-			for (size_t i = 0; i < pfds.size(); i++) {
-				// std::cout <<  pfds[i].revents << " " << POLLRDHUP << std::endl;
-				if (pfds[i].revents & POLLERR) {
-
-				}
-				if (pfds[i].revents & POLLIN || pfds[i].revents & POLLOUT || pfds[i].revents & POLLHUP || pfds[i].revents & POLLRDHUP) {
-					int fd = pfds[i].fd;
+        // Iterate over the pollfds to handle events
+        for (size_t i = 0; i < pfds.size(); i++) {
+            // std::cout <<  pfds[i].revents << " " << POLLRDHUP << std::endl;
+            if (pfds[i].revents & POLLERR) {
+                std::cerr << "Error in poll: " << std::endl;
+            }
+            if (pfds[i].revents & POLLIN || pfds[i].revents & POLLOUT || pfds[i].revents & POLLHUP || pfds[i].revents & POLLRDHUP) {
+                int fd = pfds[i].fd;
 
 					for (Server &currentServer : _servers) {
 						Server &defaultServer = currentServer;

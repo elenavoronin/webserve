@@ -275,14 +275,7 @@ int Client::writeToSocket() {
 
     if (bytesWritten > 0) {
         _responseIndex += bytesWritten;
-		if (errno == EPIPE) {
-            std::cerr << "Client disconnected (broken pipe), closing socket " << _clientSocket << std::endl;
-            close(_clientSocket);  // Handle disconnection, e.g., close the socket
-            return -1;  // Indicate error or disconnection
-        } else {
-            perror("write failed");
-            return -1;  // Handle other errors
-        }
+        std::cout << "Response index: " << _responseIndex << std::endl;
     }
 
     if (_responseIndex >= _HttpResponse->getFullResponse().size()) {
