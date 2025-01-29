@@ -34,10 +34,10 @@ void	EventPoll::addPollFdEventQueue(int fd, int eventType)
     // std::cout << "ADDDINH " << fd << std::endl;
 	newEvent.events = eventType;
 	newEvent.revents = 0;
-    std::cout << _pollfdsToAddQueue.size() << std::endl;
+    // std::cout << _pollfdsToAddQueue.size() << std::endl;
 
 	_pollfdsToAddQueue.push_back(newEvent);
-    std::cout << _pollfdsToAddQueue.size() << std::endl;
+    // std::cout << _pollfdsToAddQueue.size() << std::endl;
 }
 
 /**

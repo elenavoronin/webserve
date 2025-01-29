@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload Your Cat</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 50px;
+        }
+        .content-section {
+            margin: 20px auto;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            max-width: 400px;
+            background-color: #f9f9f9;
+        }
+        .btn {
+            background-color: #28a745;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .btn:hover {
+            background-color: #218838;
+        }
+    </style>
+</head>
+<body>
+    <section id="upload-section" class="content-section">
+        <h3>Upload Your Cat's Picture</h3>
+        <form id="upload-form" action="/upload" method="POST" enctype="multipart/form-data">
+            <label for="cat-image">Select Image:</label><br>
+            <input type="file" id="cat-image" name="cat-image" accept="image/*" required><br><br>
+            <button class="btn" type="submit">Upload</button>
+        </form>
+    </section>
+
+    <section class="content-section">
+        <button class="btn" onclick="window.location.href='index.html'">Go to Main Page</button>
+    </section>
+
+    <script>
+        document.getElementById("upload-form").addEventListener("submit", function(event) {
+            event.preventDefault();
+            window.location.href = "gallery.html";
+        });
+    </script>
+</body>
+</html>
