@@ -43,6 +43,7 @@ class Config {
         const std::vector<Server>&      getServers() const {return _servers;}
 		void                            addPollFds();
         void                            pollLoop();
-
+        
+        bool                            validateParsedLocation(Location& location);
         bool                            validateParsedData(Server &server);
 };

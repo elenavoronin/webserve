@@ -5,6 +5,12 @@ Config::Config() {}
 Config::~Config() {}
 
 
+bool Config::validateParsedLocation(Location& location) {
+    if (location.getRedirect().first != 301 && location.getRedirect().first != 302 && location.getRedirect().first != 0)
+        return false;
+    return true;
+}
+
 /**
  * @brief Validates the essential fields of a server configuration.
  * 
@@ -16,13 +22,7 @@ Config::~Config() {}
  * 
  * @return true if the server configuration is valid, false otherwise.
  */
-
 bool Config::validateParsedData(Server &server) {
-    printInfoServer(server);
-    //std::cout << "getPortStr: " <<server.getPortStr() << std::endl;
-    //std::cout << "getRoot: " <<server.getRoot() << std::endl;
-    //std::cout << "getIndex: " <<server.getIndex() << std::endl;
-
     if (server.getPortStr().empty())
         return false;
     if (server.getUploadStore().empty()) {
@@ -42,6 +42,8 @@ bool Config::validateParsedData(Server &server) {
     if (server.getRoot().empty())
         return false;
     if (server.getIndex().empty())
+        return false;
+    if (server.getRedirect().first != 0 && server.getRedirect().first != 301 && server.getRedirect().first != 302)
         return false;
     return true;
 }
@@ -114,7 +116,7 @@ bool Config::isFileEmpty(const std::string& fileName) {
 void Config::parseLocationTokens(const std::vector<std::string>& tokens, Location& newLocation)
 
 {
-    if (tokens.size() >= 2) {
+    if (tokens.size() >= 3) {
         std::string key = tokens[0];
         std::string value = tokens[1];
 
@@ -130,8 +132,11 @@ void Config::parseLocationTokens(const std::vector<std::string>& tokens, Locatio
             newLocation.setCgiExtension(value);
         } else if (key == "cgi_path") {
             newLocation.setCgiPath(value);
-        } else if (key == "redirect") {
-            newLocation.setRedirect(value);
+        } else if (key == "return") {
+            if (!tokens[1].empty() && !tokens[2].empty())
+                newLocation.setRedirect(tokens[1], tokens[2]);
+            else
+                newLocation.setRedirect("0", "");
         } else if (key == "max_body_size") {
             value = value.substr(0, value.size() - 1);
             size_t maxSize = std::stoul(value);
@@ -163,8 +168,9 @@ std::vector<Server> Config::parseConfig(std::ifstream &file) {
     std::vector<Server> servers;
     Server currentServer;
     std::string line;
-    currentServer.getLocations()["keys"].reserve(100); // Pre-allocate space for expected number of locations.
+    currentServer.getLocations()["keys"].reserve(100);
     Location newLocation;
+    std::string pathName;
     std::vector<std::string> errorPages;
     bool insideServerBlock = false;
     bool insideLocationBlock = false;
@@ -181,14 +187,18 @@ std::vector<Server> Config::parseConfig(std::ifstream &file) {
                 continue;
             }
             if (insideServerBlock && tokens[0] == "location" && tokens[2] == "{") {
-                insideLocationBlock = true;   
-                currentServer.setLocation(tokens[1], newLocation);
+                pathName= tokens[1];
+                insideLocationBlock = true;
                 continue;
             }
             if (insideLocationBlock && tokens[0] == "}" && locationComplete) {
                 insideLocationBlock = false;
                 locationComplete = false;
-                currentServer.setLocation(tokens[1], newLocation);
+                if (validateParsedLocation(newLocation))
+                {
+                    currentServer.setLocation(pathName, newLocation);
+                    newLocation.clearLocation();
+                }
                 newLocation = Location();
                 continue;
             }
@@ -200,6 +210,7 @@ std::vector<Server> Config::parseConfig(std::ifstream &file) {
                     throw std::runtime_error("Error in config file: Invalid server block detected.");
                 }
                 currentServer = Server(); // Reset for next server block
+                errorPages.clear();
                 continue;
             }
             // Now handle key-value pairs inside blocks
@@ -218,6 +229,11 @@ std::vector<Server> Config::parseConfig(std::ifstream &file) {
                         currentServer.setIndex(value);
                     } else if (key == "upload_path") {
                         currentServer.setUploadStore(value); 
+                    } else if (key == "return") {
+                        if (!tokens[1].empty() && !tokens[2].empty())
+                            currentServer.setRedirect(tokens[1], tokens[2]);
+                        else
+                            currentServer.setRedirect("0", "");
                     } else if (key == "max_body_size") {
                         value = value.substr(0, value.size() - 1);
                         size_t maxSize = std::stoul(value);
@@ -237,13 +253,13 @@ std::vector<Server> Config::parseConfig(std::ifstream &file) {
                 }
             if (insideLocationBlock) {
                 parseLocationTokens(tokens, newLocation);
-                if (isEmpty(newLocation) == false)
+                if (!isEmpty(newLocation))
                     locationComplete = true;
             }
         }
     }  catch (const std::exception &e) {
         std::cerr << "Parsing error: " << e.what() << std::endl;
-        throw; // Rethrow to handle at a higher level if needed
+        throw;
     }
     return servers;
 }
@@ -274,7 +290,6 @@ void Config::addPollFds() {
  */
 void Config::pollLoop() {
     while (true) {
-        // std::cout << "HIIIIIIII" << std::endl;
         // Update the event list from the add/remove queues
         _eventPoll.updateEventList();
 
@@ -296,10 +311,10 @@ void Config::pollLoop() {
             }
             if (pfds[i].revents & POLLIN || pfds[i].revents & POLLOUT || pfds[i].revents & POLLHUP || pfds[i].revents & POLLRDHUP) {
                 int fd = pfds[i].fd;
-                // std::cout << fd << std::endl;
 
                 for (Server &currentServer : _servers) {
                     Server &defaultServer = currentServer;
+                    std::cout << "My server is: " << currentServer.getPortStr() << std::endl;
                     if (fd == currentServer.getListenerFd()) {
                         // Handle new connection
                         currentServer.handleNewConnection(_eventPoll);
