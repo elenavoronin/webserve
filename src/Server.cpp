@@ -523,6 +523,8 @@ int Server::handlePostRequest(Client &client, HttpRequest* request) {
         ensureUploadDirectoryExists(uploadPath);
         std::cout << "[DEBUG] Upload directory exists" << std::endl;
         
+        std::cout << "[DEBUG] Raw Request Body: " << request->getBody() << std::endl; //why empty?
+
         std::string boundary = extractBoundary(request->getHeader("Content-Type"));
         std::cout << "[DEBUG] Extracted boundary: " << boundary << std::endl;
         std::vector<std::string> parts = splitMultipartBody(request->getBody(), boundary);
