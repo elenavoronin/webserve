@@ -88,6 +88,12 @@ class Server  {
 		void 											setLocation(const std::string& path, const Location& location) {_locations[path].push_back(location);}
 		void											setListenerFd(int listener_fd) {_listener_fd = listener_fd;}
 
+		std::string										extractBoundary(const std::string& contentType);
+		std::vector<std::string>						splitMultipartBody(const std::string& requestBody, const std::string& boundary);
+		std::string										extractFilename(const std::string& headers);
+		void											processMultipartPart(const std::string& part);
+		void											saveUploadedFile(const std::string& filePath, const std::string& part, size_t dataStart);
+
 
 		std::map<std::string, std::vector<Location>> 	getLocations() const {return _locations;}
 		std::string 									getPortStr() const {return this->_portString;}

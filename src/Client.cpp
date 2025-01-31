@@ -326,6 +326,7 @@ void Client::closeConnection(EventPoll& eventPoll, int currentPollFd) {
 void Client::prepareFileResponse(std::string errorContent) {
     std::string requestedFile = _HttpRequest->getFullPath();
     size_t position = requestedFile.find('?');
+    
     if (position != std::string::npos) {
         requestedFile = requestedFile.substr(0, position);   
     }

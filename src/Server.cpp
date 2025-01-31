@@ -449,6 +449,7 @@ void Server::sendBody(int clientSocket, const std::string& body) {
  * @return The HTTP status code indicating the result of the validation.
  */
 int Server::validateRequest(const std::string& method, const std::string& version) {
+    std::cout << "method: " << method << std::endl;
 	if (method != "GET" && method != "POST" && method != "DELETE") {
 		std::cerr << "Error: Unsupported HTTP method." << std::endl;
 		return 405; // Method Not Allowed
@@ -544,63 +545,32 @@ int Server::handleDeleteRequest(Client &client, HttpRequest* request) {
  * @return The HTTP status code indicating the result of the request processing.
  * @todo check if body size exceeds a predefined limit (error 413 Request Too Large)
  * @todo Error (400 Bad Request): If there was a problem with the data.
+ * 
+ * @note The boundary in multipart/form-data separates different parts of an HTTP request body, 
+ * including text fields and file uploads. 
+ * It ensures proper parsing by marking where each part starts and ends. 
+ * Without it, the server couldn't distinguish between fields and file content, 
+ * leading to incorrect data extraction and processing.
+ * ------WebKitFormBoundaryxyz123 is a boundary used in multipart/form-data requests.
  */
 int Server::handlePostRequest(Client &client, HttpRequest* request) {
     HttpResponse response;
-    std::cout << "Handling POST request" << std::endl;
 
     try {
-        // Get request body
-        std::string requestBody = request->getBody();
-        std::string contentType = request->getHeader("Content-Type");
-
-        if (contentType.find("multipart/form-data") == std::string::npos) {
-            throw std::runtime_error("Unsupported Content-Type: Only multipart/form-data is supported.");
-        }
-
         // Extract boundary from Content-Type
-        size_t boundaryPos = contentType.find("boundary=");
-        if (boundaryPos == std::string::npos) {
-            throw std::runtime_error("Malformed multipart/form-data request: Missing boundary.");
-        }
-        std::string boundary = "--" + contentType.substr(boundaryPos + 9); // Extract boundary string
+        std::string contentType = request->getHeader("Content-Type");
+        std::string boundary = extractBoundary(contentType);
 
         // Split request body into parts
-        std::vector<std::string> parts;
-        std::stringstream bodyStream(requestBody);
-        std::string line;
-        std::string part;
+        std::vector<std::string> parts = splitMultipartBody(request->getBody(), boundary);
 
-        while (std::getline(bodyStream, line)) {
-            if (line.find(boundary) != std::string::npos) {
-                if (!part.empty()) {
-                    parts.push_back(part);
-                    part.clear();
-                }
-            } else {
-                part += line + "\n";
-            }
+        // Process each part
+        for (const std::string& part : parts) {
+            processMultipartPart(part);
         }
 
-        // Process uploaded file
-        std::string filename = "uploaded_image.jpg"; // Default filename
-        std::string savePath = getUploadStore() + filename;
-        std::ofstream outFile(savePath, std::ios::binary);
-        if (!outFile.is_open()) {
-            throw std::runtime_error("Failed to open file for writing: " + savePath);
-        }
-
-        for (const auto &p : parts) {
-            // Find start of binary data
-            size_t dataPos = p.find("\r\n\r\n");
-            if (dataPos != std::string::npos) {
-                outFile.write(p.data() + dataPos + 4, p.size() - dataPos - 4);
-            }
-        }
-        outFile.close();
-
-        // Set success response
-        response.setStatus(201, getStatusMessage(201));
+        // Set response
+        response.setStatus(201, "Created");
         response.setHeader("Content-Type", "text/plain");
         response.setBody("File uploaded successfully.");
         response.buildResponse();
@@ -611,7 +581,7 @@ int Server::handlePostRequest(Client &client, HttpRequest* request) {
     } catch (const std::exception &e) {
         std::cerr << "Error handling POST request: " << e.what() << std::endl;
 
-        response.setStatus(500, getStatusMessage(500));
+        response.setStatus(500, "Internal Server Error");
         response.setHeader("Content-Type", "text/plain");
         response.setBody("Error processing the POST request.");
         response.buildResponse();
@@ -621,64 +591,141 @@ int Server::handlePostRequest(Client &client, HttpRequest* request) {
     }
 }
 
-// int Server::handlePostRequest(Client &client, HttpRequest* request) {
-//  	HttpResponse response;
-//     std::cout << "Handling POST request" << std::endl;
-//     try {
-//         // Get the request body
-//         std::string requestBody = request->getBody();
-//         // Validate the Content-Length header
-// 		// std::cout << "body of http request: " << requestBody << std::endl;
-//         std::string contentLengthHeader = request->getHeader("Content-Length");
-// 		if (contentLengthHeader.empty()) {
-//     		throw std::runtime_error("Missing Content-Length header in POST request");
-// 		}
-//         if (contentLengthHeader.empty()) {
-//             throw std::runtime_error("Missing Content-Length header in POST request");
-//         }
+/**
+ * @brief       Extracts the boundary from a Content-Type header of a multipart/form-data request.
+ * 
+ * @param       contentType    The Content-Type header value.
+ * 
+ * @return      The extracted boundary as a string, prefixed with "--".
+ * 
+ * @throws      std::runtime_error  If the Content-Type is not multipart/form-data,
+ *                                  or if the boundary is missing.
+ */
+std::string Server::extractBoundary(const std::string& contentType) {
+    if (contentType.find("multipart/form-data") == std::string::npos) {
+        throw std::runtime_error("Unsupported Content-Type: Only multipart/form-data is supported.");
+    }
 
-//         size_t contentLength = std::stoul(contentLengthHeader);
-//         if (requestBody.size() != contentLength) {
-//             throw std::runtime_error("Content-Length mismatch: Received " +
-//                                      std::to_string(requestBody.size()) +
-//                                      ", expected " + contentLengthHeader);
-//         }
+    size_t boundaryPos = contentType.find("boundary=");
+    if (boundaryPos == std::string::npos) {
+        throw std::runtime_error("Malformed multipart/form-data request: Missing boundary.");
+    }
 
-//         // Example: Process the data (e.g., save to file, database, etc.)
-//         std::string filename = "data_upload.txt";
-//         std::string savePath = getUploadStore() + filename;
-//         std::cout << "save path: " << savePath << std::endl;
-//         std::ofstream outFile(savePath, std::ios::app);
-//         if (!outFile.is_open()) {
-//             throw std::runtime_error("Failed to open file for writing: " + savePath);
-//         }
-//         outFile << requestBody << std::endl;
-//         outFile.close();
+    return "--" + contentType.substr(boundaryPos + 9); // Extract boundary
+}
 
-//         // Set success response
-//         response.setStatus(201, getStatusMessage(201));
-//         response.setHeader("Content-Type", "text/plain");
-//         response.setBody("Data received and stored successfully.");
-//         response.buildResponse();
+/**
+ * @brief       Splits a multipart/form-data request body into individual parts.
+ * 
+ * @param       requestBody    The raw request body as a string.
+ * @param       boundary       The boundary string as a string, prefixed with "--".
+ * 
+ * @return      A vector of strings, each containing a part of the request body.
+ * 
+ * @details     This function splits the request body into individual parts,
+ *              using the provided boundary string as a delimiter. Each part
+ *              is a string containing the data of that part of the request body.
+ *              The parts do not include the boundary string.
+ * 
+ * @throws      std::runtime_error  If the request body is malformed (e.g. missing
+ *                                  boundary, or a part is missing its boundary).
+ */
+std::vector<std::string> Server::splitMultipartBody(const std::string& requestBody, const std::string& boundary) {
+    std::vector<std::string> parts;
+    std::stringstream bodyStream(requestBody);
+    std::string line, part;
 
-//         // Send the response
-//         client.sendData(response.getFullResponse());
-//         return 201;
+    while (std::getline(bodyStream, line)) {
+        if (line.find(boundary) != std::string::npos) {
+            if (!part.empty()) {
+                parts.push_back(part);
+                part.clear();
+            }
+        } else {
+            part += line + "\n";
+        }
+    }
+    return parts;
+}
 
-//     } catch (const std::exception &e) {
-//         // Handle errors and return a 500 Internal Server Error
-//         std::cerr << "Error handling POST request: " << e.what() << std::endl;
+/**
+ * @brief       Extracts the filename from a part of a multipart/form-data request body.
+ * 
+ * @param       headers      A string containing the headers of a part of the request body.
+ * 
+ * @return      The extracted filename as a string, or an empty string if no filename is found.
+ * 
+ * @details     This function looks for a "filename=" header in the given string,
+ *              and extracts the value of that header. If the header is not found,
+ *              or the header is malformed, an empty string is returned.
+ */
+std::string Server::extractFilename(const std::string& headers) {
+    size_t filenamePos = headers.find("filename=");
+    if (filenamePos == std::string::npos) {
+        return "";  // No filename found
+    }
 
-//         response.setStatus(500, getStatusMessage(500));
-//         response.setHeader("Content-Type", "text/plain");
-//         response.setBody("Error processing the POST request.");
-//         response.buildResponse();
+    size_t start = filenamePos + 9; // Move past 'filename="'
+    size_t end = headers.find("\"", start);
+    if (end == std::string::npos) {
+        return ""; // Malformed header
+    }
 
-//         client.sendData(response.getFullResponse());
-//         return 500;
-//     }
-// }
+    return headers.substr(start, end - start); // Extract filename
+}
 
+/**
+ * @brief       Processes a single part of a multipart/form-data request body.
+ * 
+ * @param       part        The part of the request body as a string.
+ * 
+ * @details     This function extracts the filename from the given part of the
+ *              request body, and saves the file content to the specified path.
+ *              If the part contains no filename, the default filename is used.
+ *              If the part is malformed, it is skipped.
+ */
+void Server::processMultipartPart(const std::string& part) {
+    // Find Content-Disposition header
+    size_t headerEnd = part.find("\r\n\r\n");
+    if (headerEnd == std::string::npos) return; // Skip malformed parts
+
+    std::string headers = part.substr(0, headerEnd);  // Extract headers
+
+    // Extract filename
+    std::string filename = extractFilename(headers);
+    if (filename.empty()) {
+        filename = "uploaded_file"; // Default filename
+    }
+
+    // Save file content
+    std::string savePath = getUploadStore() + filename;
+    saveUploadedFile(savePath, part, headerEnd + 4);
+}
+
+
+/**
+ * @brief Saves the content of a multipart/form-data part to a file.
+ *
+ * This function writes the data from a specified starting point in the 
+ * multipart/form-data part to a file at the given path. If the file cannot be 
+ * opened for writing, an exception is thrown.
+ *
+ * @param filePath The path to the file where the data should be saved.
+ * @param part The multipart/form-data part containing the file content.
+ * @param dataStart The starting index within the part from which to begin writing.
+ *
+ * @throws std::runtime_error If the file cannot be opened for writing.
+ */
+
+void Server::saveUploadedFile(const std::string& filePath, const std::string& part, size_t dataStart) {
+    std::ofstream outFile(filePath, std::ios::binary);
+    if (!outFile.is_open()) {
+        throw std::runtime_error("Failed to open file for writing: " + filePath);
+    }
+
+    outFile.write(part.data() + dataStart, part.size() - dataStart);
+    outFile.close();
+}
 
 /**
  * @brief Handles an HTTP redirect request.
