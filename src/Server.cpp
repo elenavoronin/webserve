@@ -301,53 +301,30 @@ int Server::processClientRequest(Client &client, const std::string& request, Htt
  * @return The HTTP status code indicating the result of the request processing.
  */
 int Server::handleGetRequest(Client &client, HttpRequest* request) {
-	HttpResponse response;
-	std::string filepath = this->getRoot() + request->getPath();
-	request->setFullPath(filepath);
-    std::cout << "filepath: " << filepath << std::endl;
+    HttpResponse response;
+    std::string filepath = this->getRoot() + request->getPath();
+    request->setFullPath(filepath);
 
-	if (request->getPath() == "/") {
-		filepath = this->getRoot() + '/' + this->getIndex();
-		request->setFullPath(filepath);
-	}
-    size_t position = filepath.find("/cgi-bin"); //todo change this to config
-    if (position != std::string::npos) { 
-		request->setFullPath(filepath);
-		client.startCgi(request);
-		return 0;
-	}
-	try {
-        std::ifstream file(filepath);
-        if (!file) {
-            throw std::runtime_error(" " + filepath);
-        }
+    if (request->getPath() == "/") {
+        filepath = this->getRoot() + '/' + this->getIndex();
+        request->setFullPath(filepath);
+    }
+    
+    if (filepath.find("/cgi-bin") != std::string::npos) { 
+        request->setFullPath(filepath);
+        client.startCgi(request);
+        return 0;
+    }
 
-        // Proceed with sending the file response
-        client.prepareFileResponse("");
-		client.sendData(client.getHttpResponse()->getFullResponse());
-		response.buildResponse();
+    if (!fileExists(filepath)) {
+        return sendErrorResponse(client, 404, "www/html/404.html");
+    }
 
-        return 200;
+    client.prepareFileResponse(readFileContent(filepath));
+    client.sendData(client.getHttpResponse()->getFullResponse());
+    response.buildResponse();
 
-    } catch (const std::runtime_error& e) {
-        std::string errorPagePath = "www/html/404.html"; // TODO fix this to not be hardcoded
-        std::ifstream errorFile(errorPagePath, std::ios::binary);
-        std::string errorContent;
-
-        if (errorFile.is_open()) {
-            std::stringstream buffer;
-            buffer << errorFile.rdbuf();
-            errorContent = buffer.str();
-            errorFile.close();
-        } else {
-            // Fallback if the 404 page itself is missing
-            errorContent = "<html><body><h1>404 - Page Not Found</h1></body></html>";
-        }
-        client.prepareFileResponse(errorContent);
-		client.sendData(client.getHttpResponse()->getFullResponse());
-		response.buildResponse();
-        return 404;
-	}
+    return 200;
 }
 
 /**
@@ -462,7 +439,6 @@ int Server::validateRequest(const std::string& method, const std::string& versio
 	return 200;
 }
 
-
 /**
  * @brief Handles an HTTP DELETE request from a client.
  * 
@@ -480,55 +456,32 @@ int Server::validateRequest(const std::string& method, const std::string& versio
 int Server::handleDeleteRequest(Client &client, HttpRequest* request) {
     HttpResponse response;
     try {
-        std::string pathToDelete =  request->getPathToDelete(request->getRawRequest());
-        if (pathToDelete.empty()) {
-            response.setStatus(404, getStatusMessage(404));
-            response.setHeader("Content-Type", "text/plain");
-            response.setBody("Content to be deleted not found");
-            response.buildResponse();
-            return 404;
-        }
-      
-       // Check if the file exists
-       std::ifstream file(pathToDelete);
-        if (!file.is_open()) {
-            throw std::runtime_error("File not found: " + pathToDelete);
+        std::string pathToDelete = request->getPathToDelete(request->getRawRequest());
+        if (pathToDelete.empty() || !fileExists(pathToDelete)) {
+            return sendErrorResponse(client, 404, "www/html/404.html");
         }
 
-        // Check if the file is accessible and writable
-        if (access(pathToDelete.c_str(), W_OK) != 0) {
-            throw std::runtime_error("File cannot be deleted: " + pathToDelete);
+        if (pathToDelete.find("/cgi-bin") != std::string::npos) {
+            request->setFullPath(pathToDelete);
+            client.startCgi(request);
+            return 0;
         }
 
-        // Delete the file
-        if (std::remove(pathToDelete.c_str()) != 0) {
-            throw std::runtime_error("Error deleting file '" + pathToDelete);
+        if (remove(pathToDelete.c_str()) != 0) {
+            throw std::runtime_error("Error deleting file: " + pathToDelete);
         }
-    
-        // Set success response
+        
         response.setStatus(200, getStatusMessage(200));
         response.setHeader("Content-Type", "text/plain");
         response.setBody("Data deleted successfully.");
         response.buildResponse();
-        std::cout << "SUCCESS DELETED FILE" << std::endl;
-        // Send the response
         client.sendData(response.getFullResponse());
+        
         return 200;
-
-    } catch (const std::exception &e) {
-        // Handle errors and return a 500 Internal Server Error
-        std::cerr << "Error handling Delete request: " << e.what() << std::endl;
-
-        response.setStatus(500, getStatusMessage(500));
-        response.setHeader("Content-Type", "text/plain");
-        response.setBody("Error processing the DELETE request.");
-        response.buildResponse();
-
-        client.sendData(response.getFullResponse());
-        return 500;
+    } catch (const std::exception& e) {
+        return handleServerError(client, e, "Error handling DELETE request");
     }
 }
-
 
 /**
  * @brief Handles an HTTP POST request from a client.
@@ -555,39 +508,29 @@ int Server::handleDeleteRequest(Client &client, HttpRequest* request) {
  */
 int Server::handlePostRequest(Client &client, HttpRequest* request) {
     HttpResponse response;
-
     try {
-        // Extract boundary from Content-Type
-        std::string contentType = request->getHeader("Content-Type");
-        std::string boundary = extractBoundary(contentType);
-
-        // Split request body into parts
+        if (request->getPath().find("/cgi-bin") != std::string::npos) {
+            request->setFullPath(request->getPath());
+            client.startCgi(request);
+            return 0;
+        }
+        
+        std::string boundary = extractBoundary(request->getHeader("Content-Type"));
         std::vector<std::string> parts = splitMultipartBody(request->getBody(), boundary);
-
-        // Process each part
+        
         for (const std::string& part : parts) {
             processMultipartPart(part);
         }
 
-        // Set response
         response.setStatus(201, "Created");
         response.setHeader("Content-Type", "text/plain");
         response.setBody("File uploaded successfully.");
         response.buildResponse();
-
+        
         client.sendData(response.getFullResponse());
         return 201;
-
-    } catch (const std::exception &e) {
-        std::cerr << "Error handling POST request: " << e.what() << std::endl;
-
-        response.setStatus(500, "Internal Server Error");
-        response.setHeader("Content-Type", "text/plain");
-        response.setBody("Error processing the POST request.");
-        response.buildResponse();
-
-        client.sendData(response.getFullResponse());
-        return 500;
+    } catch (const std::exception& e) {
+        return handleServerError(client, e, "Error handling POST request");
     }
 }
 
@@ -702,7 +645,6 @@ void Server::processMultipartPart(const std::string& part) {
     saveUploadedFile(savePath, part, headerEnd + 4);
 }
 
-
 /**
  * @brief Saves the content of a multipart/form-data part to a file.
  *
@@ -741,45 +683,103 @@ void Server::saveUploadedFile(const std::string& filePath, const std::string& pa
  * @return The status code of the response
  */
 int Server::handleRedirect(Client& client, HttpRequest& request) {
-     HttpResponse response;
-    std::cout << " I AM DOING REDICRECTION" << std::endl;
-    (void)request;// TODO I still need to parse the request
-    try {
-        // Set the redirection status code and location
-        if (getRedirect().first == 301)
-            response.setStatus(301, getStatusMessage(301));
-        else
-            response.setStatus(302, getStatusMessage(302));
-        response.setHeader("Location", getRedirect().second);
+    HttpResponse response;
+    std::cout << "Handling Redirection..." << std::endl;
+    (void)request;
 
-        // Provide an optional body for the redirection response
+    try {
+        response.setStatus(getRedirect().first, getStatusMessage(getRedirect().first));
+        response.setHeader("Location", getRedirect().second);
         response.setHeader("Content-Type", "text/html");
+        
         std::string body = "<html><body><h1>Redirecting...</h1>"
                            "<p>If you are not redirected automatically, "
                            "<a href=\"" + getRedirect().second + "\">click here</a>.</p></body></html>";
         response.setBody(body);
-
-        // Build and send the response
         response.buildResponse();
+
         client.sendData(response.getFullResponse());
         std::cout << "Redirected to: " << getRedirect().second << " with status code: " << getRedirect().first << std::endl;
 
         return getRedirect().first;
-
-    } catch (const std::exception &e) {
-        std::cerr << "Error handling redirection request: " << e.what() << std::endl;
-
-        // Handle errors and send a 500 Internal Server Error response
-        response.setStatus(500, getStatusMessage(500));
-        response.setHeader("Content-Type", "text/plain");
-        response.setBody("Error processing the redirection request.");
-        response.buildResponse();
-
-        client.sendData(response.getFullResponse());
-        return 500;
+    } catch (const std::exception& e) {
+        return handleServerError(client, e, "Error handling redirection request");
     }
 }
 
+/**
+ * @brief Handles an error encountered while handling a client request.
+ *
+ * This function writes an error message to the standard error stream and
+ * sends a 500 Internal Server Error response to the client with a simple
+ * HTML page indicating that an internal server error occurred.
+ *
+ * @param client The client connection to send the error response to
+ * @param e The exception that caused the error
+ * @param errorMessage A string describing the error
+ *
+ * @return The status code of the response (500)
+ */
+int Server::handleServerError(Client &client, const std::exception &e, const std::string &errorMessage) {
+    std::cerr << errorMessage << ": " << e.what() << std::endl;
+    return sendErrorResponse(client, 500, "www/html/500.html");
+}
+
+/**
+ * @brief Sends an error response to the client with a given status code and error page.
+ *
+ * This function sends a response with the given status code and an HTML page
+ * containing the given error page path. If the error page path does not exist,
+ * a simple HTML page is sent with the status code and a title indicating the
+ * error status.
+ *
+ * @param client The client connection to send the error response to
+ * @param statusCode The status code of the error response
+ * @param errorPagePath The path to the HTML page to send as the response body
+ *
+ * @return The status code of the response
+ */
+int Server::sendErrorResponse(Client &client, int statusCode, const std::string &errorPagePath) {
+    HttpResponse response;
+    std::string errorContent = readFileContent(errorPagePath);
+    if (errorContent.empty()) {
+        errorContent = "<html><body><h1>" + std::to_string(statusCode) + " - Error</h1></body></html>";
+    }
+    
+    response.setStatus(statusCode, getStatusMessage(statusCode));
+    response.setHeader("Content-Type", "text/html");
+    response.setBody(errorContent);
+    response.buildResponse();
+    
+    client.sendData(response.getFullResponse());
+    return statusCode;
+}
+
+/**
+ * @brief Checks if a file exists.
+ *
+ * This function takes a path to a file and checks if it exists. It returns true
+ * if the file exists and false if it does not.
+ *
+ * @param path The path to the file to check
+ *
+ * @return true if the file exists, false if it does not
+ */
+bool Server::fileExists(const std::string& path) {
+    std::ifstream file(path);
+    return file.good();
+}
+
+/**
+ * @brief Erases a client with the specified event file descriptor from the server's internal list.
+ *
+ * This function takes an event file descriptor and checks if any clients in the server's internal
+ * list of clients have a matching file descriptor. If a client is found, it is removed from the
+ * list. This function is used to remove clients from the server's internal list when the client
+ * disconnects.
+ *
+ * @param event_fd The event file descriptor to search for
+ */
 void Server::eraseClient(int event_fd) {
     // Find all clients in _clients where the socket matches event_fd.
     auto it = std::find_if(_clients.begin(), _clients.end(), [&](const Client &c) {
@@ -812,7 +812,19 @@ void Server::eraseClient(int event_fd) {
     }
 }
 
-
+/**
+ * @brief Sets the redirect status code and path for this server.
+ *
+ * This function takes a status code and a redirect path as parameters and sets
+ * the server's internal redirect status code and path to these values. If either
+ * parameter is empty, the server's internal redirect status code and path are
+ * reset to 0 and an empty string respectively.
+ *
+ * @param statusCode The status code of the redirect response
+ * @param redirectPath The path to redirect to
+ *
+ * @throws std::invalid_argument If the status code contains non-digit characters
+ */
 void Server::setRedirect(const std::string& statusCode, const std::string& redirectPath) {
         if (statusCode.empty() || redirectPath.empty()) {
         _redirect.first = 0;

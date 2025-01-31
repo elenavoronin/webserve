@@ -93,7 +93,9 @@ class Server  {
 		std::string										extractFilename(const std::string& headers);
 		void											processMultipartPart(const std::string& part);
 		void											saveUploadedFile(const std::string& filePath, const std::string& part, size_t dataStart);
-
+		int												handleServerError(Client &client, const std::exception &e, const std::string &errorMessage);
+		int												sendErrorResponse(Client &client, int statusCode, const std::string &errorPagePath);
+		bool											fileExists(const std::string& path);
 
 		std::map<std::string, std::vector<Location>> 	getLocations() const {return _locations;}
 		std::string 									getPortStr() const {return this->_portString;}
