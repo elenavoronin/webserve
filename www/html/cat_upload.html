@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!-- <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -51,5 +51,26 @@
             window.location.href = "gallery.html";
         });
     </script>
+</body>
+</html> -->
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Upload and See Images</title>
+</head>
+<body>
+    <h2>Upload and See Pictures</h2>
+    <!-- Form to upload an image -->
+    <form action="/upload" method="POST" enctype="multipart/form-data">
+        <label for="fileUpload">Choose an image:</label><br>
+        <input type="file" id="fileUpload" name="file"><br><br>
+        <input type="submit" value="Upload Image">
+    </form>
+    <h3>See Uploaded Pictures:</h3>
+    <!-- Display uploaded images -->
+    <div id="uploadedImages">
+        <!-- List of images will be displayed here dynamically -->
+    </div>
 </body>
 </html>
