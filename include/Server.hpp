@@ -41,7 +41,7 @@ class Server  {
         std::vector<std::string>    					_allowedMethods;
 		bool                        					_autoindex;
 		size_t											_maxBodySize;
-        std::string                 					_uploadStore;   
+        std::string                 					_uploadStore;
 		std::vector<std::string>						_errorPage;
 		std::map<std::string, std::vector<Location>>	_locations;
 		int 											_listener_fd;
@@ -91,11 +91,12 @@ class Server  {
 		std::string										extractBoundary(const std::string& contentType);
 		std::vector<std::string>						splitMultipartBody(const std::string& requestBody, const std::string& boundary);
 		std::string										extractFilename(const std::string& headers);
-		void											processMultipartPart(const std::string& part);
+		void											processMultipartPart(const std::string& part, const std::string& uploadPath);
 		void											saveUploadedFile(const std::string& filePath, const std::string& part, size_t dataStart);
 		int												handleServerError(Client &client, const std::exception &e, const std::string &errorMessage);
 		int												sendErrorResponse(Client &client, int statusCode, const std::string &errorPagePath);
 		bool											fileExists(const std::string& path);
+		void 											ensureUploadDirectoryExists(const std::string& path);
 
 		std::map<std::string, std::vector<Location>> 	getLocations() const {return _locations;}
 		std::string 									getPortStr() const {return this->_portString;}

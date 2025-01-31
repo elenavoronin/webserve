@@ -232,6 +232,7 @@ void Server::checkLocations(std::string path, Server &defaultServer) {
 					this->setErrorPage(loc.getErrorPages());
                 if (loc.getRedirect().first != 0)
                     this->setRedirect(std::to_string((defaultServer.getRedirect().first)), defaultServer.getRedirect().second);
+                this->setUploadStore(defaultServer.getUploadStore()); // Use the upload path from the Server config, not Location?
 				return;
 			}
 		}
@@ -426,7 +427,6 @@ void Server::sendBody(int clientSocket, const std::string& body) {
  * @return The HTTP status code indicating the result of the validation.
  */
 int Server::validateRequest(const std::string& method, const std::string& version) {
-    std::cout << "method: " << method << std::endl;
 	if (method != "GET" && method != "POST" && method != "DELETE") {
 		std::cerr << "Error: Unsupported HTTP method." << std::endl;
 		return 405; // Method Not Allowed
@@ -514,12 +514,23 @@ int Server::handlePostRequest(Client &client, HttpRequest* request) {
             client.startCgi(request);
             return 0;
         }
+
+        std::string uploadPath = getUploadStore(); // Ensure correct upload path
+        std::cout << "[DEBUG] Upload Path: " << uploadPath << std::endl;
+        if (uploadPath.empty()) {
+            throw std::runtime_error("Upload path not set in configuration");
+        }
+        ensureUploadDirectoryExists(uploadPath);
+        std::cout << "[DEBUG] Upload directory exists" << std::endl;
         
         std::string boundary = extractBoundary(request->getHeader("Content-Type"));
+        std::cout << "[DEBUG] Extracted boundary: " << boundary << std::endl;
         std::vector<std::string> parts = splitMultipartBody(request->getBody(), boundary);
+         std::cout << "[DEBUG] Total parts detected: " << parts.size() << std::endl;
         
+
         for (const std::string& part : parts) {
-            processMultipartPart(part);
+            processMultipartPart(part, uploadPath);
         }
 
         response.setStatus(201, "Created");
@@ -528,9 +539,25 @@ int Server::handlePostRequest(Client &client, HttpRequest* request) {
         response.buildResponse();
         
         client.sendData(response.getFullResponse());
+        std::cout << "[DEBUG] Upload request processed successfully." << std::endl;
         return 201;
     } catch (const std::exception& e) {
         return handleServerError(client, e, "Error handling POST request");
+    }
+}
+
+/**
+ * @brief Ensures that the uploads directory exists.
+ * 
+ * This method checks if the "uploads" directory exists and if not, it creates it.
+ * The directory is used to store uploaded files.
+ */
+void Server::ensureUploadDirectoryExists(const std::string& path) {
+    struct stat info;
+    if (stat(path.c_str(), &info) != 0) {    
+        if (mkdir(path.c_str(), 0777) == -1) {
+            throw std::runtime_error("Failed to create directory: " + path);
+        }
     }
 }
 
@@ -627,7 +654,7 @@ std::string Server::extractFilename(const std::string& headers) {
  *              If the part contains no filename, the default filename is used.
  *              If the part is malformed, it is skipped.
  */
-void Server::processMultipartPart(const std::string& part) {
+void Server::processMultipartPart(const std::string& part, const std::string& uploadPath) {
     // Find Content-Disposition header
     size_t headerEnd = part.find("\r\n\r\n");
     if (headerEnd == std::string::npos) return; // Skip malformed parts
@@ -641,7 +668,7 @@ void Server::processMultipartPart(const std::string& part) {
     }
 
     // Save file content
-    std::string savePath = getUploadStore() + filename;
+    std::string savePath = uploadPath + filename;
     saveUploadedFile(savePath, part, headerEnd + 4);
 }
 

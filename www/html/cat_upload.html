@@ -74,3 +74,22 @@
     </div>
 </body>
 </html>
+
+<script>
+    window.onload = function() {
+        fetch('/uploads/') // Fetch image list
+        .then(response => response.json()) // Assuming the server returns a JSON list of filenames
+        .then(files => {
+            let imagesDiv = document.getElementById("uploadedImages");
+            files.forEach(file => {
+                let img = document.createElement("img");
+                img.src = "/uploads/" + file;
+                img.alt = "Uploaded Image";
+                img.style.width = "200px";
+                img.style.margin = "10px";
+                imagesDiv.appendChild(img);
+            });
+        })
+        .catch(error => console.error("Error loading images:", error));
+    };
+</script>
