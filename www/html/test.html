@@ -3,80 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Upload and See Images</title>
+    <title>Upload Image</title>
 </head>
 <body>
-    <h2>Upload and See Pictures</h2>
-    <!-- File input to upload an image -->
-    <label for="fileUpload">Now try to find a cat for us:</label><br>
-    <input type="file" id="fileUpload"><br><br>
-    <button onclick="uploadImage()">Upload Image</button>
-
-    <h3>Do you want me to show you our collection?</h3>
-    <!-- Display uploaded images -->
-    <div id="uploadedImages">
-        <!-- List of images will be displayed here dynamically -->
-    </div>
-
-    <script>
-        // Function to upload the selected image
-        function uploadImage() {
-            const fileInput = document.getElementById('fileUpload');
-            const file = fileInput.files[0]; // Get the selected file
-
-            if (!file) {
-                alert("Please choose an image first.");
-                return;
-            }
-
-            const formData = new FormData();
-            formData.append('file', file);  // Append the file to formData
-
-            // Send the image to the server using a POST request
-            fetch('/upload', {
-                method: 'POST',
-                body: formData  // Send the image as part of the request
-            })
-            .then(response => response.json()) // Expecting a JSON response with filenames
-            .then(data => {
-                console.log(data);
-                if (data.success) {
-                    displayUploadedImages(); // Refresh the list of uploaded images
-                } else {
-                    alert("Failed to upload image.");
-                }
-            })
-            .catch(error => {
-                console.error("Error uploading image:", error);
-                alert("There was an error uploading the image.");
-            });
-        }
-
-        // Function to display uploaded images
-        function displayUploadedImages() {
-            fetch('/uploads') // Fetch the list of uploaded images from the server
-            .then(response => response.json())
-            .then(files => {
-                const imagesDiv = document.getElementById('uploadedImages');
-                imagesDiv.innerHTML = ''; // Clear the existing images
-                files.forEach(file => {
-                    const img = document.createElement('img');
-                    img.src = '/uploads/' + file; // Assume files are available under '/uploads'
-                    img.alt = 'Uploaded Image';
-                    img.style.width = '200px';
-                    img.style.margin = '10px';
-                    imagesDiv.appendChild(img);
-                });
-            })
-            .catch(error => {
-                console.error("Error fetching images:", error);
-            });
-        }
-
-        // Load and display images when the page loads
-        window.onload = function() {
-            displayUploadedImages(); // Load images when the page is loaded
-        };
-    </script>
+    <h2>Upload an Image</h2>
+    <form action="/upload" method="POST" enctype="multipart/form-data">
+        <input type="file" name="file" /><br>
+        <input type="submit" value="Upload" />
+    </form>
 </body>
 </html>

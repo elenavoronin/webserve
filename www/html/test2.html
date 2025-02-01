@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cat Gallery</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 50px;
+        }
+        .content-section {
+            margin: 20px auto;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            max-width: 600px;
+            background-color: #f9f9f9;
+        }
+        .gallery {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .gallery img {
+            width: 150px;
+            height: 150px;
+            object-fit: cover;
+            border-radius: 10px;
+            border: 1px solid #ccc;
+        }
+        .btn {
+            background-color: #28a745;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .btn:hover {
+            background-color: #218838;
+        }
+    </style>
+</head>
+<body>
+    <section class="content-section">
+        <h3>Cat Gallery</h3>
+        <div class="gallery" id="gallery"></div>
+    </section>
+
+    <section class="content-section">
+        <button class="btn" onclick="window.location.href='upload.html'">Upload More Cats</button>
+    </section>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const gallery = document.getElementById("gallery");
+            
+            // Image source path
+            const imagePath = './upload/cat.jpeg'; // Direct path to your cat image
+
+            // Create an image element
+            const img = document.createElement("img");
+            img.src = imagePath;  // Set the source of the image
+            img.alt = "Cat Image"; // Alt text for accessibility
+            
+            // Add the image to the gallery
+            gallery.appendChild(img);
+        });
+    </script>
+</body>
+</html>
