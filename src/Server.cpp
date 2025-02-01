@@ -275,6 +275,7 @@ int Server::processClientRequest(Client &client, const std::string& request, Htt
 	}
     // if (redirect) // TODO handle redirect before handling any other methods
     std::cout << "Method: " << method << std::endl;
+	//std::cout << "**********Body***********: " << request << "\n ****************" << std::endl;
 	if (method == "GET" && std::find(this->_allowedMethods.begin(), this->_allowedMethods.end(), "GET") != this->_allowedMethods.end())
 		return handleGetRequest(client, HttpRequest); //?? what locations should be passed
 	if (method == "POST" && std::find(this->_allowedMethods.begin(), this->_allowedMethods.end(), "POST") != this->_allowedMethods.end())
@@ -506,9 +507,11 @@ int Server::handleDeleteRequest(Client &client, HttpRequest* request) {
  * leading to incorrect data extraction and processing.
  * ------WebKitFormBoundaryxyz123 is a boundary used in multipart/form-data requests.
  */
+
 int Server::handlePostRequest(Client &client, HttpRequest* request) {
     HttpResponse response;
     try {
+        // std::cout << "[DEBUG] Raw Request Body: \n\n" << request->getBody() << "\n\n" << std::endl; //why empty? Cause apparently it doesn't have, all info is in header
         if (request->getPath().find("/cgi-bin") != std::string::npos) {
             request->setFullPath(request->getPath());
             client.startCgi(request);
@@ -523,15 +526,17 @@ int Server::handlePostRequest(Client &client, HttpRequest* request) {
         ensureUploadDirectoryExists(uploadPath);
         std::cout << "[DEBUG] Upload directory exists" << std::endl;
         
-        std::cout << "[DEBUG] Raw Request Body: " << request->getBody() << std::endl; //why empty?
+		processMultipartPart(request->getStrReceived(), uploadPath);
 
         std::string boundary = extractBoundary(request->getHeader("Content-Type"));
+
         std::cout << "[DEBUG] Extracted boundary: " << boundary << std::endl;
         std::vector<std::string> parts = splitMultipartBody(request->getBody(), boundary);
          std::cout << "[DEBUG] Total parts detected: " << parts.size() << std::endl;
         
 
         for (const std::string& part : parts) {
+			//std::cout << "******* Part ********\n" << part << std::endl;
             processMultipartPart(part, uploadPath);
         }
 
@@ -606,17 +611,27 @@ std::vector<std::string> Server::splitMultipartBody(const std::string& requestBo
     std::vector<std::string> parts;
     std::stringstream bodyStream(requestBody);
     std::string line, part;
+	size_t startPos = 0, endPos = 0;
 
-    while (std::getline(bodyStream, line)) {
-        if (line.find(boundary) != std::string::npos) {
-            if (!part.empty()) {
-                parts.push_back(part);
-                part.clear();
-            }
-        } else {
-            part += line + "\n";
-        }
-    }
+	while ((startPos = requestBody.find(boundary, startPos)) != std::string::npos) {
+		startPos += boundary.length();
+		endPos = requestBody.find(boundary, startPos);
+		if (endPos != std::string::npos) {
+			std::cout << "Inside " << startPos  << " and " << endPos<< std::endl;
+			std::string part = requestBody.substr(startPos, endPos - startPos);
+			size_t partStart = part.find_first_not_of("\r\n");
+			size_t partEnd = part.find_last_not_of("\r\n");
+			if (partStart != std::string::npos && partEnd != std::string::npos) {
+				parts.push_back(part.substr(partStart, partEnd - partStart + 1));
+				std::cout << "***********PART ********" << part.substr(partStart, partEnd - partStart + 1) << std::endl;
+			}
+			startPos = endPos;
+		}
+		else {
+			std::string part = requestBody.substr(startPos, requestBody.length() - startPos);
+			parts.push_back(part.substr(startPos, requestBody.length() - startPos + 1));
+		}
+	}
     return parts;
 }
 
@@ -637,12 +652,11 @@ std::string Server::extractFilename(const std::string& headers) {
         return "";  // No filename found
     }
 
-    size_t start = filenamePos + 9; // Move past 'filename="'
+    size_t start = filenamePos + 10; // Move past 'filename="'
     size_t end = headers.find("\"", start);
     if (end == std::string::npos) {
         return ""; // Malformed header
     }
-
     return headers.substr(start, end - start); // Extract filename
 }
 
@@ -664,11 +678,11 @@ void Server::processMultipartPart(const std::string& part, const std::string& up
     std::string headers = part.substr(0, headerEnd);  // Extract headers
 
     // Extract filename
-    std::string filename = extractFilename(headers);
+    std::string filename = extractFilename(part);
     if (filename.empty()) {
         filename = "uploaded_file"; // Default filename
     }
-
+	std::cout << "Filename " << filename << std::endl;
     // Save file content
     std::string savePath = uploadPath + filename;
     saveUploadedFile(savePath, part, headerEnd + 4);

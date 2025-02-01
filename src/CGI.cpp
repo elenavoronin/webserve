@@ -187,7 +187,7 @@ void CGI::readCgiOutput() {
 
             // Extract headers
             std::string headers = _cgiOutput.substr(0, headers_end);
-            std::cout << headers << std::endl;
+            // std::cout << headers << std::endl;
             parseHeaders(headers);
             _receivedBodySize = _cgiOutput.size() - headers.size() - 5;
 

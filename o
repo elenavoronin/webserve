@@ -1,0 +1,54 @@
+Total Received 651 content length 0
+This Is Body in Parse Body 
+ *****
+Method: GET
+Response successfully sent to client socket 6. Sent 2447 bytes.
+Total Received 602 content length 0
+This Is Body in Parse Body 
+ *****
+Method: GET
+Response successfully sent to client socket 6. Sent 980 bytes.
+Total Received 1016 content length 148
+This Is Body in Parse Body ------WebKitFormBoundaryY5J0Qajtsafcnnhb
+Content-Disposition: form-data; name="file"
+
+download.jpeg
+------WebKitFormBoundaryY5J0Qajtsafcnnhb--
+
+ *****
+Method: POST
+[DEBUG] Raw Request Body: ------WebKitFormBoundaryY5J0Qajtsafcnnhb
+Content-Disposition: form-data; name="file"
+
+download.jpeg
+------WebKitFormBoundaryY5J0Qajtsafcnnhb--
+
+[DEBUG] Upload Path: ./www/upload/
+[DEBUG] Upload directory exists
+Filename uploaded_file
+[DEBUG] Extracted boundary: ------WebKitFormBoundaryY5J0Qajtsafcnnhb
+[DEBUG] Total parts detected: 0
+Response successfully sent to client socket 6. Sent 97 bytes.
+[DEBUG] Upload request processed successfully.
+Total Received 1016 content length 148
+This Is Body in Parse Body ------WebKitFormBoundaryAXBWXOTPnmy3L9hz
+Content-Disposition: form-data; name="file"
+
+download.jpeg
+------WebKitFormBoundaryAXBWXOTPnmy3L9hz--
+
+ *****
+Method: POST
+[DEBUG] Raw Request Body: ------WebKitFormBoundaryAXBWXOTPnmy3L9hz
+Content-Disposition: form-data; name="file"
+
+download.jpeg
+------WebKitFormBoundaryAXBWXOTPnmy3L9hz--
+
+[DEBUG] Upload Path: ./www/upload/
+[DEBUG] Upload directory exists
+Filename uploaded_file
+[DEBUG] Extracted boundary: ------WebKitFormBoundaryAXBWXOTPnmy3L9hz
+[DEBUG] Total parts detected: 0
+Response successfully sent to client socket 7. Sent 97 bytes.
+[DEBUG] Upload request processed successfully.

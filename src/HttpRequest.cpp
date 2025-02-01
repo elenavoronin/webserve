@@ -230,7 +230,12 @@ bool HttpRequest::isHeaderReceived() const{
 void HttpRequest::setHeaderReceived(bool received){
 	_headerReceived = received;
 }
-
+void HttpRequest::setBodyReceived(bool received){
+	_bodyReceived = received;
+}
+bool HttpRequest::getBodyReceived(){
+	return _bodyReceived;
+}
 /**
  * @brief       Parses an HTTP request string and populates the HttpRequest fields.
  * 
@@ -285,7 +290,7 @@ std::string HttpRequest::trim(std::string& str) {
  */
 int HttpRequest::findContentLength(std::string request){
 	this->readRequest(request);
-	std::string len = this->getField("Content-length");
+	std::string len = this->getField("Content-Length");
 	if (len != "")
 		return(std::stoi(len));
 	else
@@ -302,8 +307,15 @@ int HttpRequest::findContentLength(std::string request){
 void HttpRequest::setStrReceived(std::string input) {
 	_strReceived = input;
 }
+void HttpRequest::setHeader(std::string input) {
+	_header = input;
+}
+std::string HttpRequest::getRequestHeader() {
+	return _header;
+}
 
 void HttpRequest::parseBody(const std::string& rawRequest) {
+	// std::cout << "This Is RawRequest in Parse Body\n " <<  rawRequest << "\n *****"<< std:: endl;
     // Find the double CRLF that separates headers and body
     size_t headerEnd = rawRequest.find("\r\n\r\n");
     if (headerEnd == std::string::npos) {
@@ -317,6 +329,8 @@ void HttpRequest::parseBody(const std::string& rawRequest) {
     } else {
         _body.clear();  // No body
     }
+	setBody(_body);
+	// std::cout << "This Is Body in Parse Body " <<  this->_body << "\n *****" << std:: endl;
 }
 
 void HttpRequest::parseHeaders(const std::string& rawRequest) {
@@ -335,4 +349,6 @@ void HttpRequest::parseHeaders(const std::string& rawRequest) {
             _headers[key] = value;
         }
     }
+	setHeader(rawRequest.substr(0, headerEnd));
+	//std::cout << "ONLY HEADER " <<  rawRequest.substr(0, headerEnd) << std::endl;
 }

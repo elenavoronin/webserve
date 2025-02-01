@@ -217,41 +217,121 @@ void Client::readFromCgi() {
  * If the HTTP request headers have been fully received, processes the request using Server::processClientRequest.
  * If the HTTP request headers have not been fully received, continues to read from the socket.
  */
+
+void saveImageToFile(const std::string& imageData, const std::string& filename) {
+    std::ofstream outFile("./www/upload/" + filename, std::ios::binary);
+    if (outFile.is_open()) {
+        outFile.write(imageData.c_str(), imageData.size());
+        outFile.close();
+        std::cout << "Image saved as: " << filename << std::endl;
+    } else {
+        throw std::runtime_error("Failed to open file for writing");
+    }
+}
+
+void processPart(const std::string& part) {
+    // Find the "Content-Disposition" header to determine if this part is a file
+    size_t contentDispositionPos = part.find("Content-Disposition: form-data;");
+    if (contentDispositionPos == std::string::npos) {
+        return;  // Not a valid part (shouldn't happen if the request is well-formed)
+    }
+
+    // Extract the name and filename from the Content-Disposition header
+    // size_t namePos = part.find("name=\"file\"");  // Assuming form-data name is 'file'
+    size_t filenamePos = part.find("filename=\"");
+
+    if (filenamePos != std::string::npos) {
+        // Extract the filename
+        size_t filenameStart = filenamePos + 10;
+        size_t filenameEnd = part.find("\"", filenameStart);
+        std::string filename = part.substr(filenameStart, filenameEnd - filenameStart);
+        
+        // Now extract the binary data for the image
+        size_t binaryDataStart = part.find("\r\n\r\n", contentDispositionPos) + 4;
+        std::string imageData = part.substr(binaryDataStart);  // This is the raw binary data
+
+        // Save the image data to a file (in the upload directory)
+        saveImageToFile(imageData, filename);
+    }
+}
+void readBinary(const std::string& rawRequest) {
+	std::cout << rawRequest << std::endl;
+    size_t boundaryPos = rawRequest.find("boundary=");
+    if (boundaryPos == std::string::npos) {
+        throw std::runtime_error("Boundary not found in Content-Type");
+    }
+    std::string boundary = rawRequest.substr(boundaryPos + 9);
+    if (boundary.front() == '"' && boundary.back() == '"') {
+        boundary = boundary.substr(1, boundary.size() - 2);
+    }
+    size_t bodyStart = rawRequest.find("\r\n\r\n") + 4;
+    std::string body = rawRequest.substr(bodyStart);
+
+    size_t boundaryPosStart = 0;
+    while ((boundaryPosStart = body.find(boundary, boundaryPosStart)) != std::string::npos) {
+        size_t partStart = boundaryPosStart + boundary.length();
+        size_t partEnd = body.find(boundary, partStart);
+        if (partEnd == std::string::npos) {
+            partEnd = body.length();
+        }
+
+        std::string part = body.substr(partStart, partEnd - partStart);
+		std::cout << "PART " << part << std::endl;
+        // Process the part (parse headers, detect file, etc.)
+        processPart(part);
+
+        // Move the boundaryPosStart to the end of the current part for next iteration
+        boundaryPosStart = partEnd;
+
+    }
+}
+
+
+
+
 void Client::readFromSocket(Server *server, Server &defaultServer) {
     if (!_HttpRequest) {
         throw std::runtime_error("_HttpRequest is null. Possible use-after-free.");
     }
     
     char buf[READ_SIZE] = {0};
-    int contentLength;
+	int contentLength;
 
     // Try to receive data
     int received = recv(_clientSocket, buf, sizeof(buf), 0);
-
     if (received == 0) {
-        throw std::runtime_error("Client closed connection");
+        //throw std::runtime_error("Client closed connection");
+		return ; //??????????????????????????????????????????????????????
+
     } 
-	else if (received < 0) {
+	if (received < 0) {
         throw std::runtime_error("Error reading from socket");
     }
 
     // Append the data to the HTTP request buffer
     _HttpRequest->getStrReceived().append(buf, received);
+	//std::cout << "Total Received " << _HttpRequest->getStrReceived()<< std::endl;
 
     if (!_HttpRequest->isHeaderReceived()) {
         if (_HttpRequest->getStrReceived().find("\r\n\r\n") != std::string::npos) {
             contentLength = _HttpRequest->findContentLength(_HttpRequest->getStrReceived());
             if (static_cast<int>(_HttpRequest->getStrReceived().length() - _HttpRequest->getStrReceived().find("\r\n\r\n") - 4) >= contentLength)
                 _HttpRequest->setHeaderReceived(true);
+				_HttpRequest->parseHeaders(_HttpRequest->getStrReceived());
         }
     }
 
     if (_HttpRequest->isHeaderReceived()) {
-		_HttpRequest->parseBody(_HttpRequest->getStrReceived());
-		_HttpRequest->parseHeaders(_HttpRequest->getStrReceived());
-        server->processClientRequest(*this, _HttpRequest->getStrReceived(), _HttpRequest, defaultServer);
-        _HttpRequest->setHeaderReceived(false);
-        _HttpRequest->clearStrReceived();
+		// size_t totalReceived = _HttpRequest->getStrReceived().length();
+		// size_t headerEnd = _HttpRequest->getStrReceived().find("\r\n\r\n");
+		std::cout << "Total Received " << _HttpRequest->getStrReceived().length() << " content length " << contentLength << std::endl;
+		// if (totalReceived >= contentLength + headerEnd + 4) {  // The 4 is for "\r\n\r\n"
+		// }
+			_HttpRequest->parseBody(_HttpRequest->getStrReceived());
+			server->processClientRequest(*this, _HttpRequest->getStrReceived(), _HttpRequest, defaultServer);
+			_HttpRequest->setHeaderReceived(false);
+			_HttpRequest->clearStrReceived();
+		
     }
 }
 
