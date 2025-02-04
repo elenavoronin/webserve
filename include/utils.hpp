@@ -16,7 +16,7 @@ class Client;
 # define WRITE 1
 # define WRITE_SIZE 100
 # define READ_SIZE 100
-# define BACKLOG 10
+# define BACKLOG 100
 
 std::string             getStatusMessage(int statusCode);
 void                    printConfigParse(std::vector<Server> &servers);

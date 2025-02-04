@@ -305,10 +305,19 @@ void Config::pollLoop() {
 
         // Iterate over the pollfds to handle events
         for (size_t i = 0; i < pfds.size(); i++) {
-            // std::cout <<  pfds[i].revents << " " << POLLRDHUP << std::endl;
+            //std::cout << "Polling on " << pfds.size() << " sockets" << std::endl;
+
             if (pfds[i].revents & POLLERR) {
-                std::cerr << "Error in poll: " << std::endl;
-            }
+				if (pfds[i].revents & POLLERR) {
+					int err = 0;
+					socklen_t len = sizeof(err);
+					getsockopt(pfds[i].fd, SOL_SOCKET, SO_ERROR, &err, &len);
+					std::cerr << "Poll error on fd " << pfds[i].fd << " : " << strerror(err) << std::endl;
+					close(pfds[i].fd);
+    				_eventPoll.ToremovePollEventFd(pfds[i].fd, pfds[i].events);
+					break ;
+				}
+			}
             if (pfds[i].revents & POLLIN || pfds[i].revents & POLLOUT || pfds[i].revents & POLLHUP || pfds[i].revents & POLLRDHUP) {
                 int fd = pfds[i].fd;
 

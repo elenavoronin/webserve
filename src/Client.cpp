@@ -332,6 +332,13 @@ void Client::closeConnection(EventPoll& eventPoll, int currentPollFd) {
  */
 void Client::prepareFileResponse(std::string errorContent) {
     std::string requestedFile = _HttpRequest->getFullPath();
+
+	/*
+	TODO : totally wrong approach searching by folder like this
+	*/
+	std::string ContentType = "text/html";
+	if (requestedFile.find("images") != std::string::npos || requestedFile.find("upload") != std::string::npos)
+		ContentType = "image/jpeg";
     size_t position = requestedFile.find('?');
     
     if (position != std::string::npos) {
@@ -360,7 +367,7 @@ void Client::prepareFileResponse(std::string errorContent) {
 		
 		// Set the response headers and body
 		_HttpResponse->setStatus(200, "OK");
-		_HttpResponse->setHeader("Content-Type", "text/html");
+		_HttpResponse->setHeader("Content-Type", ContentType); //ANNA changed from  "text/html" to ContentType
 		_HttpResponse->setBody(buffer.str());
 		_HttpResponse->buildResponse();
 
@@ -372,9 +379,20 @@ void Client::prepareFileResponse(std::string errorContent) {
 	}
 }
 
+#include <fcntl.h>
+
+bool isFdOpen(int fd) {
+    return fcntl(fd, F_GETFD) != -1 || errno != EBADF;
+}
+
+
 void Client::sendData(const std::string &response) {
-    // Send the complete HTTP response to the client socket
-    ssize_t bytesSent = send(_clientSocket, response.c_str(), response.size(), 0);
+    // if (isFdOpen(_clientSocket)) { /* TEST */
+    //     std::cout << "FD " << _clientSocket << " is open." << std::endl;
+    // } else {
+    //     std::cout << "FD " << _clientSocket << " is closed." << std::endl;
+    // }
+    ssize_t bytesSent = send(_clientSocket, response.c_str(), response.size(), MSG_NOSIGNAL);
 
     if (bytesSent == -1) {
         // Log an error if sending fails

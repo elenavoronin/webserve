@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!-- <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -54,22 +54,115 @@
     <section class="content-section">
         <button class="btn" onclick="window.location.href='upload.html'">Upload More Cats</button>
     </section>
+	<script>
+		document.addEventListener("DOMContentLoaded", async function() {
+			const gallery = document.getElementById("gallery");
+		
+			try {
+				// Fetch the list of images from the server
+				const response = await fetch("/cgi-bin/list_images.py"); // Adjust based on your setup
+				const images = await response.json(); // Convert response to JSON array
+		
+				images.forEach(imagePath => {
+					// Create an image element
+					const img = document.createElement("img");
+					img.src = imagePath;  // Set the source of the image
+					img.alt = "Uploaded Image";
+					img.style.width = "200px";  // Example styling
+					img.style.margin = "10px";
+		
+					// Append image to the gallery
+					gallery.appendChild(img);
+				});
+			} catch (error) {
+				console.error("Error loading images:", error);
+			}
+		});
+		</script>
+		
+</body>
+</html> -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Gallery</title>
+    <style>
+        body {
+            background-color: black;
+            color: white;
+            font-family: Arial, sans-serif;
+            text-align: center;
+        }
+        #gallery {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        img {
+            margin: 10px;
+            width: 200px;
+            border-radius: 10px;
+            box-shadow: 0px 0px 10px rgba(255, 255, 255, 0.5);
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            color: white;
+            background-color: black;
+            border: 1px solid white;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+        button:hover {
+            background-color: gray;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Uploaded Images</h1>
+    <div id="gallery"></div>
+    
+    <button onclick="loadImages()">Refresh Images</button>
 
     <script>
-        document.addEventListener("DOMContentLoaded", function() {
+        async function loadImages() {
             const gallery = document.getElementById("gallery");
-            
-            // Image source path
-            const imagePath = './upload/cat.jpeg'; // Direct path to your cat image
+            gallery.innerHTML = '';  // Clear the current images
 
-            // Create an image element
-            const img = document.createElement("img");
-            img.src = imagePath;  // Set the source of the image
-            img.alt = "Cat Image"; // Alt text for accessibility
-            
-            // Add the image to the gallery
-            gallery.appendChild(img);
-        });
+            try {
+                // Fetch the list of images from the CGI script
+                const response = await fetch("/cgi-bin/list_images.py");
+
+                // Ensure response is OK
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+
+                // Assuming the response is JSON and contains an array of image paths
+                const images = await response.json();
+
+                // Loop through the image paths and add them to the gallery
+                images.forEach(imagePath => {
+                    const img = document.createElement("img");
+                    img.src = imagePath;
+                    img.alt = "Uploaded Image";
+                    gallery.appendChild(img);
+                });
+            } catch (error) {
+                console.error("Error loading images:", error);
+            }
+        }
+
+        // Load images when the page loads for the first time
+        window.onload = loadImages;
     </script>
+
 </body>
 </html>
+

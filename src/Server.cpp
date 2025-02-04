@@ -141,7 +141,7 @@ void Server::handlePollEvent(EventPoll &eventPoll, int i, Server& defaultServer)
 
     if (!client) {
         // std::cerr << "Client not found for fd: " << event_fd << std::endl;
-		    //client->closeConnection(eventPoll);
+		    // client->closeConnection(eventPoll, currentPollFd.fd);
 		    eraseClient(event_fd);
         return;
     }
@@ -169,6 +169,7 @@ void Server::handlePollEvent(EventPoll &eventPoll, int i, Server& defaultServer)
                 client->writeToCgi();
             } else {
                 if (client->writeToSocket() > 0) {
+					//std::cout << "WritetoSocket error fd: " << event_fd << std::endl;
 					client->closeConnection(eventPoll, currentPollFd.fd);
 					eraseClient(event_fd);
 				}
@@ -182,7 +183,7 @@ void Server::handlePollEvent(EventPoll &eventPoll, int i, Server& defaultServer)
 
     // Handle hangup or disconnection events
     if (currentPollFd.revents & (POLLHUP | POLLRDHUP)) {
-		// std::cout << "does this happen" << std::endl;
+		std::cout << "does this happen: POLLHUP && POLLRDHUP" << std::endl;
         client->closeConnection(eventPoll, currentPollFd.fd);
 		eraseClient(event_fd);
     }
@@ -306,6 +307,7 @@ int Server::handleGetRequest(Client &client, HttpRequest* request) {
     HttpResponse response;
     std::string filepath = this->getRoot() + request->getPath();
     request->setFullPath(filepath);
+	std::cout << "FILEPATH: " << filepath << std::endl;
 
     if (request->getPath() == "/") {
         filepath = this->getRoot() + '/' + this->getIndex();
@@ -317,15 +319,17 @@ int Server::handleGetRequest(Client &client, HttpRequest* request) {
         client.startCgi(request);
         return 0;
     }
-    if (filepath.find("/upload") != std::string::npos) { 
-        request->setFullPath(filepath);
-        client.startCgi(request);
-        return 0;
-    }
+    // if (filepath.find("/upload") != std::string::npos) { 
+    //     request->setFullPath(filepath);
+
+
+
+    //     client.startCgi(request);
+    //     return 0;
+    // }
     if (!fileExists(filepath)) {
         return sendErrorResponse(client, 404, "www/html/404.html");
     }
-
     client.prepareFileResponse(readFileContent(filepath));
     client.sendData(client.getHttpResponse()->getFullResponse());
     response.buildResponse();
@@ -368,7 +372,7 @@ void Server::sendFileResponse(int clientSocket, const std::string& filepath, int
  * @return The contents of the file as a string.
  */
 std::string Server::readFileContent(const std::string& filepath) {
-    std::ifstream file(filepath);
+    std::ifstream file(filepath, std::ios::binary);
     if (!file) {
         std::cerr << "Error: File not found 2: " << filepath << std::endl;
         return "";
@@ -377,6 +381,7 @@ std::string Server::readFileContent(const std::string& filepath) {
     buffer << file.rdbuf(); //read file by bytes, go back to poll, check if finished reading
 	//request->_readyToSendBack = true;
 	//std::cout.flush();
+	//std::cout << "BUFFER " << buffer.str() << std::endl;
     return buffer.str();
 }
 
