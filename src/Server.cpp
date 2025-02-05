@@ -624,7 +624,7 @@ std::vector<std::string> Server::splitMultipartBody(const std::string& requestBo
 			size_t partEnd = part.find_last_not_of("\r\n");
 			if (partStart != std::string::npos && partEnd != std::string::npos) {
 				parts.push_back(part.substr(partStart, partEnd - partStart + 1));
-				std::cout << "***********PART ********" << part.substr(partStart, partEnd - partStart + 1) << std::endl;
+				//std::cout << "***********PART ********" << part.substr(partStart, partEnd - partStart + 1) << std::endl;
 			}
 			startPos = endPos;
 		}

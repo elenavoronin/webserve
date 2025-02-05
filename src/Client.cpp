@@ -339,6 +339,7 @@ void Client::prepareFileResponse(std::string errorContent) {
 	std::string ContentType = "text/html";
 	if (requestedFile.find("images") != std::string::npos || requestedFile.find("upload") != std::string::npos)
 		ContentType = "image/jpeg";
+	//std::cout << "***** Content Type " << _HttpRequest->getStrReceived() << std::endl;
     size_t position = requestedFile.find('?');
     
     if (position != std::string::npos) {
