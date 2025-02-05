@@ -319,14 +319,6 @@ int Server::handleGetRequest(Client &client, HttpRequest* request) {
         client.startCgi(request);
         return 0;
     }
-    // if (filepath.find("/upload") != std::string::npos) { 
-    //     request->setFullPath(filepath);
-
-
-
-    //     client.startCgi(request);
-    //     return 0;
-    // }
     if (!fileExists(filepath)) {
         return sendErrorResponse(client, 404, "www/html/404.html");
     }

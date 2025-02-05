@@ -26,6 +26,10 @@ POll decides what we're doing not the server
 30. In the configuration, try to setup the same port multiple times. It should not work
 31. Launch multiple servers at the same time with different configurations but with common ports. Does it work. If it does, ask why the server should work if one of the configurations isn't functional. 
 32. siege -c 10 -t 10S http://localhost:8080 doesn't work
+33. When both ports and names are the same it should give error, if names are different(first server - localhost, second server - webserv2) test it with curl --resolve webserv2:8080:127.0.0.1 webserv2:8080. How to solve: check by hostname in the request
+
+
+
 
 WE USE UTILS... DO NOT REMOVE, love you!
 

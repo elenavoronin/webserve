@@ -362,7 +362,7 @@ int Config::checkConfig(const std::string &config_file) {
     }
     try {
         _servers = parseConfig(file);
-        // printConfigParse(_servers);
+        //printConfigParse(_servers);
         addPollFds();
     } catch (const std::exception &e) {
         std::cerr << "Configuration error: " << e.what() << std::endl;

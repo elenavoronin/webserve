@@ -245,9 +245,9 @@ void Client::readFromSocket(Server *server, Server &defaultServer) {
             if (static_cast<int>(_HttpRequest->getStrReceived().length() - _HttpRequest->getStrReceived().find("\r\n\r\n") - 4) >= contentLength)
                 _HttpRequest->setHeaderReceived(true);
 				_HttpRequest->parseHeaders(_HttpRequest->getStrReceived());
+				//std::cout << "******* HOST " << _HttpRequest->getField("Host") << " ****************"  << std::endl;
         }
     }
-
     if (_HttpRequest->isHeaderReceived()) {
 		// size_t totalReceived = _HttpRequest->getStrReceived().length();
 		// size_t headerEnd = _HttpRequest->getStrReceived().find("\r\n\r\n");
