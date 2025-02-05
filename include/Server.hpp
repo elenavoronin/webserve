@@ -34,6 +34,7 @@ class Client;
 class HttpRequest; 
 class Server  {
 	private:
+		bool											_on;
 		std::string										_portString;
 		std::string 									_serverName;
 		std::string                 					_root;
@@ -87,6 +88,7 @@ class Server  {
 		void 											setErrorPage(const std::vector<std::string>& errorPages) {_errorPage = errorPages;}
 		void 											setLocation(const std::string& path, const Location& location) {_locations[path].push_back(location);}
 		void											setListenerFd(int listener_fd) {_listener_fd = listener_fd;}
+		void											setOnOff(bool on) {_on = on;}
 
 		std::string										extractBoundary(const std::string& contentType);
 		std::vector<std::string>						splitMultipartBody(const std::string& requestBody, const std::string& boundary);
@@ -110,4 +112,5 @@ class Server  {
 		std::vector<std::string> 						getErrorPage() const {return this->_errorPage;}
 		int												getListenerFd() const {return this->_listener_fd;}
 		std::pair<int, std::string>						getRedirect() const { return this->_redirect;}
+		bool											getOnOff() const {return this->_on;}
 };
