@@ -5,6 +5,22 @@ Config::Config() {}
 Config::~Config() {}
 
 
+bool Config::validateConfig(std::vector<Server> &servers) {
+    if (servers.size() < 2)
+        return true;
+    for (std::vector<Server>::iterator it1 = servers.begin(); it1 != servers.end(); ++it1) {
+        for (std::vector<Server>::iterator it2 = it1 + 1; it2 != servers.end();) {
+            if (it1->getPortStr() == it2->getPortStr()) {
+                it2 = servers.erase(it2); // Remove duplicate and update iterator
+            } else {
+                ++it2; // Only increment if no deletion happened
+            }
+        }
+    }
+    return true;
+}
+
+
 bool Config::validateParsedLocation(Location& location) {
     if (location.getRedirect().first != 301 && location.getRedirect().first != 302 && location.getRedirect().first != 0)
         return false;
@@ -293,6 +309,7 @@ void Config::pollLoop() {
         // Update the event list from the add/remove queues
         _eventPoll.updateEventList();
 
+
         std::vector<pollfd> &pfds = _eventPoll.getPollEventFd();
         int pollResult = poll(pfds.data(), pfds.size(), -1);
         // std::cout << "size of pollfds" << pfds.size() << std::endl; 
@@ -322,6 +339,7 @@ void Config::pollLoop() {
                 int fd = pfds[i].fd;
 
                 for (Server &currentServer : _servers) {
+                    std::cout << "IM HERE" << std::endl;
                     Server &defaultServer = currentServer;
                     // std::cout << "My server is: " << currentServer.getPortStr() << std::endl;
                     if (fd == currentServer.getListenerFd()) {
@@ -362,7 +380,8 @@ int Config::checkConfig(const std::string &config_file) {
     }
     try {
         _servers = parseConfig(file);
-        //printConfigParse(_servers);
+        if (!validateConfig(_servers))
+            throw std::runtime_error("Error in config file: Invalid servers.");
         addPollFds();
     } catch (const std::exception &e) {
         std::cerr << "Configuration error: " << e.what() << std::endl;

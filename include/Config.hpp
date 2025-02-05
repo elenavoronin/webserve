@@ -46,4 +46,5 @@ class Config {
         
         bool                            validateParsedLocation(Location& location);
         bool                            validateParsedData(Server &server);
+        bool                            validateConfig(std::vector<Server> &servers);
 };

@@ -73,7 +73,7 @@ int Server::getListenerSocket(){
  */
 int Server::reportReady(EventPoll &eventPoll){
 	int listener = getListenerSocket(); // Set up and get a listening socket
-	if (listener == -1){
+    if (listener == -1){
 		throw std::runtime_error("Error get listener socket");
 	}
     // Add the listener to EventPoll
