@@ -36,7 +36,7 @@ int Server::getListenerSocket(){
 	hints.ai_socktype = SOCK_STREAM; // tells the system to use TCP
 	hints.ai_flags = AI_PASSIVE; //makes the program automatically fill in the IP 
 	if ((status = getaddrinfo(NULL, getPortStr().c_str(), &hints, &servinfo)) != 0){
-		//std::cout << "Error get Address information" << std::endl;
+		throw std::runtime_error("Error get Address information");
 		return 1;
 	}
 	for (newConnect = servinfo; newConnect != NULL; newConnect= newConnect->ai_next){
@@ -46,7 +46,7 @@ int Server::getListenerSocket(){
 		}
 		setsockopt(serverSocket, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)); //allows the program to reuse the address
 		if (bind(serverSocket, newConnect->ai_addr, newConnect->ai_addrlen) == -1){ //associates the socket with an address (IP and port).
-			//std::cout << "Bind error" << std::endl;
+			throw std::runtime_error("Bind Error");
 			close(serverSocket);
 			continue;
 		}
