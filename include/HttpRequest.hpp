@@ -26,7 +26,8 @@ class HttpRequest {
 		std::string 								_body;
 		std::map<std::string, std::string> 			_headers;
 		std::string									_fileName;
-
+		std::string									_header;
+		bool 										_bodyReceived = false;
 	public:
 		bool 										_readyToSendBack = false; // Flag indicating whether the request is ready to send a response.
 
@@ -50,7 +51,9 @@ class HttpRequest {
 		void												setMethod(std::string method);
 		void												setVersion(std::string version);
 		void 												setBody(std::string& body);
-
+		void 												setHeader(std::string input);
+		void 												setBodyReceived(bool received);
+		bool 												getBodyReceived();
 		std::string 										getPath();
 		std::string 										getFullPath();
 		std::string											getMethod();
@@ -59,7 +62,7 @@ class HttpRequest {
 		std::string 										getHeader(const std::string& key);
 		std::string											getRawRequest();
 		std::string											getPathToDelete(const std::string& rawRequest);
-		
+		std::string 												getRequestHeader();	
 		void 												parseHeaders(const std::string& rawRequest);
 		void												parseBody(const std::string& rawRequest);
 		const std::map<std::string, std::string>& 			getAllHeaders() const;

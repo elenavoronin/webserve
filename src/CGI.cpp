@@ -125,6 +125,7 @@ void CGI::executeCgi() {
         _path = _path.substr(0, queryPos);
     }
 
+	// std::string cgiProgramString = "/home/akrepkov/Desktop/webserv_git/git/www/html/assets/cat.jpeg";
 	std::string cgiProgramString = "./www/html" + _path;
     const char* cgiProgram = cgiProgramString.c_str();
     const char* argv[] = {"/usr/bin/python3", cgiProgram, nullptr};
@@ -187,7 +188,7 @@ void CGI::readCgiOutput() {
 
             // Extract headers
             std::string headers = _cgiOutput.substr(0, headers_end);
-            std::cout << headers << std::endl;
+            // std::cout << headers << std::endl;
             parseHeaders(headers);
             _receivedBodySize = _cgiOutput.size() - headers.size() - 5;
 

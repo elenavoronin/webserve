@@ -217,41 +217,48 @@ void Client::readFromCgi() {
  * If the HTTP request headers have been fully received, processes the request using Server::processClientRequest.
  * If the HTTP request headers have not been fully received, continues to read from the socket.
  */
+
 void Client::readFromSocket(Server *server, Server &defaultServer) {
     if (!_HttpRequest) {
         throw std::runtime_error("_HttpRequest is null. Possible use-after-free.");
     }
     
     char buf[READ_SIZE] = {0};
-    int contentLength;
+	int contentLength;
 
     // Try to receive data
     int received = recv(_clientSocket, buf, sizeof(buf), 0);
-
     if (received == 0) {
-        throw std::runtime_error("Client closed connection");
+        //throw std::runtime_error("Client closed connection");
+		return ; //??????????????????????????????????????????????????????
+
     } 
-	else if (received < 0) {
+	if (received < 0) {
         throw std::runtime_error("Error reading from socket");
     }
 
     // Append the data to the HTTP request buffer
     _HttpRequest->getStrReceived().append(buf, received);
-
     if (!_HttpRequest->isHeaderReceived()) {
         if (_HttpRequest->getStrReceived().find("\r\n\r\n") != std::string::npos) {
             contentLength = _HttpRequest->findContentLength(_HttpRequest->getStrReceived());
             if (static_cast<int>(_HttpRequest->getStrReceived().length() - _HttpRequest->getStrReceived().find("\r\n\r\n") - 4) >= contentLength)
                 _HttpRequest->setHeaderReceived(true);
+				_HttpRequest->parseHeaders(_HttpRequest->getStrReceived());
+				//std::cout << "******* HOST " << _HttpRequest->getField("Host") << " ****************"  << std::endl;
         }
     }
-
     if (_HttpRequest->isHeaderReceived()) {
-		_HttpRequest->parseBody(_HttpRequest->getStrReceived());
-		_HttpRequest->parseHeaders(_HttpRequest->getStrReceived());
-        server->processClientRequest(*this, _HttpRequest->getStrReceived(), _HttpRequest, defaultServer);
-        _HttpRequest->setHeaderReceived(false);
-        _HttpRequest->clearStrReceived();
+		// size_t totalReceived = _HttpRequest->getStrReceived().length();
+		// size_t headerEnd = _HttpRequest->getStrReceived().find("\r\n\r\n");
+		// std::cout << "Total Received " << _HttpRequest->getStrReceived().length() << " content length " << contentLength << std::endl;
+		// if (totalReceived >= contentLength + headerEnd + 4) {  // The 4 is for "\r\n\r\n"
+		// }
+			_HttpRequest->parseBody(_HttpRequest->getStrReceived());
+			server->processClientRequest(*this, _HttpRequest->getStrReceived(), _HttpRequest, defaultServer);
+			_HttpRequest->setHeaderReceived(false);
+			_HttpRequest->clearStrReceived();
+		
     }
 }
 
@@ -325,6 +332,13 @@ void Client::closeConnection(EventPoll& eventPoll, int currentPollFd) {
  */
 void Client::prepareFileResponse(std::string errorContent) {
     std::string requestedFile = _HttpRequest->getFullPath();
+
+	/*
+	TODO : totally wrong approach searching by folder like this
+	*/
+	std::string ContentType = "text/html";
+	if (requestedFile.find("images") != std::string::npos || requestedFile.find("upload") != std::string::npos)
+		ContentType = "image/jpeg";
     size_t position = requestedFile.find('?');
     
     if (position != std::string::npos) {
@@ -353,7 +367,7 @@ void Client::prepareFileResponse(std::string errorContent) {
 		
 		// Set the response headers and body
 		_HttpResponse->setStatus(200, "OK");
-		_HttpResponse->setHeader("Content-Type", "text/html");
+		_HttpResponse->setHeader("Content-Type", ContentType); //ANNA changed from  "text/html" to ContentType
 		_HttpResponse->setBody(buffer.str());
 		_HttpResponse->buildResponse();
 
@@ -365,9 +379,20 @@ void Client::prepareFileResponse(std::string errorContent) {
 	}
 }
 
+#include <fcntl.h>
+
+bool isFdOpen(int fd) {
+    return fcntl(fd, F_GETFD) != -1 || errno != EBADF;
+}
+
+
 void Client::sendData(const std::string &response) {
-    // Send the complete HTTP response to the client socket
-    ssize_t bytesSent = send(_clientSocket, response.c_str(), response.size(), 0);
+    // if (isFdOpen(_clientSocket)) { /* TEST */
+    //     std::cout << "FD " << _clientSocket << " is open." << std::endl;
+    // } else {
+    //     std::cout << "FD " << _clientSocket << " is closed." << std::endl;
+    // }
+    ssize_t bytesSent = send(_clientSocket, response.c_str(), response.size(), MSG_NOSIGNAL);
 
     if (bytesSent == -1) {
         // Log an error if sending fails

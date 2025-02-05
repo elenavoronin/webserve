@@ -5,7 +5,7 @@ import os
 import re
 
 # Directory to store uploaded files
-UPLOAD_DIR = "/home/dreijans/uploads/"
+UPLOAD_DIR = "./images"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 # Sanitize file names to prevent security issues

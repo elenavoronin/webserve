@@ -2,15 +2,12 @@ Server makes sure everything is parsed
 POll decides what we're doing not the server
 
 1. use throw instead of std cout or std cerr and have a catch somewhere (lena, djoyke)
-2. handling null characters for requesting images eg assets/nebula.jpg dont handle it like a string (lena)
+2. handling null characters for requesting images eg assets/nebula.jpg dont handle it like a string (lena) - check reading in chunks (anna)
 3. should we assert more? (all)
 4. close pipe when something goes wrong reading or writing (djoyke)
-5. test config file with 2 servers
 6. add CGI scripts for post and delete (djoyke)
 7. make ugly button not ugly in html (djoyke)
 8. eval sheet misery (jan)
-9. unit test (all, jan)
-10. fix the download thing without us telling it to do so (anna)
 11. do we need broadcast message?
 12. add charset 8 for Content type
 13. handleGet check extension (img. html ..) instead cgi-bin
@@ -20,18 +17,19 @@ POll decides what we're doing not the server
 17. Test locations (Lena)
 18. Check errno (Anna)
 19. Check HTTP response status codes(Anna)
-20. The first server for a host:port will be the default for this host:port (that means
-it will answer to all the requests that don’t belong to an other server). ?????
 21. Returning after CGI turns off the program
 23. Search for all read/recv/write/send on a socket and check that, if an error is returned, the client is removed.(Anna)
 24. Search for all read/recv/write/send and check if the returned value is correctly checked (checking only -1 or values is not enough, both should be checked).(Anna)
-25. Setup multiple servers with different ports.
 26. Setup multiple servers with different hostnames (use something like: curl --resolve example.com:80:127.0.0 http://example.com/ (http://example.com/)).
 27. Limit the client body (use: curl -X POST -H "Content-Type: plain/text" --data "BODY IS HERE write something shorter or longer than body limit").
 29. Upload some file to the server and get it back.
 30. In the configuration, try to setup the same port multiple times. It should not work
 31. Launch multiple servers at the same time with different configurations but with common ports. Does it work. If it does, ask why the server should work if one of the configurations isn't functional. 
 32. siege -c 10 -t 10S http://localhost:8080 doesn't work
+33. When both ports and names are the same it should give error, if names are different(first server - localhost, second server - webserv2) test it with curl --resolve webserv2:8080:127.0.0.1 webserv2:8080. How to solve: check by hostname in the request
+
+
+
 
 WE USE UTILS... DO NOT REMOVE, love you!
 
