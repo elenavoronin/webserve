@@ -48,9 +48,8 @@ int Server::getListenerSocket(){
             std::cerr << "Socket creation failed: " << strerror(errno) << std::endl;
             continue;
 		}
-		
         setsockopt(serverSocket, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt)); //allows the program to reuse the address
-		
+
         if (bind(serverSocket, newConnect->ai_addr, newConnect->ai_addrlen) == -1){ //associates the socket with an address (IP and port).
 			throw std::runtime_error("Bind Error");
             close(serverSocket);
