@@ -338,16 +338,23 @@ void Config::pollLoop() {
 			}
             if (pfds[i].revents & POLLIN || pfds[i].revents & POLLOUT || pfds[i].revents & POLLHUP || pfds[i].revents & POLLRDHUP) {
                 int fd = pfds[i].fd;
+                Server* defaultServer = nullptr;
+                Server* activeServer = nullptr;
 
                 for (Server &currentServer : _servers) {
-                    Server &defaultServer = currentServer;
-                    std::cout << "My server is: " << currentServer.getPortStr() << std::endl;
+                    if (!defaultServer)
+                        defaultServer = &currentServer;
+                    if (fd == currentServer.getListenerFd()) {
+                        if (currentServer.getOnOff() == true)
+                            activeServer = &currentServer;
+                    }
+                    Server* selectedServer = activeServer ? activeServer : defaultServer;
                     if (fd == currentServer.getListenerFd()) {
                         // Handle new connection
-                        currentServer.handleNewConnection(_eventPoll);
+                        selectedServer->handleNewConnection(_eventPoll);
                     } else {
                         // Handle events for existing connections
-                        currentServer.handlePollEvent(_eventPoll, i, defaultServer);
+                        selectedServer->handlePollEvent(_eventPoll, i, *defaultServer);
                     }
     
                 }
@@ -381,9 +388,11 @@ int Config::checkConfig(const std::string &config_file) {
     }
     try {
         _servers = parseConfig(file);
-        if (!validateConfig(_servers))
+        if (!validateConfig(_servers)) {
             throw std::runtime_error("Error in config file: Invalid servers.");
-        printConfigParse(_servers);
+            return -1;
+        }
+        // printConfigParse(_servers);
         addPollFds();
     } catch (const std::exception &e) {
         std::cerr << "Configuration error: " << e.what() << std::endl;

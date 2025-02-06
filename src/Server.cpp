@@ -35,45 +35,41 @@ int Server::getListenerSocket(){
 	hints.ai_family = AF_UNSPEC; // allows either IPv4 or IPv6.
 	hints.ai_socktype = SOCK_STREAM; // tells the system to use TCP
 	hints.ai_flags = AI_PASSIVE; //makes the program automatically fill in the IP 
-	
-     std::cout << "Binding to: " << getServerName() << " on port " << getPortStr() << std::endl;
-    if (this->getServerName() == "localhost") {
-        if ((status = getaddrinfo(NULL, getPortStr().c_str(), &hints, &servinfo)) != 0) {
-            // throw std::runtime_error("Error get Address information");
-            std::cerr << "Error get Address information: " << gai_strerror(status) << std::endl;
-            return 1;
-	    }
-    }
-    else {
-        if ((status = getaddrinfo("0.0.0.0", getPortStr().c_str(), &hints, &servinfo)) != 0) {
-            // throw std::runtime_error("Error get Address information");
-            std::cerr << "Error get Address information: " << gai_strerror(status) << std::endl;
-            return 1;
-        }
+    
+    std::string bindAddress = (getServerName() == "localhost") ? "127.0.0.1" : "0.0.0.0";
+
+    std::cout << "Binding to: " << getServerName() << " on port " << getPortStr() << std::endl;
+    if ((status = getaddrinfo(bindAddress.c_str(), getPortStr().c_str(), &hints, &servinfo)) != 0) {
+        throw std::runtime_error("Error get Address information");
+        return 1;
     }
 	for (newConnect = servinfo; newConnect != NULL; newConnect= newConnect->ai_next){
-		if ((serverSocket = socket(servinfo->ai_family, servinfo->ai_socktype, servinfo->ai_protocol)) == -1){ //creates a socket
-			// //std::cout << "Create server socket " << serverSocket << std::endl;
-			std::cerr << "Socket creation failed: " << strerror(errno) << std::endl;
+		if ((serverSocket = socket(newConnect->ai_family, newConnect->ai_socktype, newConnect->ai_protocol)) == -1){ //creates a socket
+            std::cerr << "Socket creation failed: " << strerror(errno) << std::endl;
             continue;
 		}
-		setsockopt(serverSocket, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)); //allows the program to reuse the address
-		if (bind(serverSocket, newConnect->ai_addr, newConnect->ai_addrlen) == -1){ //associates the socket with an address (IP and port).
-			// throw std::runtime_error("Bind Error");
-			 std::cerr << "Bind failed on " << getServerName() << ":" << getPortStr() 
-                      << " - " << strerror(errno) << std::endl;
+		
+        setsockopt(serverSocket, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt)); //allows the program to reuse the address
+		
+        if (bind(serverSocket, newConnect->ai_addr, newConnect->ai_addrlen) == -1){ //associates the socket with an address (IP and port).
+			throw std::runtime_error("Bind Error");
             close(serverSocket);
 			continue;
 		}
 		break;
 	}
+
 	freeaddrinfo(servinfo);
 
-	if (newConnect == NULL) //If no address was successfully bound, the program exits with an error.
+    //If no address was successfully bound, the program exits with an error.
+	if (newConnect == NULL) {
 		throw std::runtime_error("Failed to bind to address");
-	if (listen(serverSocket, BACKLOG) == -1) //tells the socket to listen for incoming connections
-		close(serverSocket);
         return -1;
+    }
+	if (listen(serverSocket, BACKLOG) == -1) {
+        close(serverSocket);
+        return -1;
+    }
 	// //std::cout << "serverSocket " << serverSocket << std::endl;
     return serverSocket;
 }
