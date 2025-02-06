@@ -167,3 +167,16 @@ void printEventPoll(EventPoll& eventPoll) {
     std::cout << std::endl;
 
 }
+
+std::map<int, int> stuckFdCounter;  // Track stuck FDs
+
+bool isFdStuck(int fd) {
+    stuckFdCounter[fd]++;
+
+    // If an FD has been in POLLIN/POLLOUT state too many times, it's likely stuck
+    if (stuckFdCounter[fd] > 5) {  // Adjust threshold as needed
+        stuckFdCounter.erase(fd);  // Remove it from tracking
+        return true;  // FD is stuck
+    }
+    return false;
+}

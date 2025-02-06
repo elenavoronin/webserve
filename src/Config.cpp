@@ -10,6 +10,9 @@ bool Config::validateConfig(std::vector<Server> &servers) {
         return true;
     for (std::vector<Server>::iterator it1 = servers.begin(); it1 != servers.end(); ++it1) {
         for (std::vector<Server>::iterator it2 = it1 + 1; it2 != servers.end();) {
+            if (it1->getServerName() == it2->getServerName() && it1->getPortStr() == it2->getPortStr()) {
+                return false;
+            }
             if (it1->getPortStr() == it2->getPortStr()) {
                 Server server2 = *it2;
                 server2.setOnOff(false);   //we turn off this server
@@ -336,6 +339,15 @@ void Config::pollLoop() {
 					break ;
 				}
 			}
+            // If an FD is active but not being handled correctly, close it
+            if ((pfds[i].revents & POLLIN || pfds[i].revents & POLLOUT) && isFdStuck(pfds[i].fd)) {
+                std::cerr << "[WARNING] FD: " << pfds[i].fd << " is stuck, closing it." << std::endl;
+                close(pfds[i].fd);
+                _eventPoll.ToremovePollEventFd(pfds[i].fd, pfds[i].events);
+                continue; // Skip further processing of this FD
+            }
+
+
             if (pfds[i].revents & POLLIN || pfds[i].revents & POLLOUT || pfds[i].revents & POLLHUP || pfds[i].revents & POLLRDHUP) {
                 int fd = pfds[i].fd;
                 Server* defaultServer = nullptr;
