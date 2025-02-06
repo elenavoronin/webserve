@@ -35,30 +35,42 @@ int Server::getListenerSocket(){
 	hints.ai_family = AF_UNSPEC; // allows either IPv4 or IPv6.
 	hints.ai_socktype = SOCK_STREAM; // tells the system to use TCP
 	hints.ai_flags = AI_PASSIVE; //makes the program automatically fill in the IP 
-	if ((status = getaddrinfo(NULL, getPortStr().c_str(), &hints, &servinfo)) != 0){
-		throw std::runtime_error("Error get Address information");
-		return 1;
-	}
+    
+    std::string bindAddress = (getServerName() == "localhost") ? "127.0.0.1" : "0.0.0.0";
+
+    std::cout << "Binding to: " << getServerName() << " on port " << getPortStr() << std::endl;
+    if ((status = getaddrinfo(bindAddress.c_str(), getPortStr().c_str(), &hints, &servinfo)) != 0) {
+        throw std::runtime_error("Error get Address information");
+        return 1;
+    }
 	for (newConnect = servinfo; newConnect != NULL; newConnect= newConnect->ai_next){
-		if ((serverSocket = socket(servinfo->ai_family, servinfo->ai_socktype, servinfo->ai_protocol)) == -1){ //creates a socket
-			// //std::cout << "Create server socket " << serverSocket << std::endl;
-			continue;
+		if ((serverSocket = socket(newConnect->ai_family, newConnect->ai_socktype, newConnect->ai_protocol)) == -1){ //creates a socket
+            std::cerr << "Socket creation failed: " << strerror(errno) << std::endl;
+            continue;
 		}
-		setsockopt(serverSocket, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)); //allows the program to reuse the address
-		if (bind(serverSocket, newConnect->ai_addr, newConnect->ai_addrlen) == -1){ //associates the socket with an address (IP and port).
+        setsockopt(serverSocket, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt)); //allows the program to reuse the address
+
+        if (bind(serverSocket, newConnect->ai_addr, newConnect->ai_addrlen) == -1){ //associates the socket with an address (IP and port).
 			throw std::runtime_error("Bind Error");
-			close(serverSocket);
+            close(serverSocket);
 			continue;
 		}
 		break;
 	}
+
 	freeaddrinfo(servinfo);
-	if (newConnect == NULL) //If no address was successfully bound, the program exits with an error.
-		exit(1);
-	if (listen(serverSocket, BACKLOG) == -1) //tells the socket to listen for incoming connections
-		return -1;
+
+    //If no address was successfully bound, the program exits with an error.
+	if (newConnect == NULL) {
+		throw std::runtime_error("Failed to bind to address");
+        return -1;
+    }
+	if (listen(serverSocket, BACKLOG) == -1) {
+        close(serverSocket);
+        return -1;
+    }
 	// //std::cout << "serverSocket " << serverSocket << std::endl;
-	return serverSocket;
+    return serverSocket;
 }
 
 /**
@@ -74,6 +86,7 @@ int Server::getListenerSocket(){
 int Server::reportReady(EventPoll &eventPoll){
 	int listener = getListenerSocket(); // Set up and get a listening socket
     if (listener == -1){
+        std::cerr << "error on port: " << getPortStr() << std::endl;
 		throw std::runtime_error("Error get listener socket");
 	}
     // Add the listener to EventPoll
@@ -274,9 +287,9 @@ int Server::processClientRequest(Client &client, const std::string& request, Htt
 		sendFileResponse(client.getSocket(), "www/html/500.html", status);  //change to a config ones?
 		return status;
 	}
+    //TODO handle the server that is being requested
     // if (redirect) // TODO handle redirect before handling any other methods
     std::cout << "Method: " << method << std::endl;
-	//std::cout << "**********Body***********: " << request << "\n ****************" << std::endl;
 	if (method == "GET" && std::find(this->_allowedMethods.begin(), this->_allowedMethods.end(), "GET") != this->_allowedMethods.end())
 		return handleGetRequest(client, HttpRequest); //?? what locations should be passed
 	if (method == "POST" && std::find(this->_allowedMethods.begin(), this->_allowedMethods.end(), "POST") != this->_allowedMethods.end())
@@ -307,7 +320,7 @@ int Server::handleGetRequest(Client &client, HttpRequest* request) {
     HttpResponse response;
     std::string filepath = this->getRoot() + request->getPath();
     request->setFullPath(filepath);
-	std::cout << "FILEPATH: " << filepath << std::endl;
+	// std::cout << "FILEPATH: " << filepath << std::endl;
 
     if (request->getPath() == "/") {
         filepath = this->getRoot() + '/' + this->getIndex();

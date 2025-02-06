@@ -10,11 +10,14 @@ bool Config::validateConfig(std::vector<Server> &servers) {
         return true;
     for (std::vector<Server>::iterator it1 = servers.begin(); it1 != servers.end(); ++it1) {
         for (std::vector<Server>::iterator it2 = it1 + 1; it2 != servers.end();) {
-            if (it1->getPortStr() == it2->getPortStr()) {
-                it2 = servers.erase(it2); // Remove duplicate and update iterator
-            } else {
-                ++it2; // Only increment if no deletion happened
+            if (it1->getServerName() == it2->getServerName() && it1->getPortStr() == it2->getPortStr()) {
+                return false;
             }
+            if (it1->getPortStr() == it2->getPortStr()) {
+                Server server2 = *it2;
+                server2.setOnOff(false);   //we turn off this server
+            }
+            ++it2;
         }
     }
     return true;
@@ -61,6 +64,7 @@ bool Config::validateParsedData(Server &server) {
         return false;
     if (server.getRedirect().first != 0 && server.getRedirect().first != 301 && server.getRedirect().first != 302)
         return false;
+    server.setOnOff(true);
     return true;
 }
 
@@ -335,20 +339,36 @@ void Config::pollLoop() {
 					break ;
 				}
 			}
+            // If an FD is active but not being handled correctly, close it
+            if ((pfds[i].revents & POLLIN || pfds[i].revents & POLLOUT) && isFdStuck(pfds[i].fd)) {
+                std::cerr << "[WARNING] FD: " << pfds[i].fd << " is stuck, closing it." << std::endl;
+                close(pfds[i].fd);
+                _eventPoll.ToremovePollEventFd(pfds[i].fd, pfds[i].events);
+                continue; // Skip further processing of this FD
+            }
+
+
             if (pfds[i].revents & POLLIN || pfds[i].revents & POLLOUT || pfds[i].revents & POLLHUP || pfds[i].revents & POLLRDHUP) {
                 int fd = pfds[i].fd;
+                Server* defaultServer = nullptr;
+                Server* activeServer = nullptr;
 
                 for (Server &currentServer : _servers) {
-                    std::cout << "IM HERE" << std::endl;
-                    Server &defaultServer = currentServer;
-                    // std::cout << "My server is: " << currentServer.getPortStr() << std::endl;
+                    if (!defaultServer)
+                        defaultServer = &currentServer;
+                    if (fd == currentServer.getListenerFd()) {
+                        if (currentServer.getOnOff() == true)
+                            activeServer = &currentServer;
+                    }
+                    Server* selectedServer = activeServer ? activeServer : defaultServer;
                     if (fd == currentServer.getListenerFd()) {
                         // Handle new connection
-                        currentServer.handleNewConnection(_eventPoll);
+                        selectedServer->handleNewConnection(_eventPoll);
                     } else {
                         // Handle events for existing connections
-                        currentServer.handlePollEvent(_eventPoll, i, defaultServer);
+                        selectedServer->handlePollEvent(_eventPoll, i, *defaultServer);
                     }
+    
                 }
             }
         }
@@ -380,8 +400,11 @@ int Config::checkConfig(const std::string &config_file) {
     }
     try {
         _servers = parseConfig(file);
-        if (!validateConfig(_servers))
+        if (!validateConfig(_servers)) {
             throw std::runtime_error("Error in config file: Invalid servers.");
+            return -1;
+        }
+        // printConfigParse(_servers);
         addPollFds();
     } catch (const std::exception &e) {
         std::cerr << "Configuration error: " << e.what() << std::endl;
