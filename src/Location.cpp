@@ -58,6 +58,10 @@ void Location::setRedirect(const std::string& statusCode, const std::string& red
     _redirect.second = redirectPath;
 }
 
+void Location::setUploadPath(const std::string& uploadPath) {
+    _uploadPath = uploadPath;
+}
+
 void Location::clearLocation() {
     _root.clear();                 // Clear the root path
     _index.clear();                // Clear the index
@@ -69,4 +73,5 @@ void Location::clearLocation() {
     _maxBodySize = 0;              // Reset max body size to default (0)
     _cgiExtension.clear();         // Clear the CGI extension
     _redirect = std::make_pair(0, ""); // Reset the redirect pair
+    _uploadPath.clear(); // Clear the upload path
 }
