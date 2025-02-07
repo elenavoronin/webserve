@@ -387,7 +387,6 @@ bool isFdOpen(int fd) {
 
 
 void Client::sendData(const std::string &response) {
-    std::cout << "Response sent: " << response.c_str() << std::endl;
     ssize_t bytesSent = send(_clientSocket, response.c_str(), response.size(), MSG_NOSIGNAL);
     
     if (bytesSent == -1) {

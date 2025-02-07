@@ -190,8 +190,9 @@ std::string generateDirectoryListing(const std::string &directoryPath, const std
     DIR *dir;
     struct dirent *entry;
     struct stat fileStat;
-
+    std::cout << "[DEBUG] Checking directory: " << directoryPath << std::endl;
     if ((dir = opendir(directoryPath.c_str())) == NULL) {
+        std::cerr << "[ERROR] Failed to open directory: " << directoryPath << std::endl;
         return "<html><body><h1>403 Forbidden</h1><p>Directory listing not allowed.</p></body></html>";
     }
 

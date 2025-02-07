@@ -326,24 +326,21 @@ int Server::handleGetRequest(Client &client, HttpRequest* request) {
     std::string filepath = this->getRoot() + request->getPath();
     
     // Check if it's a directory and autoindex is enabled{
-    struct stat fileStat;
-    if (stat(filepath.c_str(), &fileStat) == 0 && S_ISDIR(fileStat.st_mode)) {
+    if (getAutoindex() == "on") {  // Autoindex must be enabled
+        std::string htmlContent = generateDirectoryListing(filepath, request->getPath());
+        client.getHttpResponse()->setHeader("Content-Type", "text/html\r\n");
+        client.getHttpResponse()->setHeader("Content-Length:", std::to_string(htmlContent.size()) + "\r\n");
+        client.getHttpResponse()->setBody(htmlContent);
         
-        if (getAutoindex() == "on") {  // Autoindex must be enabled
-            std::string htmlContent = generateDirectoryListing(filepath, request->getPath());
-            std::cout << "htmlContent: " << htmlContent << std::endl;
-            client.getHttpResponse()->setHeader("Content-Type", "text/html\r\n");
-            client.getHttpResponse()->setHeader("Content-Length:", std::to_string(htmlContent.size()) + "\r\n");
-            client.getHttpResponse()->setBody(htmlContent);
-            client.getHttpResponse()->buildResponse();
-            client.addToEventPollQueue(client.getSocket(), POLLIN);
-            client.addToEventPollRemove(client.getSocket(), POLLOUT);
-            return 200;
-        }
-        else {
-            return sendErrorResponse(client, 403, "www/html/403.html");
+        std::cout << "[DEBUG] Sending Autoindex Page: " << htmlContent.size() << " bytes\n";
+        std::cout << "[DEBUG] Response Content:\n" << htmlContent << std::endl;
+        client.getHttpResponse()->buildResponse();
+
+        // client.addToEventPollRemove(client.getSocket(), POLLIN);
+		// client.addToEventPollQueue(client.getSocket(), POLLOUT);
+        return 200;
     }
-    }
+    
     request->setFullPath(filepath);
 
     if (request->getPath() == "/") {
