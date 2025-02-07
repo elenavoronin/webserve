@@ -238,8 +238,8 @@ void Server::checkLocations(std::string path, Server &defaultServer) {
 					this->setIndex(loc.getIndex());
 				if (!loc.getAllowedMethods().empty())
 					this->setAllowedMethods(loc.getAllowedMethods());
-				if (loc.getAutoindex())
-					this->setAutoindex(loc.getAutoindex());
+				if (loc.getAutoindex() == "on")
+					this->setAutoindex("on");
 				if (loc.getMaxBodySize() != 0)
 					this->setMaxBodySize(loc.getMaxBodySize());
 				if (!loc.getErrorPages().empty())
@@ -282,7 +282,6 @@ int Server::processClientRequest(Client &client, const std::string& request, Htt
     std::string version = HttpRequest->getVersion();
 
 	checkLocations(path, defaultServer);
-    std::cout << "Redirecting " << getRedirect().first << " to " << getRedirect().second << std::endl;
     if (getRedirect().first != 0)
     {
         return handleRedirect(client, *HttpRequest);
@@ -323,8 +322,28 @@ int Server::processClientRequest(Client &client, const std::string& request, Htt
  * @return The HTTP status code indicating the result of the request processing.
  */
 int Server::handleGetRequest(Client &client, HttpRequest* request) {
-    // HttpResponse response;
+    
     std::string filepath = this->getRoot() + request->getPath();
+    
+    // Check if it's a directory and autoindex is enabled{
+    struct stat fileStat;
+    if (stat(filepath.c_str(), &fileStat) == 0 && S_ISDIR(fileStat.st_mode)) {
+        
+        if (getAutoindex() == "on") {  // Autoindex must be enabled
+            std::string htmlContent = generateDirectoryListing(filepath, request->getPath());
+            std::cout << "htmlContent: " << htmlContent << std::endl;
+            client.getHttpResponse()->setHeader("Content-Type", "text/html\r\n");
+            client.getHttpResponse()->setHeader("Content-Length:", std::to_string(htmlContent.size()) + "\r\n");
+            client.getHttpResponse()->setBody(htmlContent);
+            client.getHttpResponse()->buildResponse();
+            client.addToEventPollQueue(client.getSocket(), POLLIN);
+            client.addToEventPollRemove(client.getSocket(), POLLOUT);
+            return 200;
+        }
+        else {
+            return sendErrorResponse(client, 403, "www/html/403.html");
+    }
+    }
     request->setFullPath(filepath);
 
     if (request->getPath() == "/") {
@@ -341,8 +360,6 @@ int Server::handleGetRequest(Client &client, HttpRequest* request) {
         return sendErrorResponse(client, 404, "www/html/404.html");
     }
     client.prepareFileResponse(readFileContent(filepath));
-    // response.buildResponse();
-
     return 200;
 }
 

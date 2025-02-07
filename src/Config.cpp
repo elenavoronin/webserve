@@ -27,7 +27,9 @@ bool Config::validateConfig(std::vector<Server> &servers) {
 bool Config::validateParsedLocation(Location& location) {
     if (location.getRedirect().first != 301 && location.getRedirect().first != 302 && location.getRedirect().first != 0)
         return false;
-    return true;
+    if (location.getAutoindex() != "on")
+        location.setAutoindex("off");
+   return true;
 }
 
 /**
@@ -64,6 +66,8 @@ bool Config::validateParsedData(Server &server) {
         return false;
     if (server.getRedirect().first != 0 && server.getRedirect().first != 301 && server.getRedirect().first != 302)
         return false;
+    if (server.getAutoindex() != "on")
+        server.setAutoindex("off");
     server.setOnOff(true);
     return true;
 }
@@ -110,12 +114,12 @@ std::vector<std::string> Config::tokenize(const std::string &line) {
     
     while (ss >> token) {
         tokens.push_back(token);
-        
         // If it's the start of a block (like 'server {'), treat it as a separate token
         if (token == "{" || token == "}") {
             break;
         }
     }
+    printTokens(tokens);
     return tokens;
 }
 
@@ -145,7 +149,8 @@ void Config::parseLocationTokens(const std::vector<std::string>& tokens, Locatio
         } else if (key == "index") {
             newLocation.setIndex(value);
         } else if (key == "autoindex") {
-            newLocation.setAutoindex(value == "on");
+            std::cerr << "value: " << value << std::endl;
+            newLocation.setAutoindex(value);
         } else if (key == "upload_path") {
             newLocation.setUploadPath(value);
         } else if (key == "cgi_pass") {
@@ -201,7 +206,7 @@ std::vector<Server> Config::parseConfig(std::ifstream &file) {
     try {
         while (std::getline(file, line)) {
             std::vector<std::string> tokens = tokenize(line);
-            
+
             if (tokens.empty()) continue;
 
             if (tokens[0] == "server" && tokens[1] == "{") {
@@ -251,6 +256,8 @@ std::vector<Server> Config::parseConfig(std::ifstream &file) {
                         currentServer.setIndex(value);
                     } else if (key == "upload_path") {
                         currentServer.setUploadStore(value); 
+                    } else if (key == "autoindex") {
+                        currentServer.setAutoindex(value); 
                     } else if (key == "return") {
                         if (!tokens[1].empty() && !tokens[2].empty())
                             currentServer.setRedirect(tokens[1], tokens[2]);
@@ -275,8 +282,6 @@ std::vector<Server> Config::parseConfig(std::ifstream &file) {
                 }
             if (insideLocationBlock) {
                 parseLocationTokens(tokens, newLocation);
-                // if (!isEmpty(newLocation))
-                //     locationComplete = true;
             }
         }
     }  catch (const std::exception &e) {
@@ -361,8 +366,6 @@ void Config::pollLoop() {
                     if (currentServer.getOnOff() == true)
                         activeServer = &currentServer;
                     Server* selectedServer = activeServer ? activeServer : defaultServer;
-                    std::cout << "the default server is : " << defaultServer->getServerName() << " " << defaultServer->getPortStr() << std::endl;
-                    std::cout << "the active server is : " << selectedServer->getServerName() << " " << selectedServer->getPortStr() << std::endl;
                     if (fd == currentServer.getListenerFd()) {
                         // Handle new connection
                         selectedServer->handleNewConnection(_eventPoll);
@@ -406,7 +409,7 @@ int Config::checkConfig(const std::string &config_file) {
             throw std::runtime_error("Error in config file: Invalid servers.");
             return -1;
         }
-        printConfigParse(_servers);
+        // printConfigParse(_servers);
         addPollFds();
     } catch (const std::exception &e) {
         std::cerr << "Configuration error: " << e.what() << std::endl;

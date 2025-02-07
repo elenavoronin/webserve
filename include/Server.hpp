@@ -40,7 +40,7 @@ class Server  {
 		std::string                 					_root;
 		std::string										_index;
         std::vector<std::string>    					_allowedMethods;
-		bool                        					_autoindex;
+		std::string                       				_autoindex;
 		size_t											_maxBodySize;
         std::string                 					_uploadStore;
 		std::vector<std::string>						_errorPage;
@@ -81,7 +81,7 @@ class Server  {
         void 											setPortString(const std::string &port) { _portString = port;}
         void 											setRoot(const std::string &root) { _root = root;}
         void 											setMaxBodySize(const size_t &maxBodySize) { _maxBodySize = maxBodySize;}
-        void 											setAutoindex(bool autoindex) { _autoindex = autoindex;}
+        void 											setAutoindex(std::string autoindex) { _autoindex = autoindex;}
         void 											setUploadStore(const std::string &upload_store) { _uploadStore = upload_store;}
         void 											setAllowedMethods(const std::vector<std::string> &AllowedMethods) { _allowedMethods = AllowedMethods;}
         void 											setIndex(const std::string &index) { _index = index;}
@@ -107,7 +107,7 @@ class Server  {
 		size_t		 									getMaxBodySize() const {return this->_maxBodySize;}
 		std::string 									getRoot() const {return this->_root;}
 		std::vector<std::string> 						getAllowedMethods() const {return this->_allowedMethods;}
-		bool 											getAutoindex() const {return this->_autoindex;}
+		std::string										getAutoindex() const {return this->_autoindex;}
 		std::string 									getUploadStore() const {return this->_uploadStore;}
 		std::vector<std::string> 						getErrorPage() const {return this->_errorPage;}
 		int												getListenerFd() const {return this->_listener_fd;}

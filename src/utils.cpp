@@ -123,7 +123,7 @@ void printInfoLocations(const Location &location) {
     std::cout << "    Root: " << location.getRoot() << std::endl;
     std::cout << "    Index: " << location.getIndex() << std::endl;
     std::cout << "    MaxBodySize: " << location.getMaxBodySize() << std::endl;
-    std::cout << "    Autoindex: " << (location.getAutoindex() ? "on" : "off") << std::endl;
+    std::cout << "    Autoindex: " << location.getAutoindex() << std::endl;
 
     // Store the result of getAllowedMethods() to avoid dangling references
     const std::vector<std::string>& allowedMethods = location.getAllowedMethods();
@@ -180,4 +180,40 @@ bool isFdStuck(int fd) {
         return true;  // FD is stuck
     }
     return false;
+}
+
+std::string generateDirectoryListing(const std::string &directoryPath, const std::string &requestPath) {
+    std::ostringstream html;
+    html << "<html><head><title>Directory Listing</title></head><body>";
+    html << "<h1>Index of " << requestPath << "</h1><ul>";
+
+    DIR *dir;
+    struct dirent *entry;
+    struct stat fileStat;
+
+    if ((dir = opendir(directoryPath.c_str())) == NULL) {
+        return "<html><body><h1>403 Forbidden</h1><p>Directory listing not allowed.</p></body></html>";
+    }
+
+    while ((entry = readdir(dir)) != NULL) {
+        std::string fileName = entry->d_name;
+        std::string fullPath = directoryPath + "/" + fileName;
+
+        // Skip "." and ".."
+        if (fileName == "." || fileName == "..") {
+            continue;
+        }
+
+        // Check if entry is a directory
+        if (stat(fullPath.c_str(), &fileStat) == 0 && S_ISDIR(fileStat.st_mode)) {
+            fileName += "/";  // Add trailing slash to indicate it's a directory
+        }
+
+        // Add file or directory to the HTML response
+        html << "<li><a href=\"" << requestPath << "/" << fileName << "\">" << fileName << "</a></li>";
+    }
+    closedir(dir);
+
+    html << "</ul></body></html>";
+    return html.str();
 }

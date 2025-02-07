@@ -6,6 +6,10 @@
 #include "../include/Location.hpp"
 #include "../include/Config.hpp"
 #include "../include/Client.hpp"
+#include <iostream>
+#include <vector>
+#include <dirent.h>
+#include <sys/stat.h>
 
 class Server;
 class Location;
@@ -26,3 +30,4 @@ void                    printTokens(const std::vector<std::string>& tokens);
 bool                    isEmpty(const Location& location);
 void                    printClientsVector(const std::vector<Client>& Clients);
 bool                    isFdStuck(int fd);
+std::string             generateDirectoryListing(const std::string &directoryPath, const std::string &requestPath);

@@ -18,7 +18,7 @@ class Location {
     std::string                           _return;
     std::vector<std::string>              _errorPages;
     std::vector<std::string>              _allowedMethods;
-    bool                                  _autoindex;
+    std::string                           _autoindex;
     std::string                           _cgiPass;
     std::string                           _cgiPath;
     size_t										            _maxBodySize;
@@ -33,7 +33,7 @@ public:
     ~Location();
     void                        setRoot(const std::string& root);
     void                        setAllowedMethods(const std::vector<std::string>& methods);
-    void                        setAutoindex(bool autoindex);
+    void                        setAutoindex(std::string autoindex);
     void                        setCgiPass(const std::string& cgiPass);
     void                        setCgiPath(const std::string& cgiPath);
     void                        setCgiExtension(const std::string& cgiExtension);
@@ -45,7 +45,7 @@ public:
     
     const                       std::string& getRoot() const { return _root; }
     const                       std::vector<std::string>& getAllowedMethods() const { return _allowedMethods; }
-    bool                        getAutoindex() const { return _autoindex; }
+    std::string                 getAutoindex() const { return _autoindex; }
     const                       std::string& getCgiPass() const { return _cgiPass; }
     const                       std::string& getCgiPath() const { return _cgiPath; }
     const                       std::string& getCgiExten() const { return _cgiExtension; }
