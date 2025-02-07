@@ -140,7 +140,7 @@ bool Config::isFileEmpty(const std::string& fileName) {
 void Config::parseLocationTokens(const std::vector<std::string>& tokens, Location& newLocation)
 
 {
-    if (tokens.size() >= 3) {
+    if (tokens.size() >= 2) {
         std::string key = tokens[0];
         std::string value = tokens[1];
 
@@ -149,7 +149,7 @@ void Config::parseLocationTokens(const std::vector<std::string>& tokens, Locatio
         } else if (key == "index") {
             newLocation.setIndex(value);
         } else if (key == "autoindex") {
-            std::cerr << "value: " << value << std::endl;
+            std::cout << "autoindex: " << value << std::endl;
             newLocation.setAutoindex(value);
         } else if (key == "upload_path") {
             newLocation.setUploadPath(value);
@@ -165,7 +165,8 @@ void Config::parseLocationTokens(const std::vector<std::string>& tokens, Locatio
             else
                 newLocation.setRedirect("0", "");
         } else if (key == "max_body_size") {
-            value = value.substr(0, value.size() - 1);
+            std::cout << "max body size: " << value << std::endl;
+            value = value.substr(0, value.size());
             size_t maxSize = std::stoul(value);
             newLocation.setMaxBodySize(maxSize);
         } else if (key == "methods") {
@@ -409,7 +410,7 @@ int Config::checkConfig(const std::string &config_file) {
             throw std::runtime_error("Error in config file: Invalid servers.");
             return -1;
         }
-        // printConfigParse(_servers);
+        printConfigParse(_servers);
         addPollFds();
     } catch (const std::exception &e) {
         std::cerr << "Configuration error: " << e.what() << std::endl;
