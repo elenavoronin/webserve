@@ -182,7 +182,7 @@ void Server::handlePollEvent(EventPoll &eventPoll, int i, Server& defaultServer)
                 client->writeToCgi();
             } else {
                 if (client->writeToSocket() > 0) {
-					//std::cout << "WritetoSocket error fd: " << event_fd << std::endl;
+					// std::cout << "WritetoSocket error fd: " << event_fd << std::endl;
 					client->closeConnection(eventPoll, currentPollFd.fd);
 					eraseClient(event_fd);
 				}
@@ -245,8 +245,11 @@ void Server::checkLocations(std::string path, Server &defaultServer) {
 				if (!loc.getErrorPages().empty())
 					this->setErrorPage(loc.getErrorPages());
                 if (loc.getRedirect().first != 0)
-                    this->setRedirect(std::to_string((defaultServer.getRedirect().first)), defaultServer.getRedirect().second);
-                this->setUploadStore(defaultServer.getUploadStore()); // Use the upload path from the Server config, not Location?
+                    this->setRedirect(std::to_string(loc.getRedirect().first), loc.getRedirect().second);
+                if (!loc.getUploadPath().empty())
+                    this->setUploadStore(loc.getUploadPath());
+                else
+                    this->setUploadStore(defaultServer.getUploadStore()); // Use the upload path from the Server config, not Location?
 				return;
 			}
 		}
@@ -279,8 +282,11 @@ int Server::processClientRequest(Client &client, const std::string& request, Htt
     std::string version = HttpRequest->getVersion();
 
 	checkLocations(path, defaultServer);
+    std::cout << "Redirecting " << getRedirect().first << " to " << getRedirect().second << std::endl;
     if (getRedirect().first != 0)
+    {
         return handleRedirect(client, *HttpRequest);
+    }
 	
     int status = validateRequest(method, version);
 	if (status != 200) {
@@ -291,7 +297,7 @@ int Server::processClientRequest(Client &client, const std::string& request, Htt
     // if (redirect) // TODO handle redirect before handling any other methods
     std::cout << "Method: " << method << std::endl;
 	if (method == "GET" && std::find(this->_allowedMethods.begin(), this->_allowedMethods.end(), "GET") != this->_allowedMethods.end())
-		return handleGetRequest(client, HttpRequest); //?? what locations should be passed
+		return handleGetRequest(client, HttpRequest);
 	if (method == "POST" && std::find(this->_allowedMethods.begin(), this->_allowedMethods.end(), "POST") != this->_allowedMethods.end())
 		return handlePostRequest(client, HttpRequest);
 	if (method == "DELETE" && std::find(this->_allowedMethods.begin(), this->_allowedMethods.end(), "DELETE") != this->_allowedMethods.end())
@@ -317,10 +323,9 @@ int Server::processClientRequest(Client &client, const std::string& request, Htt
  * @return The HTTP status code indicating the result of the request processing.
  */
 int Server::handleGetRequest(Client &client, HttpRequest* request) {
-    HttpResponse response;
+    // HttpResponse response;
     std::string filepath = this->getRoot() + request->getPath();
     request->setFullPath(filepath);
-	// std::cout << "FILEPATH: " << filepath << std::endl;
 
     if (request->getPath() == "/") {
         filepath = this->getRoot() + '/' + this->getIndex();
@@ -336,8 +341,7 @@ int Server::handleGetRequest(Client &client, HttpRequest* request) {
         return sendErrorResponse(client, 404, "www/html/404.html");
     }
     client.prepareFileResponse(readFileContent(filepath));
-    client.sendData(client.getHttpResponse()->getFullResponse());
-    response.buildResponse();
+    // response.buildResponse();
 
     return 200;
 }
@@ -490,7 +494,7 @@ int Server::handleDeleteRequest(Client &client, HttpRequest* request) {
         response.setHeader("Content-Type", "text/plain");
         response.setBody("Data deleted successfully.");
         response.buildResponse();
-        client.sendData(response.getFullResponse());
+        client.addToEventPollRemove(client.getSocket(), POLLIN);
         
         return 200;
     } catch (const std::exception& e) {
@@ -558,8 +562,9 @@ int Server::handlePostRequest(Client &client, HttpRequest* request) {
         response.setHeader("Content-Type", "text/plain");
         response.setBody("File uploaded successfully.");
         response.buildResponse();
+        client.addToEventPollRemove(client.getSocket(), POLLIN);
         
-        client.sendData(response.getFullResponse());
+        // client.sendData(response.getFullResponse());
         std::cout << "[DEBUG] Upload request processed successfully." << std::endl;
         return 201;
     } catch (const std::exception& e) {
@@ -740,22 +745,22 @@ void Server::saveUploadedFile(const std::string& filePath, const std::string& pa
  * @return The status code of the response
  */
 int Server::handleRedirect(Client& client, HttpRequest& request) {
-    HttpResponse response;
     std::cout << "Handling Redirection..." << std::endl;
     (void)request;
 
     try {
-        response.setStatus(getRedirect().first, getStatusMessage(getRedirect().first));
-        response.setHeader("Location", getRedirect().second);
-        response.setHeader("Content-Type", "text/html");
+        client.getHttpResponse()->setStatus(getRedirect().first, getStatusMessage(getRedirect().first));
+        client.getHttpResponse()->setHeader("Location", getRedirect().second);
+        client.getHttpResponse()->setHeader("Content-Type", "text/html");
         
         std::string body = "<html><body><h1>Redirecting...</h1>"
                            "<p>If you are not redirected automatically, "
                            "<a href=\"" + getRedirect().second + "\">click here</a>.</p></body></html>";
-        response.setBody(body);
-        response.buildResponse();
-
-        client.sendData(response.getFullResponse());
+        client.getHttpResponse()->setBody(body);
+        client.getHttpResponse()->buildResponse();
+        
+        client.addToEventPollRemove(client.getSocket(), POLLIN);
+		client.addToEventPollQueue(client.getSocket(), POLLOUT);
         std::cout << "Redirected to: " << getRedirect().second << " with status code: " << getRedirect().first << std::endl;
 
         return getRedirect().first;
@@ -807,7 +812,7 @@ int Server::sendErrorResponse(Client &client, int statusCode, const std::string 
     response.setHeader("Content-Type", "text/html");
     response.setBody(errorContent);
     response.buildResponse();
-    
+    client.addToEventPollRemove(client.getSocket(), POLLIN);
     client.sendData(response.getFullResponse());
     return statusCode;
 }
@@ -897,3 +902,5 @@ void Server::setRedirect(const std::string& statusCode, const std::string& redir
     _redirect.first = std::stoi(statusCode);
     _redirect.second = redirectPath;
 }
+
+

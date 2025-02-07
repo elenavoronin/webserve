@@ -146,6 +146,8 @@ void Config::parseLocationTokens(const std::vector<std::string>& tokens, Locatio
             newLocation.setIndex(value);
         } else if (key == "autoindex") {
             newLocation.setAutoindex(value == "on");
+        } else if (key == "upload_path") {
+            newLocation.setUploadPath(value);
         } else if (key == "cgi_pass") {
             newLocation.setCgiPass(value);
         }  else if (key == "cgi_extension") {
@@ -194,7 +196,7 @@ std::vector<Server> Config::parseConfig(std::ifstream &file) {
     std::vector<std::string> errorPages;
     bool insideServerBlock = false;
     bool insideLocationBlock = false;
-    bool locationComplete = false;
+    // bool locationComplete = false;
 
     try {
         while (std::getline(file, line)) {
@@ -211,9 +213,9 @@ std::vector<Server> Config::parseConfig(std::ifstream &file) {
                 insideLocationBlock = true;
                 continue;
             }
-            if (insideLocationBlock && tokens[0] == "}" && locationComplete) {
+            if (insideLocationBlock && tokens[0] == "}" ) {
                 insideLocationBlock = false;
-                locationComplete = false;
+                // locationComplete = false;
                 if (validateParsedLocation(newLocation))
                 {
                     currentServer.setLocation(pathName, newLocation);
@@ -273,8 +275,8 @@ std::vector<Server> Config::parseConfig(std::ifstream &file) {
                 }
             if (insideLocationBlock) {
                 parseLocationTokens(tokens, newLocation);
-                if (!isEmpty(newLocation))
-                    locationComplete = true;
+                // if (!isEmpty(newLocation))
+                //     locationComplete = true;
             }
         }
     }  catch (const std::exception &e) {
@@ -340,15 +342,15 @@ void Config::pollLoop() {
 				}
 			}
             // If an FD is active but not being handled correctly, close it
-            if ((pfds[i].revents & POLLIN || pfds[i].revents & POLLOUT) && isFdStuck(pfds[i].fd)) {
+
+            if ((pfds[i].revents & POLLHUP || pfds[i].revents & POLLRDHUP) && isFdStuck(pfds[i].fd)) {
                 std::cerr << "[WARNING] FD: " << pfds[i].fd << " is stuck, closing it." << std::endl;
                 close(pfds[i].fd);
                 _eventPoll.ToremovePollEventFd(pfds[i].fd, pfds[i].events);
                 continue; // Skip further processing of this FD
             }
 
-
-            if (pfds[i].revents & POLLIN || pfds[i].revents & POLLOUT || pfds[i].revents & POLLHUP || pfds[i].revents & POLLRDHUP) {
+            if (pfds[i].revents & POLLIN || pfds[i].revents & POLLOUT) {
                 int fd = pfds[i].fd;
                 Server* defaultServer = nullptr;
                 Server* activeServer = nullptr;
@@ -356,11 +358,11 @@ void Config::pollLoop() {
                 for (Server &currentServer : _servers) {
                     if (!defaultServer)
                         defaultServer = &currentServer;
-                    if (fd == currentServer.getListenerFd()) {
-                        if (currentServer.getOnOff() == true)
-                            activeServer = &currentServer;
-                    }
+                    if (currentServer.getOnOff() == true)
+                        activeServer = &currentServer;
                     Server* selectedServer = activeServer ? activeServer : defaultServer;
+                    std::cout << "the default server is : " << defaultServer->getServerName() << " " << defaultServer->getPortStr() << std::endl;
+                    std::cout << "the active server is : " << selectedServer->getServerName() << " " << selectedServer->getPortStr() << std::endl;
                     if (fd == currentServer.getListenerFd()) {
                         // Handle new connection
                         selectedServer->handleNewConnection(_eventPoll);
@@ -404,7 +406,7 @@ int Config::checkConfig(const std::string &config_file) {
             throw std::runtime_error("Error in config file: Invalid servers.");
             return -1;
         }
-        // printConfigParse(_servers);
+        printConfigParse(_servers);
         addPollFds();
     } catch (const std::exception &e) {
         std::cerr << "Configuration error: " << e.what() << std::endl;

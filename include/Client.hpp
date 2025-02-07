@@ -48,6 +48,8 @@ class Client {
 		void 				closeConnection(EventPoll& eventPoll, int currentPollFd);
 		void				prepareFileResponse(std::string errorContent);
 		void				sendData(const std::string &response);
+		void				addToEventPollRemove(int fd, int eventType);
+		void 				addToEventPollQueue(int fd, int eventType);
 		
 		//CGI calling methods
 		int 				getCgiRead();

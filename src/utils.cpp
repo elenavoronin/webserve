@@ -142,6 +142,7 @@ void printInfoLocations(const Location &location) {
 
     std::cout << "    CGI pass: " << location.getCgiPass() << std::endl;
     std::cout << "    CGI path: " << location.getCgiPath() << std::endl;
+    std::cout << "    Redirect to : "  << location.getRedirect().first << " " << location.getRedirect().second << std::endl;
     std::cout << std::endl;
     std::cout << "---------------------------" << std::endl;
 }
