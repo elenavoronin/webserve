@@ -89,7 +89,7 @@
 
     <div class="container">
         <h1>Upload Your Picture & Info</h1>
-        <form id="uploadForm" action="/upload" method="POST" enctype="multipart/form-data">
+        <form id="uploadForm" action="/cgi-bin/anna.py" method="POST" enctype="multipart/form-data">
             <div class="form-group">
                 <label for="name">Your Name</label>
                 <input type="text" id="name" name="name" placeholder="Enter your name" >
@@ -106,47 +106,30 @@
         </form>
     </div>
 
-    <div id="uploadedImages"></div> <!-- Div to show uploaded images -->
-
 	<script>
-		document.getElementById("submitButton").addEventListener("click", async function(event) {
-			event.preventDefault(); // Prevent default form submission
-	
-			let form = document.getElementById("uploadForm");
-			submitButton.disabled = true;  
-			let formData = new FormData(form);
-			try {
-				// Submit the form data via AJAX
-				let response = await fetch(form.action, {
-					method: 'POST',
-					body: formData,
-				});
-	
-				// Parse server response (assuming JSON)
-				let data = await response.json();
-	
-				// Fetch and display the uploaded image
-				let imageResponse = await fetch('/upload/');
-				let file = await imageResponse.json(); // Assuming the server returns just one filename
-	
-				let imagesDiv = document.getElementById("uploadedImages");
-				imagesDiv.innerHTML = ""; // Clear previous image if any
-	
-				let img = document.createElement("img");
-				img.src = "/upload/" + file;  // Directly using the single filename
-				img.alt = "Uploaded Image";
-				img.style.width = "200px";
-				img.style.margin = "10px";
-				imagesDiv.appendChild(img);
-	
-			} catch (error) {
-				console.error("Error:", error);
-			} finally {
-            submitButton.disabled = false; // Re-enable the submit button after the operation
+        // Function to get query parameters from the URL
+        function getQueryParams() {
+            const params = {};
+            const queryString = window.location.search;
+            const urlParams = new URLSearchParams(queryString);
+            urlParams.forEach((value, key) => {
+                params[key] = value;
+            });
+            return params;
         }
-		});
-	</script>
-	
+
+        // Get query parameters from URL
+        const queryParams = getQueryParams();
+
+        // Check if queryParams contains 'name' and 'image' parameters, then display them
+        if (queryParams.name && queryParams.image) {
+            document.getElementById('userName').textContent = queryParams.name;
+            document.getElementById('uploadedImage').src = `/uploads/${queryParams.image}`; // Adjust the path to match where your image is stored
+        } else {
+            document.getElementById('userName').textContent = 'No name provided';
+            document.getElementById('uploadedImage').style.display = 'none'; // Hide image if not provided
+        }
+    </script>
 
 </body>
 </html>

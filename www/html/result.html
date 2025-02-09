@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Purrrrrfection</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Poppins', sans-serif;
+            background-color: #1f1f1f;
+            color: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .container {
+            background-color: #2b2b2b;
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            max-width: 600px;
+            width: 100%;
+            text-align: center;
+        }
+
+        h1 {
+            color: #ff4f88; /* Pink heading */
+            font-size: 28px;
+            margin-bottom: 30px;
+            letter-spacing: 1px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        p {
+            font-size: 18px;
+            margin-bottom: 15px;
+        }
+
+        .result-heading {
+            font-size: 20px;
+            font-weight: 600;
+            color: #ff4f88;
+        }
+
+        img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 12px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
+            margin-top: 20px;
+            transition: transform 0.3s ease-in-out;
+        }
+
+        img:hover {
+            transform: scale(1.05); /* Zoom effect on hover */
+        }
+
+        .btn {
+            background-color: #ff4f88;
+            color: white;
+            padding: 14px 28px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 18px;
+            margin-top: 30px;
+            transition: background-color 0.3s;
+        }
+
+        .btn:hover {
+            background-color: #ff668f;
+        }
+
+        .btn:focus {
+            outline: none;
+        }
+    </style>
+</head>
+<body>
+	<div class="container">
+		<h1>Upload Result</h1>
+        <p class="result-heading"><strong>Name:</strong> <span id="userName"></span></p>
+        <p class="result-heading"><strong>Your proof:</strong></p>
+		<img id="uploadedImage" src="images/cat2.jpeg" alt="Uploaded Image">
+		
+        <a href="main.html" class="btn">Back to Upload</a>
+    </div>
+	
+    <script>
+		// HARDCODED src for image, change it!!!!!!!!!!!!!!!!!!!!!!!!!
+        // Function to get query parameters from the URL
+        function getQueryParams() {
+            const params = {};
+            const queryString = window.location.search;
+            const urlParams = new URLSearchParams(queryString);
+            urlParams.forEach((value, key) => {
+                params[key] = value;
+            });
+            return params;
+        }
+
+        // Get query parameters from URL
+        const queryParams = getQueryParams();
+
+        // Set the name and image on the page
+        document.getElementById('userName').textContent = queryParams.name || 'No name provided';
+        document.getElementById('uploadedImage').src = `/upload/${queryParams.image}`;
+    </script>
+</body>
+</html>

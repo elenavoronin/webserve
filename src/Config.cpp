@@ -45,7 +45,7 @@ bool Config::validateParsedData(Server &server) {
     if (server.getPortStr().empty())
         return false;
     if (server.getUploadStore().empty()) {
-        std::string path = "./www/upload/";
+        std::string path = "./www/html/upload/";
         struct stat info;
         server.setUploadStore(path);
         if (stat(path.c_str(), &info) != 0) {    
@@ -361,8 +361,8 @@ void Config::pollLoop() {
                     if (currentServer.getOnOff() == true)
                         activeServer = &currentServer;
                     Server* selectedServer = activeServer ? activeServer : defaultServer;
-                    std::cout << "the default server is : " << defaultServer->getServerName() << " " << defaultServer->getPortStr() << std::endl;
-                    std::cout << "the active server is : " << selectedServer->getServerName() << " " << selectedServer->getPortStr() << std::endl;
+                    // std::cout << "the default server is : " << defaultServer->getServerName() << " " << defaultServer->getPortStr() << std::endl;
+                    // std::cout << "the active server is : " << selectedServer->getServerName() << " " << selectedServer->getPortStr() << std::endl;
                     if (fd == currentServer.getListenerFd()) {
                         // Handle new connection
                         selectedServer->handleNewConnection(_eventPoll);

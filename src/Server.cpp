@@ -537,12 +537,12 @@ int Server::handlePostRequest(Client &client, HttpRequest* request) {
         }
 
         std::string uploadPath = getUploadStore(); // Ensure correct upload path
-        std::cout << "[DEBUG] Upload Path: " << uploadPath << std::endl;
+        // std::cout << "[DEBUG] Upload Path: " << uploadPath << std::endl;
         if (uploadPath.empty()) {
             throw std::runtime_error("Upload path not set in configuration");
         }
         ensureUploadDirectoryExists(uploadPath);
-        std::cout << "[DEBUG] Upload directory exists" << std::endl;
+        // std::cout << "[DEBUG] Upload directory exists" << std::endl;
         
 		processMultipartPart(request->getStrReceived(), uploadPath);
 
@@ -555,7 +555,15 @@ int Server::handlePostRequest(Client &client, HttpRequest* request) {
 
         for (const std::string& part : parts) {
 			//std::cout << "******* Part ********\n" << part << std::endl;
-            processMultipartPart(part, uploadPath);
+            if (!processMultipartPart(part, uploadPath))
+			{
+				response.setStatus(400, "Bad Request");
+				response.setHeader("Content-Type", "text/plain");
+				response.setBody("The request was malformed or missing required parameters.");
+				response.buildResponse();
+				client.addToEventPollRemove(client.getSocket(), POLLIN);
+				return 400;
+			}
         }
 
         response.setStatus(201, "Created");
@@ -689,22 +697,24 @@ std::string Server::extractFilename(const std::string& headers) {
  *              If the part contains no filename, the default filename is used.
  *              If the part is malformed, it is skipped.
  */
-void Server::processMultipartPart(const std::string& part, const std::string& uploadPath) {
+int Server::processMultipartPart(const std::string& part, const std::string& uploadPath) {
     // Find Content-Disposition header
     size_t headerEnd = part.find("\r\n\r\n");
-    if (headerEnd == std::string::npos) return; // Skip malformed parts
+    if (headerEnd == std::string::npos) return 0; // Skip malformed parts
 
     std::string headers = part.substr(0, headerEnd);  // Extract headers
 
     // Extract filename
     std::string filename = extractFilename(part);
     if (filename.empty()) {
-        filename = "uploaded_file"; // Default filename
+		return -1;
+        // filename = "uploaded_file"; // Default filename
     }
-	std::cout << "Filename " << filename << std::endl;
+	// std::cout << "Filename " << filename << std::endl;
     // Save file content
     std::string savePath = uploadPath + filename;
     saveUploadedFile(savePath, part, headerEnd + 4);
+	return 0;
 }
 
 /**

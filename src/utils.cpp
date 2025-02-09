@@ -44,7 +44,7 @@ for (std::vector<Server>::const_iterator serverIt = servers.begin(); serverIt !=
     printInfoServer(*serverIt);
     std::map<std::string, std::vector<Location>> locations = serverIt->getLocations();
     for (std::map<std::string, std::vector<Location>>::const_iterator locIt = locations.begin(); locIt != locations.end(); ++locIt) {
-        std::cout << "Location Path: " << locIt->first << std::endl;
+        //std::cout << "Location Path: " << locIt->first << std::endl;
         const std::vector<Location>& locationVector = locIt->second;
             for (std::vector<Location>::const_iterator vecIt = locationVector.begin(); vecIt != locationVector.end(); ++vecIt) {
                 printInfoLocations(*vecIt); // Print information about the location
