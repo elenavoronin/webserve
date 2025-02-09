@@ -24,6 +24,7 @@ class Location {
     size_t										            _maxBodySize;
     std::string                           _cgiExtension;
     std::pair<int, std::string>						_redirect;
+    std::string                           _uploadPath;
 
 public:
     Location();
@@ -40,6 +41,7 @@ public:
     void                        setRedirect(const std::string& statusCode, const std::string& redirectPath);
     void                        setMaxBodySize(const size_t& _maxBodySize);
     void                        setErrorPages(const std::vector<std::string>& errorPages);
+    void                        setUploadPath(const std::string& uploadPath);
     
     const                       std::string& getRoot() const { return _root; }
     const                       std::vector<std::string>& getAllowedMethods() const { return _allowedMethods; }
@@ -52,6 +54,7 @@ public:
     const                       std::string& getReturn() const { return _return; }
     const                       size_t& getMaxBodySize() const { return _maxBodySize; }
     const                       std::vector<std::string>& getErrorPages() const { return _errorPages; }
+    const                       std::string& getUploadPath() const { return _uploadPath; }
     void                        clearLocation();
 
 };

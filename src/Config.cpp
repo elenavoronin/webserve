@@ -5,6 +5,25 @@ Config::Config() {}
 Config::~Config() {}
 
 
+bool Config::validateConfig(std::vector<Server> &servers) {
+    if (servers.size() < 2)
+        return true;
+    for (std::vector<Server>::iterator it1 = servers.begin(); it1 != servers.end(); ++it1) {
+        for (std::vector<Server>::iterator it2 = it1 + 1; it2 != servers.end();) {
+            if (it1->getServerName() == it2->getServerName() && it1->getPortStr() == it2->getPortStr()) {
+                return false;
+            }
+            if (it1->getPortStr() == it2->getPortStr()) {
+                Server server2 = *it2;
+                server2.setOnOff(false);   //we turn off this server
+            }
+            ++it2;
+        }
+    }
+    return true;
+}
+
+
 bool Config::validateParsedLocation(Location& location) {
     if (location.getRedirect().first != 301 && location.getRedirect().first != 302 && location.getRedirect().first != 0)
         return false;
@@ -45,6 +64,7 @@ bool Config::validateParsedData(Server &server) {
         return false;
     if (server.getRedirect().first != 0 && server.getRedirect().first != 301 && server.getRedirect().first != 302)
         return false;
+    server.setOnOff(true);
     return true;
 }
 
@@ -126,6 +146,8 @@ void Config::parseLocationTokens(const std::vector<std::string>& tokens, Locatio
             newLocation.setIndex(value);
         } else if (key == "autoindex") {
             newLocation.setAutoindex(value == "on");
+        } else if (key == "upload_path") {
+            newLocation.setUploadPath(value);
         } else if (key == "cgi_pass") {
             newLocation.setCgiPass(value);
         }  else if (key == "cgi_extension") {
@@ -174,7 +196,7 @@ std::vector<Server> Config::parseConfig(std::ifstream &file) {
     std::vector<std::string> errorPages;
     bool insideServerBlock = false;
     bool insideLocationBlock = false;
-    bool locationComplete = false;
+    // bool locationComplete = false;
 
     try {
         while (std::getline(file, line)) {
@@ -191,9 +213,9 @@ std::vector<Server> Config::parseConfig(std::ifstream &file) {
                 insideLocationBlock = true;
                 continue;
             }
-            if (insideLocationBlock && tokens[0] == "}" && locationComplete) {
+            if (insideLocationBlock && tokens[0] == "}" ) {
                 insideLocationBlock = false;
-                locationComplete = false;
+                // locationComplete = false;
                 if (validateParsedLocation(newLocation))
                 {
                     currentServer.setLocation(pathName, newLocation);
@@ -253,8 +275,8 @@ std::vector<Server> Config::parseConfig(std::ifstream &file) {
                 }
             if (insideLocationBlock) {
                 parseLocationTokens(tokens, newLocation);
-                if (!isEmpty(newLocation))
-                    locationComplete = true;
+                // if (!isEmpty(newLocation))
+                //     locationComplete = true;
             }
         }
     }  catch (const std::exception &e) {
@@ -293,6 +315,7 @@ void Config::pollLoop() {
         // Update the event list from the add/remove queues
         _eventPoll.updateEventList();
 
+
         std::vector<pollfd> &pfds = _eventPoll.getPollEventFd();
         int pollResult = poll(pfds.data(), pfds.size(), -1);
         // std::cout << "size of pollfds" << pfds.size() << std::endl; 
@@ -318,19 +341,36 @@ void Config::pollLoop() {
 					break ;
 				}
 			}
-            if (pfds[i].revents & POLLIN || pfds[i].revents & POLLOUT || pfds[i].revents & POLLHUP || pfds[i].revents & POLLRDHUP) {
+            // If an FD is active but not being handled correctly, close it
+
+            if ((pfds[i].revents & POLLHUP || pfds[i].revents & POLLRDHUP) && isFdStuck(pfds[i].fd)) {
+                std::cerr << "[WARNING] FD: " << pfds[i].fd << " is stuck, closing it." << std::endl;
+                close(pfds[i].fd);
+                _eventPoll.ToremovePollEventFd(pfds[i].fd, pfds[i].events);
+                continue; // Skip further processing of this FD
+            }
+
+            if (pfds[i].revents & POLLIN || pfds[i].revents & POLLOUT) {
                 int fd = pfds[i].fd;
+                Server* defaultServer = nullptr;
+                Server* activeServer = nullptr;
 
                 for (Server &currentServer : _servers) {
-                    Server &defaultServer = currentServer;
-                    // std::cout << "My server is: " << currentServer.getPortStr() << std::endl;
+                    if (!defaultServer)
+                        defaultServer = &currentServer;
+                    if (currentServer.getOnOff() == true)
+                        activeServer = &currentServer;
+                    Server* selectedServer = activeServer ? activeServer : defaultServer;
+                    std::cout << "the default server is : " << defaultServer->getServerName() << " " << defaultServer->getPortStr() << std::endl;
+                    std::cout << "the active server is : " << selectedServer->getServerName() << " " << selectedServer->getPortStr() << std::endl;
                     if (fd == currentServer.getListenerFd()) {
                         // Handle new connection
-                        currentServer.handleNewConnection(_eventPoll);
+                        selectedServer->handleNewConnection(_eventPoll);
                     } else {
                         // Handle events for existing connections
-                        currentServer.handlePollEvent(_eventPoll, i, defaultServer);
+                        selectedServer->handlePollEvent(_eventPoll, i, *defaultServer);
                     }
+    
                 }
             }
         }
@@ -362,7 +402,11 @@ int Config::checkConfig(const std::string &config_file) {
     }
     try {
         _servers = parseConfig(file);
-        //printConfigParse(_servers);
+        if (!validateConfig(_servers)) {
+            throw std::runtime_error("Error in config file: Invalid servers.");
+            return -1;
+        }
+        printConfigParse(_servers);
         addPollFds();
     } catch (const std::exception &e) {
         std::cerr << "Configuration error: " << e.what() << std::endl;

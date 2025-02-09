@@ -142,6 +142,7 @@ void printInfoLocations(const Location &location) {
 
     std::cout << "    CGI pass: " << location.getCgiPass() << std::endl;
     std::cout << "    CGI path: " << location.getCgiPath() << std::endl;
+    std::cout << "    Redirect to : "  << location.getRedirect().first << " " << location.getRedirect().second << std::endl;
     std::cout << std::endl;
     std::cout << "---------------------------" << std::endl;
 }
@@ -166,4 +167,17 @@ void printEventPoll(EventPoll& eventPoll) {
     }
     std::cout << std::endl;
 
+}
+
+std::map<int, int> stuckFdCounter;  // Track stuck FDs
+
+bool isFdStuck(int fd) {
+    stuckFdCounter[fd]++;
+
+    // If an FD has been in POLLIN/POLLOUT state too many times, it's likely stuck
+    if (stuckFdCounter[fd] > 5) {  // Adjust threshold as needed
+        stuckFdCounter.erase(fd);  // Remove it from tracking
+        return true;  // FD is stuck
+    }
+    return false;
 }
