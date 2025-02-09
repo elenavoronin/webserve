@@ -114,7 +114,7 @@ void HttpResponse::buildResponse() {
 	// Build the headers
 	std::ostringstream headersStream;
 	// Ensure `Connection: close` is added to prevent hanging requests
-    _headers["Connection"] = "close";
+    // _headers["Connection"] = "close";
 	for (const auto& header : _headers) {
 		// The header name and value are separated by a colon and a space
 		headersStream << header.first << ": " << header.second << "\r\n";

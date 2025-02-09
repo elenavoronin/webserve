@@ -238,8 +238,8 @@ void Server::checkLocations(std::string path, Server &defaultServer) {
 					this->setIndex(loc.getIndex());
 				if (!loc.getAllowedMethods().empty())
 					this->setAllowedMethods(loc.getAllowedMethods());
-				if (loc.getAutoindex() == "on")
-					this->setAutoindex("on");
+				if (!loc.getAutoindex().empty())
+					this->setAutoindex(loc.getAutoindex());
 				if (loc.getMaxBodySize() != 0)
 					this->setMaxBodySize(loc.getMaxBodySize());
 				if (!loc.getErrorPages().empty())
@@ -255,6 +255,30 @@ void Server::checkLocations(std::string path, Server &defaultServer) {
 		}
 	}
 }
+
+/**
+ * @brief Resets the server's configuration to match the default server.
+ *
+ * This function sets the server's configuration attributes such as root, index, 
+ * port string, allowed methods, autoindex, max body size, upload store, error 
+ * pages, and redirect settings to those of the provided default server.
+ *
+ * @param defaultServer The Server object whose configuration will be used as the default.
+ */
+
+void Server::resetLocations(Server &defaultServer) {
+    this->setRoot(defaultServer.getRoot());
+    this->setIndex(defaultServer.getIndex());
+    this->setPortString(defaultServer.getPortStr());
+    this->setAllowedMethods(defaultServer.getAllowedMethods());
+    this->setAutoindex(defaultServer.getAutoindex());
+    this->setMaxBodySize(defaultServer.getMaxBodySize());
+    this->setUploadStore(defaultServer.getUploadStore());
+    this->setErrorPage(defaultServer.getErrorPage());
+    this->setRedirect(std::to_string((defaultServer.getRedirect().first)), defaultServer.getRedirect().second);
+    return;
+}
+
 
 /**
  * @brief Process an HTTP request received from a client.
@@ -281,7 +305,10 @@ int Server::processClientRequest(Client &client, const std::string& request, Htt
     std::string path = HttpRequest->getPath();
     std::string version = HttpRequest->getVersion();
 
+
+    printInfoServer(defaultServer);
 	checkLocations(path, defaultServer);
+    std::cout << "path: " << path << " autoindex: " << this->getAutoindex() << std::endl;
     if (getRedirect().first != 0)
     {
         return handleRedirect(client, *HttpRequest);
@@ -325,19 +352,16 @@ int Server::handleGetRequest(Client &client, HttpRequest* request) {
     
     std::string filepath = this->getRoot() + request->getPath();
     
+    // std::cout << "in GET autoindex: " << getAutoindex() << std::endl;
     // Check if it's a directory and autoindex is enabled{
     if (getAutoindex() == "on") {  // Autoindex must be enabled
         std::string htmlContent = generateDirectoryListing(filepath, request->getPath());
-        client.getHttpResponse()->setHeader("Content-Type", "text/html\r\n");
-        client.getHttpResponse()->setHeader("Content-Length:", std::to_string(htmlContent.size()) + "\r\n");
+        client.getHttpResponse()->setHeader("Content-Type", "text/html");
+        client.getHttpResponse()->setHeader("Content-Length", std::to_string(htmlContent.size()));
         client.getHttpResponse()->setBody(htmlContent);
-        
-        std::cout << "[DEBUG] Sending Autoindex Page: " << htmlContent.size() << " bytes\n";
-        std::cout << "[DEBUG] Response Content:\n" << htmlContent << std::endl;
         client.getHttpResponse()->buildResponse();
-
-        // client.addToEventPollRemove(client.getSocket(), POLLIN);
-		// client.addToEventPollQueue(client.getSocket(), POLLOUT);
+        client.addToEventPollRemove(client.getSocket(), POLLIN);
+		client.addToEventPollQueue(client.getSocket(), POLLOUT);
         return 200;
     }
     
@@ -577,6 +601,7 @@ int Server::handlePostRequest(Client &client, HttpRequest* request) {
         response.setBody("File uploaded successfully.");
         response.buildResponse();
         client.addToEventPollRemove(client.getSocket(), POLLIN);
+        client.addToEventPollQueue(client.getSocket(), POLLOUT);
         
         // client.sendData(response.getFullResponse());
         std::cout << "[DEBUG] Upload request processed successfully." << std::endl;
@@ -827,7 +852,8 @@ int Server::sendErrorResponse(Client &client, int statusCode, const std::string 
     response.setBody(errorContent);
     response.buildResponse();
     client.addToEventPollRemove(client.getSocket(), POLLIN);
-    client.sendData(response.getFullResponse());
+    client.addToEventPollQueue(client.getSocket(), POLLOUT);
+    // client.sendData(response.getFullResponse());
     return statusCode;
 }
 

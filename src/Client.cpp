@@ -287,6 +287,7 @@ int Client::writeToSocket() {
     }
 
     if (_responseIndex >= _HttpResponse->getFullResponse().size()) {
+        sendData(_HttpResponse->getFullResponse().substr(_responseIndex, bytesWritten));
         _eventPoll->ToremovePollEventFd(_clientSocket, POLLOUT);
         return 1;
     }

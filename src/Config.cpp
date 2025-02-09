@@ -347,14 +347,13 @@ void Config::pollLoop() {
 			}
             // If an FD is active but not being handled correctly, close it
 
-            if ((pfds[i].revents & POLLHUP || pfds[i].revents & POLLRDHUP) && isFdStuck(pfds[i].fd)) {
-                std::cerr << "[WARNING] FD: " << pfds[i].fd << " is stuck, closing it." << std::endl;
-                close(pfds[i].fd);
-                _eventPoll.ToremovePollEventFd(pfds[i].fd, pfds[i].events);
-                continue; // Skip further processing of this FD
-            }
+            // if ((pfds[i].revents & POLLHUP || pfds[i].revents & POLLRDHUP) && isFdStuck(pfds[i].fd)) {
+            //     close(pfds[i].fd);
+            //     _eventPoll.ToremovePollEventFd(pfds[i].fd, pfds[i].events);
+            //     continue; // Skip further processing of this FD
+            // }
 
-            if (pfds[i].revents & POLLIN || pfds[i].revents & POLLOUT) {
+            if (pfds[i].revents & POLLIN || pfds[i].revents & POLLOUT || pfds[i].revents & POLLHUP || pfds[i].revents & POLLRDHUP) {
                 int fd = pfds[i].fd;
                 Server* defaultServer = nullptr;
                 Server* activeServer = nullptr;

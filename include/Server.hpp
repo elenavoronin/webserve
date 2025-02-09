@@ -113,4 +113,5 @@ class Server  {
 		int												getListenerFd() const {return this->_listener_fd;}
 		std::pair<int, std::string>						getRedirect() const { return this->_redirect;}
 		bool											getOnOff() const {return this->_on;}
+		void											resetLocations(Server &defaultServer);
 };
