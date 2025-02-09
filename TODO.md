@@ -10,19 +10,15 @@ POll decides what we're doing not the server
 7. eval sheet misery (jan)
 8. do we need broadcast message?
 9. add charset 8 for Content type
-10. handleGet check extension (img. html ..) instead cgi-bin
-11. Directory listing (Lena)
-12. Cgi - infinite loops handling and error handling (Djoyke)
-13. Check errno (Anna)
-14. Check HTTP response status codes(Anna)
-15. Returning after CGI turns off the program
-16. Search for all read/recv/write/send on a socket and check that, if an error is returned, the client is removed.(Anna)
-17. Search for all read/recv/write/send and check if the returned value is correctly checked (checking only -1 or values is not enough, both should be checked).(Anna)
-18. Limit the client body (use: curl -X POST -H "Content-Type: plain/text" --data "BODY IS HERE write something shorter or longer than body limit").
-19. Upload some file to the server and get it back.
-20. siege -c 10 -t 10S http://localhost:8080 doesn't work
-21. implement max body size (lena)
-22. server that is off - make it respond to specific request
+10. Cgi - infinite loops handling and error handling (Djoyke)
+11. Check errno (Anna)
+12. Returning after CGI turns off the program
+13. Search for all read/recv/write/send on a socket and check that, if an error is returned, the client is removed.(Anna)
+14. Search for all read/recv/write/send and check if the returned value is correctly checked (checking only -1 or values is not enough, both should be checked).(Anna)
+15. Upload some file to the server and get it back.
+16. siege -c 10 -t 10S http://localhost:8080 doesn't work
+17. implement max body size (lena)
+18. server that is off - make it respond to specific request
 
 
 
