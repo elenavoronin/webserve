@@ -218,7 +218,7 @@ void Client::readFromCgi() {
  * If the HTTP request headers have not been fully received, continues to read from the socket.
  */
 
-void Client::readFromSocket(Server *server, Server &defaultServer) {
+void Client::readFromSocket(Server *server, defaultServer defaultServer) {
     if (!_HttpRequest) {
         throw std::runtime_error("_HttpRequest is null. Possible use-after-free.");
     }

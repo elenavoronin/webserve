@@ -95,6 +95,8 @@ void printInfoServer(const Server &server) {
     std::cout << "Root: " << server.getRoot() << std::endl;
     std::cout << "MaxBodySize: " << server.getMaxBodySize() << std::endl;
     std::cout << "Index: " << server.getIndex() << std::endl;
+    std::cout << "Autoindex: " << server.getAutoindex() << std::endl;
+
 
     // Store the result of getAllowedMethods() to avoid dangling references
     const std::vector<std::string>& allowedMethods = server.getAllowedMethods();

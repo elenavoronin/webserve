@@ -44,6 +44,7 @@ bool Config::validateParsedLocation(Location& location) {
  * @return true if the server configuration is valid, false otherwise.
  */
 bool Config::validateParsedData(Server &server) {
+
     if (server.getPortStr().empty())
         return false;
     if (server.getUploadStore().empty()) {
@@ -69,6 +70,20 @@ bool Config::validateParsedData(Server &server) {
     if (server.getAutoindex() != "on")
         server.setAutoindex("off");
     server.setOnOff(true);
+    
+    defaultServer _defaultS;
+    _defaultS._allowedMethods = server.getAllowedMethods();
+    _defaultS._autoindex = server.getAutoindex();
+    _defaultS._errorPage = server.getErrorPage();
+    _defaultS._index = server.getIndex();
+    _defaultS._maxBodySize = server.getMaxBodySize();
+    _defaultS._portString = server.getPortStr();
+    _defaultS._redirect = server.getRedirect();
+    _defaultS._root = server.getRoot();
+    _defaultS._serverName = server.getServerName();
+    _defaultS._uploadStore = server.getUploadStore();
+
+    server.setDefaultServer(_defaultS);
     return true;
 }
 
@@ -364,12 +379,14 @@ void Config::pollLoop() {
                     if (currentServer.getOnOff() == true)
                         activeServer = &currentServer;
                     Server* selectedServer = activeServer ? activeServer : defaultServer;
+
                     if (fd == currentServer.getListenerFd()) {
                         // Handle new connection
                         selectedServer->handleNewConnection(_eventPoll);
                     } else {
                         // Handle events for existing connections
-                        selectedServer->handlePollEvent(_eventPoll, i, *defaultServer);
+                        selectedServer->handlePollEvent(_eventPoll, i, selectedServer->getDefaultServer());
+                        
                     }
     
                 }

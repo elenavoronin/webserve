@@ -129,7 +129,7 @@ void HttpResponse::buildResponse() {
 	if (!_body.empty()) {
 		_fullResponse += _body;	
 	}
-	std::cout << _fullResponse << std::endl; // Debug output
+	// std::cout << _fullResponse << std::endl; // Debug output
 }
 
 /**

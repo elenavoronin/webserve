@@ -137,7 +137,7 @@ void Server::handleNewConnection(EventPoll &eventPoll){
  * @todo  divide into smaller functions doing one thing
  * @todo throw instead of error or cout
  */
-void Server::handlePollEvent(EventPoll &eventPoll, int i, Server& defaultServer) {
+void Server::handlePollEvent(EventPoll &eventPoll, int i, defaultServer defaultServer) {
     Client *client = nullptr;
     pollfd &currentPollFd = eventPoll.getPollEventFd()[i];
     int event_fd = currentPollFd.fd;
@@ -215,68 +215,50 @@ void Server::handlePollEvent(EventPoll &eventPoll, int i, Server& defaultServer)
  * @param path The path to check against the server's locations.
  * @todo figure out when to reset server information to default
  */
-void Server::checkLocations(std::string path, Server &defaultServer) {
-    if (path == this->getIndex()) {
-		this->setRoot(defaultServer.getRoot());
-		this->setIndex(defaultServer.getIndex());
-		this->setPortString(defaultServer.getPortStr());
-		this->setAllowedMethods(defaultServer.getAllowedMethods());
-		this->setAutoindex(defaultServer.getAutoindex());
-		this->setMaxBodySize(defaultServer.getMaxBodySize());
-		this->setUploadStore(defaultServer.getUploadStore());
-		this->setErrorPage(defaultServer.getErrorPage());
-        this->setRedirect(std::to_string((defaultServer.getRedirect().first)), defaultServer.getRedirect().second);
-		return;
-	}
-	for (const auto& location : this->getLocations()) {
-		if (path == location.first) {
-			if (!location.second.empty()) {
-				Location loc = location.second[0];
-				if (!loc.getRoot().empty())
-					this->setRoot(loc.getRoot());
-				if (!loc.getIndex().empty())
-					this->setIndex(loc.getIndex());
-				if (!loc.getAllowedMethods().empty())
-					this->setAllowedMethods(loc.getAllowedMethods());
-				if (!loc.getAutoindex().empty())
-					this->setAutoindex(loc.getAutoindex());
-				if (loc.getMaxBodySize() != 0)
-					this->setMaxBodySize(loc.getMaxBodySize());
-				if (!loc.getErrorPages().empty())
-					this->setErrorPage(loc.getErrorPages());
+void Server::checkLocations(std::string path, defaultServer defaultServer) {
+    std::cout << "INDEX: " << getIndex() << std::endl;
+    std::cout << "PATH " << path << std::endl;
+    for (const auto& location : this->getLocations()) {
+        if (path == location.first) {
+            if (!location.second.empty()) {
+                Location loc = location.second[0];
+                if (!loc.getRoot().empty())
+                    this->setRoot(loc.getRoot());
+                if (!loc.getIndex().empty())
+                    this->setIndex(loc.getIndex());
+                if (!loc.getAllowedMethods().empty())
+                    this->setAllowedMethods(loc.getAllowedMethods());
+                if (loc.getAutoindex() == "on")
+                    this->setAutoindex("on");
+                else
+                    this->setAutoindex("off");
+                if (loc.getMaxBodySize() != 0)
+                    this->setMaxBodySize(loc.getMaxBodySize());
+                if (!loc.getErrorPages().empty())
+                    this->setErrorPage(loc.getErrorPages());
                 if (loc.getRedirect().first != 0)
                     this->setRedirect(std::to_string(loc.getRedirect().first), loc.getRedirect().second);
                 if (!loc.getUploadPath().empty())
                     this->setUploadStore(loc.getUploadPath());
                 else
-                    this->setUploadStore(defaultServer.getUploadStore()); // Use the upload path from the Server config, not Location?
-				return;
-			}
-		}
-	}
-}
+                    this->setUploadStore(defaultServer._uploadStore); // Use the upload path from the Server config, not Location?
+                return;
+            }
+        }
+    }
 
-/**
- * @brief Resets the server's configuration to match the default server.
- *
- * This function sets the server's configuration attributes such as root, index, 
- * port string, allowed methods, autoindex, max body size, upload store, error 
- * pages, and redirect settings to those of the provided default server.
- *
- * @param defaultServer The Server object whose configuration will be used as the default.
- */
-
-void Server::resetLocations(Server &defaultServer) {
-    this->setRoot(defaultServer.getRoot());
-    this->setIndex(defaultServer.getIndex());
-    this->setPortString(defaultServer.getPortStr());
-    this->setAllowedMethods(defaultServer.getAllowedMethods());
-    this->setAutoindex(defaultServer.getAutoindex());
-    this->setMaxBodySize(defaultServer.getMaxBodySize());
-    this->setUploadStore(defaultServer.getUploadStore());
-    this->setErrorPage(defaultServer.getErrorPage());
-    this->setRedirect(std::to_string((defaultServer.getRedirect().first)), defaultServer.getRedirect().second);
+    this->setRoot(defaultServer._root);
+    this->setIndex(defaultServer._index);
+    this->setPortString(defaultServer._portString);
+    this->setAllowedMethods(defaultServer._allowedMethods);
+    this->setAutoindex(defaultServer._autoindex);
+    std::cout << "autoindex in DS: " << defaultServer._autoindex << std::endl;
+    this->setMaxBodySize(defaultServer._maxBodySize);
+    this->setUploadStore(defaultServer._uploadStore);
+    this->setErrorPage(defaultServer._errorPage);
+    this->setRedirect(std::to_string((defaultServer._redirect.first)), defaultServer._redirect.second);
     return;
+    
 }
 
 
@@ -298,17 +280,15 @@ void Server::resetLocations(Server &defaultServer) {
  * @param HttpRequest The HttpRequest object associated with the client.
  * @return The HTTP status code indicating the result of the request processing.
  */
-int Server::processClientRequest(Client &client, const std::string& request, HttpRequest* HttpRequest, Server &defaultServer) {
+int Server::processClientRequest(Client &client, const std::string& request, HttpRequest* HttpRequest, defaultServer defaultServer) {
 	HttpRequest->readRequest(request);
 
 	std::string method = HttpRequest->getMethod();
     std::string path = HttpRequest->getPath();
     std::string version = HttpRequest->getVersion();
 
-
-    printInfoServer(defaultServer);
 	checkLocations(path, defaultServer);
-    std::cout << "path: " << path << " autoindex: " << this->getAutoindex() << std::endl;
+    // std::cout << "path: " << path << " autoindex: " << this->getAutoindex() << std::endl;
     if (getRedirect().first != 0)
     {
         return handleRedirect(client, *HttpRequest);
@@ -352,7 +332,7 @@ int Server::handleGetRequest(Client &client, HttpRequest* request) {
     
     std::string filepath = this->getRoot() + request->getPath();
     
-    // std::cout << "in GET autoindex: " << getAutoindex() << std::endl;
+    std::cout << "in GET autoindex: " << getAutoindex() << std::endl;
     // Check if it's a directory and autoindex is enabled{
     if (getAutoindex() == "on") {  // Autoindex must be enabled
         std::string htmlContent = generateDirectoryListing(filepath, request->getPath());
@@ -575,20 +555,20 @@ int Server::handlePostRequest(Client &client, HttpRequest* request) {
         }
 
         std::string uploadPath = getUploadStore(); // Ensure correct upload path
-        std::cout << "[DEBUG] Upload Path: " << uploadPath << std::endl;
+        // std::cout << "[DEBUG] Upload Path: " << uploadPath << std::endl;
         if (uploadPath.empty()) {
             throw std::runtime_error("Upload path not set in configuration");
         }
         ensureUploadDirectoryExists(uploadPath);
-        std::cout << "[DEBUG] Upload directory exists" << std::endl;
+        // std::cout << "[DEBUG] Upload directory exists" << std::endl;
         
 		processMultipartPart(request->getStrReceived(), uploadPath);
 
         std::string boundary = extractBoundary(request->getHeader("Content-Type"));
 
-        std::cout << "[DEBUG] Extracted boundary: " << boundary << std::endl;
+        // std::cout << "[DEBUG] Extracted boundary: " << boundary << std::endl;
         std::vector<std::string> parts = splitMultipartBody(request->getBody(), boundary);
-         std::cout << "[DEBUG] Total parts detected: " << parts.size() << std::endl;
+        //  std::cout << "[DEBUG] Total parts detected: " << parts.size() << std::endl;
         
 
         for (const std::string& part : parts) {
@@ -604,7 +584,7 @@ int Server::handlePostRequest(Client &client, HttpRequest* request) {
         client.addToEventPollQueue(client.getSocket(), POLLOUT);
         
         // client.sendData(response.getFullResponse());
-        std::cout << "[DEBUG] Upload request processed successfully." << std::endl;
+        // std::cout << "[DEBUG] Upload request processed successfully." << std::endl;
         return 201;
     } catch (const std::exception& e) {
         return handleServerError(client, e, "Error handling POST request");

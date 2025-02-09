@@ -347,6 +347,8 @@ void HttpRequest::parseHeaders(const std::string& rawRequest) {
             std::string key = line.substr(0, delimiter);
             std::string value = line.substr(delimiter + 1);
             _headers[key] = value;
+			if (key == "Referer value:")
+				setPath(value);
         }
     }
 	setHeader(rawRequest.substr(0, headerEnd));
