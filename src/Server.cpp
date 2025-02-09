@@ -332,26 +332,23 @@ int Server::handleGetRequest(Client &client, HttpRequest* request) {
     
     std::string filepath = this->getRoot() + request->getPath();
     
-    std::cout << "in GET autoindex: " << getAutoindex() << std::endl;
+    // std::cout << "in GET autoindex: " << getAutoindex() << std::endl;
+    if (opendir(filepath.c_str())) {
     // Check if it's a directory and autoindex is enabled{
-    if (getAutoindex() == "on") {  // Autoindex must be enabled
-        std::string htmlContent = generateDirectoryListing(filepath, request->getPath());
-        client.getHttpResponse()->setHeader("Content-Type", "text/html");
-        client.getHttpResponse()->setHeader("Content-Length", std::to_string(htmlContent.size()));
-        client.getHttpResponse()->setBody(htmlContent);
-        client.getHttpResponse()->buildResponse();
-        client.addToEventPollRemove(client.getSocket(), POLLIN);
-		client.addToEventPollQueue(client.getSocket(), POLLOUT);
-        return 200;
+        if (getAutoindex() == "on") {  // Autoindex must be enabled
+            std::string htmlContent = generateDirectoryListing(filepath, request->getPath());
+            client.getHttpResponse()->setHeader("Content-Type", "text/html");
+            client.getHttpResponse()->setHeader("Content-Length", std::to_string(htmlContent.size()));
+            client.getHttpResponse()->setBody(htmlContent);
+            client.getHttpResponse()->buildResponse();
+            client.addToEventPollRemove(client.getSocket(), POLLIN);
+            client.addToEventPollQueue(client.getSocket(), POLLOUT);
+            return 200;
+        }
+        else 
+            request->setFullPath(filepath + getIndex());
     }
-    
-    request->setFullPath(filepath);
 
-    if (request->getPath() == "/") {
-        filepath = this->getRoot() + '/' + this->getIndex();
-        request->setFullPath(filepath);
-    }
-    
     if (filepath.find("/cgi-bin") != std::string::npos) { 
         request->setFullPath(filepath);
         client.startCgi(request);
