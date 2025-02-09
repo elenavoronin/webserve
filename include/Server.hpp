@@ -85,7 +85,7 @@ class Server  {
 		int 											handleGetRequest(Client &client, HttpRequest* request);
 		int 											handlePostRequest(Client &client, HttpRequest* Http);
 		int 											handleDeleteRequest(Client &client, HttpRequest* request);
-		int												handleRedirect(Client& client, HttpRequest& request);
+		int												handleRedirect(Client& client);
 		void 											checkLocations(std::string path, defaultServer defaultServer);
 		void 											sendFileResponse(int clientSocket, const std::string& filepath, int statusCode);
 		std::string 									readFileContent(const std::string& filepath);

@@ -288,10 +288,10 @@ int Server::processClientRequest(Client &client, const std::string& request, Htt
     std::string version = HttpRequest->getVersion();
 
 	checkLocations(path, defaultServer);
-    // std::cout << "path: " << path << " autoindex: " << this->getAutoindex() << std::endl;
+    std::cout << "redirect " << getRedirect().first << " to " << getRedirect().second << std::endl;
     if (getRedirect().first != 0)
     {
-        return handleRedirect(client, *HttpRequest);
+        return handleRedirect(client);
     }
 	
     int status = validateRequest(method, version);
@@ -299,8 +299,6 @@ int Server::processClientRequest(Client &client, const std::string& request, Htt
 		sendFileResponse(client.getSocket(), "www/html/500.html", status);  //change to a config ones?
 		return status;
 	}
-    //TODO handle the server that is being requested
-    // if (redirect) // TODO handle redirect before handling any other methods
     std::cout << "Method: " << method << std::endl;
 	if (method == "GET" && std::find(this->_allowedMethods.begin(), this->_allowedMethods.end(), "GET") != this->_allowedMethods.end())
 		return handleGetRequest(client, HttpRequest);
@@ -760,9 +758,8 @@ void Server::saveUploadedFile(const std::string& filePath, const std::string& pa
  *
  * @return The status code of the response
  */
-int Server::handleRedirect(Client& client, HttpRequest& request) {
+int Server::handleRedirect(Client& client) {
     std::cout << "Handling Redirection..." << std::endl;
-    (void)request;
 
     try {
         client.getHttpResponse()->setStatus(getRedirect().first, getStatusMessage(getRedirect().first));

@@ -208,17 +208,18 @@ std::string generateDirectoryListing(const std::string &directoryPath, const std
 
         // std::cout << "[DEBUG] Found: " << fileName << std::endl;
 
-        // Check if entry is a directory
-        if (stat(fullPath.c_str(), &fileStat) == 0 && S_ISDIR(fileStat.st_mode)) {
-            fileName += "/";  // Add trailing slash to indicate it's a directory
-        }
 
         // Add file or directory to the HTML response
         html << "<li><a href=\"" << requestPath;
         if (requestPath.back() != '/') {
             html << "/";
         }
-        html << fileName << "\">" << fileName << "</a></li>";
+        html << fileName;
+        // Check if entry is a directory
+        if (stat(fullPath.c_str(), &fileStat) == 0 && S_ISDIR(fileStat.st_mode)) {
+            fileName += "/";  // Add trailing slash to indicate it's a directory
+        }
+        html << "\">" << fileName << "</a></li>";
     }
     closedir(dir);
 
