@@ -16,9 +16,8 @@ POll decides what we're doing not the server
 13. Search for all read/recv/write/send on a socket and check that, if an error is returned, the client is removed.(Anna)
 14. Search for all read/recv/write/send and check if the returned value is correctly checked (checking only -1 or values is not enough, both should be checked).(Anna)
 15. Upload some file to the server and get it back.
-16. siege -c 10 -t 10S http://localhost:8080 doesn't work
-17. implement max body size (lena)
-18. server that is off - make it respond to specific request
+16. implement max body size (lena)
+17. server that is off - make it respond to specific request
 
 
 

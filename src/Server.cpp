@@ -216,8 +216,8 @@ void Server::handlePollEvent(EventPoll &eventPoll, int i, defaultServer defaultS
  * @todo figure out when to reset server information to default
  */
 void Server::checkLocations(std::string path, defaultServer defaultServer) {
-    std::cout << "INDEX: " << getIndex() << std::endl;
-    std::cout << "PATH " << path << std::endl;
+    std::cout << "Server Name " << getServerName() << std::endl;
+
     for (const auto& location : this->getLocations()) {
         if (path == location.first) {
             if (!location.second.empty()) {
@@ -540,50 +540,44 @@ int Server::handleDeleteRequest(Client &client, HttpRequest* request) {
  */
 
 int Server::handlePostRequest(Client &client, HttpRequest* request) {
-    HttpResponse response;
-    try {
-        // std::cout << "[DEBUG] Raw Request Body: \n\n" << request->getBody() << "\n\n" << std::endl; //why empty? Cause apparently it doesn't have, all info is in header
-        if (request->getPath().find("/cgi-bin") != std::string::npos) {
-            request->setFullPath(request->getPath());
-            client.startCgi(request);
-            return 0;
-        }
 
-        std::string uploadPath = getUploadStore(); // Ensure correct upload path
-        // std::cout << "[DEBUG] Upload Path: " << uploadPath << std::endl;
-        if (uploadPath.empty()) {
-            throw std::runtime_error("Upload path not set in configuration");
-        }
-        ensureUploadDirectoryExists(uploadPath);
-        // std::cout << "[DEBUG] Upload directory exists" << std::endl;
-        
-		processMultipartPart(request->getStrReceived(), uploadPath);
+    size_t requestSize = request->getBody().size();
+    std::cout << "[DEBUG] Request size: " << requestSize << std::endl;
+    std::cout << "[DEBUG] Max body size: " << getMaxBodySize() << std::endl;
 
-        std::string boundary = extractBoundary(request->getHeader("Content-Type"));
-
-        // std::cout << "[DEBUG] Extracted boundary: " << boundary << std::endl;
-        std::vector<std::string> parts = splitMultipartBody(request->getBody(), boundary);
-        //  std::cout << "[DEBUG] Total parts detected: " << parts.size() << std::endl;
-        
-
-        for (const std::string& part : parts) {
-			//std::cout << "******* Part ********\n" << part << std::endl;
-            processMultipartPart(part, uploadPath);
-        }
-
-        response.setStatus(201, "Created");
-        response.setHeader("Content-Type", "text/plain");
-        response.setBody("File uploaded successfully.");
-        response.buildResponse();
-        client.addToEventPollRemove(client.getSocket(), POLLIN);
-        client.addToEventPollQueue(client.getSocket(), POLLOUT);
-        
-        // client.sendData(response.getFullResponse());
-        // std::cout << "[DEBUG] Upload request processed successfully." << std::endl;
-        return 201;
-    } catch (const std::exception& e) {
-        return handleServerError(client, e, "Error handling POST request");
+    if (requestSize > getMaxBodySize()) {
+        return sendErrorResponse(client, 413, "www/html/413.html");
     }
+
+    if (request->getPath().find("/cgi-bin") != std::string::npos) {
+        request->setFullPath(request->getPath());
+        client.startCgi(request);
+        return 0;
+    }
+
+    std::string uploadPath = getUploadStore(); // Ensure correct upload path
+    if (uploadPath.empty()) {
+        throw std::runtime_error("Upload path not set in configuration");
+    }
+    ensureUploadDirectoryExists(uploadPath);
+    
+    processMultipartPart(request->getStrReceived(), uploadPath);
+
+    std::string boundary = extractBoundary(request->getHeader("Content-Type"));
+    std::vector<std::string> parts = splitMultipartBody(request->getBody(), boundary);
+    
+
+    for (const std::string& part : parts) {
+        processMultipartPart(part, uploadPath);
+    }
+
+    client.getHttpResponse()->setStatus(201, "Created");
+    client.getHttpResponse()->setHeader("Content-Type", "text/plain");
+    client.getHttpResponse()->setBody("File uploaded successfully.");
+    client.getHttpResponse()->buildResponse();
+    client.addToEventPollRemove(client.getSocket(), POLLIN);
+    client.addToEventPollQueue(client.getSocket(), POLLOUT);
+    return 201;
 }
 
 /**
@@ -815,19 +809,17 @@ int Server::handleServerError(Client &client, const std::exception &e, const std
  * @return The status code of the response
  */
 int Server::sendErrorResponse(Client &client, int statusCode, const std::string &errorPagePath) {
-    HttpResponse response;
     std::string errorContent = readFileContent(errorPagePath);
     if (errorContent.empty()) {
         errorContent = "<html><body><h1>" + std::to_string(statusCode) + " - Error</h1></body></html>";
     }
     
-    response.setStatus(statusCode, getStatusMessage(statusCode));
-    response.setHeader("Content-Type", "text/html");
-    response.setBody(errorContent);
-    response.buildResponse();
+    client.getHttpResponse()->setStatus(statusCode, getStatusMessage(statusCode));
+    client.getHttpResponse()->setHeader("Content-Type", "text/html");
+    client.getHttpResponse()->setBody(errorContent);
+    client.getHttpResponse()->buildResponse();
     client.addToEventPollRemove(client.getSocket(), POLLIN);
     client.addToEventPollQueue(client.getSocket(), POLLOUT);
-    // client.sendData(response.getFullResponse());
     return statusCode;
 }
 

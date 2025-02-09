@@ -29,6 +29,8 @@ bool Config::validateParsedLocation(Location& location) {
         return false;
     if (location.getAutoindex() != "on")
         location.setAutoindex("off");
+    if (!location.getMaxBodySize())
+        location.setMaxBodySize(1000000);
    return true;
 }
 
@@ -70,6 +72,8 @@ bool Config::validateParsedData(Server &server) {
     if (server.getAutoindex() != "on")
         server.setAutoindex("off");
     server.setOnOff(true);
+    if (!server.getMaxBodySize())
+        server.setMaxBodySize(1000000);
     
     defaultServer _defaultS;
     _defaultS._allowedMethods = server.getAllowedMethods();
@@ -278,7 +282,8 @@ std::vector<Server> Config::parseConfig(std::ifstream &file) {
                         else
                             currentServer.setRedirect("0", "");
                     } else if (key == "max_body_size") {
-                        value = value.substr(0, value.size() - 1);
+                        std::cout << value << std::endl;
+                        value = value.substr(0, value.size());
                         size_t maxSize = std::stoul(value);
                         currentServer.setMaxBodySize(maxSize);
                     }else if (key == "methods") {
