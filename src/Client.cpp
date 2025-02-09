@@ -287,7 +287,6 @@ int Client::writeToSocket() {
     }
 
     if (_responseIndex >= _HttpResponse->getFullResponse().size()) {
-        sendData(_HttpResponse->getFullResponse().substr(_responseIndex, bytesWritten));
         _eventPoll->ToremovePollEventFd(_clientSocket, POLLOUT);
         return 1;
     }
@@ -384,24 +383,6 @@ void Client::prepareFileResponse(std::string errorContent) {
 
 bool isFdOpen(int fd) {
     return fcntl(fd, F_GETFD) != -1 || errno != EBADF;
-}
-
-
-void Client::sendData(const std::string &response) {
-    ssize_t bytesSent = send(_clientSocket, response.c_str(), response.size(), MSG_NOSIGNAL);
-    
-    if (bytesSent == -1) {
-        // Log an error if sending failsstuck
-        std::cerr << "Error: Failed to send response to client socket " << _clientSocket << ". Error: " << strerror(errno) << std::endl;
-    } else if (static_cast<size_t>(bytesSent) < response.size()) {
-        // Log a warning if only part of the response was sent
-        std::cerr << "Warning: Partial response sent to client socket " << _clientSocket 
-                  << ". Sent " << bytesSent << " of " << response.size() << " bytes." << std::endl;
-    } else {
-        // Log success if the entire response was sent
-        std::cout << "Response successfully sent to client socket " << _clientSocket 
-                  << ". Sent " << bytesSent << " bytes." << std::endl;
-    }
 }
 
 
