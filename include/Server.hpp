@@ -77,11 +77,11 @@ class Server  {
 		int												getListenerSocket();
 		/*Main loop*/
 		void 											handleNewConnection(EventPoll &eventPoll);
-		void 											handlePollEvent(EventPoll &eventPoll, int i, defaultServer defaultServer);
+		void 											handlePollEvent(EventPoll &eventPoll, int i, defaultServer defaultServer, std::vector<Server> &servers);
 		void											eraseClient(int event_fd);
 		// void 										broadcastMessage(int sender_fd, char *buf, int received, std::vector<struct pollfd> &pfds, int listener);
 		/*Handle requests*/	
-		int 											processClientRequest(Client &client, const std::string& request, HttpRequest* Http, defaultServer defaultServer);
+		int 											processClientRequest(Client &client, const std::string& request, HttpRequest* Http, defaultServer defaultServer, std::vector<Server> &servers);
 		int 											handleGetRequest(Client &client, HttpRequest* request);
 		int 											handlePostRequest(Client &client, HttpRequest* Http);
 		int 											handleDeleteRequest(Client &client, HttpRequest* request);
@@ -132,4 +132,5 @@ class Server  {
 		bool											getOnOff() const {return this->_on;}
 		void											resetLocations(Server &defaultServer);
 		defaultServer									getDefaultServer() const {return this->_defaultServer;}
+		void 											checkServer(HttpRequest* HttpRequest, std::vector<Server> &servers);
 };
