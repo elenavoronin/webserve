@@ -267,6 +267,14 @@ void HttpRequest::readRequest(std::string request){
 	}
 }
 
+std::string HttpRequest::getServerName() {
+	std::string str = getField("Host");
+	str.erase(std::remove_if(str.begin(), str.end(),
+        [](char c) { return !std::isalpha(c); }), str.end());
+	std::cout << "Server name: " << str << std::endl;
+	return str;
+}
+
 /**
  * @brief       Trims leading and trailing whitespace from a string.
  * 

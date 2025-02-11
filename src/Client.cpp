@@ -218,7 +218,7 @@ void Client::readFromCgi() {
  * If the HTTP request headers have not been fully received, continues to read from the socket.
  */
 
-void Client::readFromSocket(Server *server, defaultServer defaultServer) {
+void Client::readFromSocket(Server *server, defaultServer defaultServer, std::vector<Server> &servers) {
     if (!_HttpRequest) {
         throw std::runtime_error("_HttpRequest is null. Possible use-after-free.");
     }
@@ -255,7 +255,7 @@ void Client::readFromSocket(Server *server, defaultServer defaultServer) {
 		// if (totalReceived >= contentLength + headerEnd + 4) {  // The 4 is for "\r\n\r\n"
 		// }
 			_HttpRequest->parseBody(_HttpRequest->getStrReceived());
-			server->processClientRequest(*this, _HttpRequest->getStrReceived(), _HttpRequest, defaultServer);
+			server->processClientRequest(*this, _HttpRequest->getStrReceived(), _HttpRequest, defaultServer, servers);
 			_HttpRequest->setHeaderReceived(false);
 			_HttpRequest->clearStrReceived();
 		

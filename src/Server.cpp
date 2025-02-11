@@ -137,7 +137,7 @@ void Server::handleNewConnection(EventPoll &eventPoll){
  * @todo  divide into smaller functions doing one thing
  * @todo throw instead of error or cout
  */
-void Server::handlePollEvent(EventPoll &eventPoll, int i, defaultServer defaultServer) {
+void Server::handlePollEvent(EventPoll &eventPoll, int i, defaultServer defaultServer, std::vector<Server> &servers) {
     Client *client = nullptr;
     pollfd &currentPollFd = eventPoll.getPollEventFd()[i];
     int event_fd = currentPollFd.fd;
@@ -166,7 +166,7 @@ void Server::handlePollEvent(EventPoll &eventPoll, int i, defaultServer defaultS
             if (event_fd != client->getSocket() && event_fd == client->getCgiRead()) {
                 client->readFromCgi();
             } else {
-                client->readFromSocket(this, defaultServer);
+                client->readFromSocket(this, defaultServer, servers);
             }
         } catch (const std::runtime_error &e) {
             std::cerr << "Read error: " << e.what() << std::endl;
@@ -200,6 +200,31 @@ void Server::handlePollEvent(EventPoll &eventPoll, int i, defaultServer defaultS
         client->closeConnection(eventPoll, currentPollFd.fd);
 		eraseClient(event_fd);
     }
+}
+
+void Server::checkServer(HttpRequest* HttpRequest, std::vector<Server> &servers) {
+	if (getServerName() == HttpRequest->getServerName())
+		return;
+	Server newServer;
+	for (std::vector<Server>::iterator it = servers.begin(); it != servers.end(); ++it) {
+		if (it->getServerName() == HttpRequest->getServerName()) {
+		newServer = *it;
+		break ;
+		}
+	}
+
+	this->setServerName(newServer.getServerName());
+	this->setPortString(newServer.getPortStr());
+	this->setRoot(newServer.getRoot());
+	this->setIndex(newServer.getIndex());
+	this->setAllowedMethods(newServer.getAllowedMethods());
+	this->setAutoindex(newServer.getAutoindex());
+	this->setMaxBodySize(newServer.getMaxBodySize());
+	this->setErrorPage(newServer.getErrorPage());
+	this->setRedirect(std::to_string(newServer.getRedirect().first), newServer.getRedirect().second);
+	this->setUploadStore(newServer.getUploadStore());
+	this->setMaxBodySize(newServer.getMaxBodySize());
+	
 }
 
 
@@ -280,7 +305,7 @@ void Server::checkLocations(std::string path, defaultServer defaultServer) {
  * @param HttpRequest The HttpRequest object associated with the client.
  * @return The HTTP status code indicating the result of the request processing.
  */
-int Server::processClientRequest(Client &client, const std::string& request, HttpRequest* HttpRequest, defaultServer defaultServer) {
+int Server::processClientRequest(Client &client, const std::string& request, HttpRequest* HttpRequest, defaultServer defaultServer, std::vector<Server> &servers) {
 	HttpRequest->readRequest(request);
 
 	std::string method = HttpRequest->getMethod();
@@ -288,7 +313,7 @@ int Server::processClientRequest(Client &client, const std::string& request, Htt
     std::string version = HttpRequest->getVersion();
 
 	checkLocations(path, defaultServer);
-    std::cout << "redirect " << getRedirect().first << " to " << getRedirect().second << std::endl;
+	checkServer(HttpRequest, servers);
     if (getRedirect().first != 0)
     {
         return handleRedirect(client);
@@ -908,5 +933,3 @@ void Server::setRedirect(const std::string& statusCode, const std::string& redir
     _redirect.first = std::stoi(statusCode);
     _redirect.second = redirectPath;
 }
-
-

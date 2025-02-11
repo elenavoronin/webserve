@@ -53,6 +53,7 @@ class HttpRequest {
 		void 												setBody(std::string& body);
 		void 												setHeader(std::string input);
 		void 												setBodyReceived(bool received);
+
 		bool 												getBodyReceived();
 		std::string 										getPath();
 		std::string 										getFullPath();
@@ -66,5 +67,6 @@ class HttpRequest {
 		void 												parseHeaders(const std::string& rawRequest);
 		void												parseBody(const std::string& rawRequest);
 		const std::map<std::string, std::string>& 			getAllHeaders() const;
+		std::string 										getServerName();
 };
 	//std::string _bodyReceived;// Raw HTTP request string

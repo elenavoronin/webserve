@@ -384,13 +384,14 @@ void Config::pollLoop() {
                     if (currentServer.getOnOff() == true)
                         activeServer = &currentServer;
                     Server* selectedServer = activeServer ? activeServer : defaultServer;
+					std::vector<Server> &servers = _servers;
 
                     if (fd == currentServer.getListenerFd()) {
                         // Handle new connection
                         selectedServer->handleNewConnection(_eventPoll);
                     } else {
                         // Handle events for existing connections
-                        selectedServer->handlePollEvent(_eventPoll, i, selectedServer->getDefaultServer());
+                        selectedServer->handlePollEvent(_eventPoll, i, selectedServer->getDefaultServer(), servers);
                         
                     }
     
