@@ -2,8 +2,7 @@ Server makes sure everything is parsed
 POll decides what we're doing not the server
 
 1. use throw instead of std cout or std cerr and have a catch somewhere (lena, djoyke)
-2. server that is off - make it respond to specific request (lena) :
-          curl --resolve webserv:8080:0.0.0.0 webserv:8080
+2. Upload some file to the server and get it back (the upload directory needs to be fixed) (anna, lena)
 3. close pipe when something goes wrong reading or writing?? (djoyke)
 4. add CGI scripts for post and delete?? (djoyke)
 5. make the main page (anna)
@@ -13,9 +12,11 @@ POll decides what we're doing not the server
 9. Returning after CGI turns off the program (djoyke)
 10. Search for all read/recv/write/send on a socket and check that, if an error is returned, the client is removed.(anna)
 11. Search for all read/recv/write/send and check if the returned value is correctly checked (checking only -1 or values is not enough, both should be checked).(anna)
-12. Upload some file to the server and get it back (the upload directory needs to be fixed) (anna, lena)
 
 
+FOR TESTING:
+server that is off - make it respond to specific request :
+          curl --resolve webserv:8080:0.0.0.0 webserv:8080
 
 
 
