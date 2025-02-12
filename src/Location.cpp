@@ -7,7 +7,7 @@
 #include <iostream>
 
 Location::Location() : _root(), _index(),  _errorPages(), 
-      _allowedMethods(), _autoindex(false), _cgiPass(), _cgiPath(),
+      _allowedMethods(), _autoindex(), _cgiPass(), _cgiPath(),
       _maxBodySize(0), _cgiExtension(), _redirect(){}
 Location::~Location() {}
 
@@ -15,7 +15,7 @@ void Location::setRoot(const std::string& root) {
     this->_root = root;
 }
 
-void Location::setAutoindex(bool autoindex) {
+void Location::setAutoindex(std::string autoindex) {
     this->_autoindex = autoindex;
 }
 
@@ -67,7 +67,7 @@ void Location::clearLocation() {
     _index.clear();                // Clear the index
     _errorPages.clear();           // Clear the error pages vector
     _allowedMethods.clear();       // Clear the allowed methods vector
-    _autoindex = false;            // Reset autoindex to default (false)
+    _autoindex.clear();           // Reset autoindex to default (false)
     _cgiPass.clear();              // Clear the CGI pass path
     _cgiPath.clear();              // Clear the CGI path
     _maxBodySize = 0;              // Reset max body size to default (0)

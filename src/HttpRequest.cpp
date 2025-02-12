@@ -267,6 +267,14 @@ void HttpRequest::readRequest(std::string request){
 	}
 }
 
+std::string HttpRequest::getServerName() {
+	std::string str = getField("Host");
+	str.erase(std::remove_if(str.begin(), str.end(),
+        [](char c) { return !std::isalpha(c); }), str.end());
+	std::cout << "Server name: " << str << std::endl;
+	return str;
+}
+
 /**
  * @brief       Trims leading and trailing whitespace from a string.
  * 
@@ -347,6 +355,8 @@ void HttpRequest::parseHeaders(const std::string& rawRequest) {
             std::string key = line.substr(0, delimiter);
             std::string value = line.substr(delimiter + 1);
             _headers[key] = value;
+			if (key == "Referer value:")
+				setPath(value);
         }
     }
 	setHeader(rawRequest.substr(0, headerEnd));

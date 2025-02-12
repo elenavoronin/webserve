@@ -137,7 +137,7 @@ void Server::handleNewConnection(EventPoll &eventPoll){
  * @todo  divide into smaller functions doing one thing
  * @todo throw instead of error or cout
  */
-void Server::handlePollEvent(EventPoll &eventPoll, int i, Server& defaultServer) {
+void Server::handlePollEvent(EventPoll &eventPoll, int i, defaultServer defaultServer, std::vector<Server> &servers) {
     Client *client = nullptr;
     pollfd &currentPollFd = eventPoll.getPollEventFd()[i];
     int event_fd = currentPollFd.fd;
@@ -166,7 +166,7 @@ void Server::handlePollEvent(EventPoll &eventPoll, int i, Server& defaultServer)
             if (event_fd != client->getSocket() && event_fd == client->getCgiRead()) {
                 client->readFromCgi();
             } else {
-                client->readFromSocket(this, defaultServer);
+                client->readFromSocket(this, defaultServer, servers);
             }
         } catch (const std::runtime_error &e) {
             std::cerr << "Read error: " << e.what() << std::endl;
@@ -202,6 +202,31 @@ void Server::handlePollEvent(EventPoll &eventPoll, int i, Server& defaultServer)
     }
 }
 
+void Server::checkServer(HttpRequest* HttpRequest, std::vector<Server> &servers) {
+	if (getServerName() == HttpRequest->getServerName())
+		return;
+	Server newServer;
+	for (std::vector<Server>::iterator it = servers.begin(); it != servers.end(); ++it) {
+		if (it->getServerName() == HttpRequest->getServerName()) {
+		newServer = *it;
+		break ;
+		}
+	}
+
+	this->setServerName(newServer.getServerName());
+	this->setPortString(newServer.getPortStr());
+	this->setRoot(newServer.getRoot());
+	this->setIndex(newServer.getIndex());
+	this->setAllowedMethods(newServer.getAllowedMethods());
+	this->setAutoindex(newServer.getAutoindex());
+	this->setMaxBodySize(newServer.getMaxBodySize());
+	this->setErrorPage(newServer.getErrorPage());
+	this->setRedirect(std::to_string(newServer.getRedirect().first), newServer.getRedirect().second);
+	this->setUploadStore(newServer.getUploadStore());
+	this->setMaxBodySize(newServer.getMaxBodySize());
+	
+}
+
 
 /**
  * @brief Checks and updates the server's root based on the given path.
@@ -215,46 +240,52 @@ void Server::handlePollEvent(EventPoll &eventPoll, int i, Server& defaultServer)
  * @param path The path to check against the server's locations.
  * @todo figure out when to reset server information to default
  */
-void Server::checkLocations(std::string path, Server &defaultServer) {
-    if (path == this->getIndex()) {
-		this->setRoot(defaultServer.getRoot());
-		this->setIndex(defaultServer.getIndex());
-		this->setPortString(defaultServer.getPortStr());
-		this->setAllowedMethods(defaultServer.getAllowedMethods());
-		this->setAutoindex(defaultServer.getAutoindex());
-		this->setMaxBodySize(defaultServer.getMaxBodySize());
-		this->setUploadStore(defaultServer.getUploadStore());
-		this->setErrorPage(defaultServer.getErrorPage());
-        this->setRedirect(std::to_string((defaultServer.getRedirect().first)), defaultServer.getRedirect().second);
-		return;
-	}
-	for (const auto& location : this->getLocations()) {
-		if (path == location.first) {
-			if (!location.second.empty()) {
-				Location loc = location.second[0];
-				if (!loc.getRoot().empty())
-					this->setRoot(loc.getRoot());
-				if (!loc.getIndex().empty())
-					this->setIndex(loc.getIndex());
-				if (!loc.getAllowedMethods().empty())
-					this->setAllowedMethods(loc.getAllowedMethods());
-				if (loc.getAutoindex())
-					this->setAutoindex(loc.getAutoindex());
-				if (loc.getMaxBodySize() != 0)
-					this->setMaxBodySize(loc.getMaxBodySize());
-				if (!loc.getErrorPages().empty())
-					this->setErrorPage(loc.getErrorPages());
+void Server::checkLocations(std::string path, defaultServer defaultServer) {
+    std::cout << "Server Name " << getServerName() << std::endl;
+
+    for (const auto& location : this->getLocations()) {
+        if (path == location.first) {
+            if (!location.second.empty()) {
+                Location loc = location.second[0];
+                if (!loc.getRoot().empty())
+                    this->setRoot(loc.getRoot());
+                if (!loc.getIndex().empty())
+                    this->setIndex(loc.getIndex());
+                if (!loc.getAllowedMethods().empty())
+                    this->setAllowedMethods(loc.getAllowedMethods());
+                if (loc.getAutoindex() == "on")
+                    this->setAutoindex("on");
+                else
+                    this->setAutoindex("off");
+                if (loc.getMaxBodySize() != 0)
+                    this->setMaxBodySize(loc.getMaxBodySize());
+                if (!loc.getErrorPages().empty())
+                    this->setErrorPage(loc.getErrorPages());
                 if (loc.getRedirect().first != 0)
                     this->setRedirect(std::to_string(loc.getRedirect().first), loc.getRedirect().second);
                 if (!loc.getUploadPath().empty())
                     this->setUploadStore(loc.getUploadPath());
                 else
-                    this->setUploadStore(defaultServer.getUploadStore()); // Use the upload path from the Server config, not Location?
-				return;
-			}
-		}
-	}
+                    this->setUploadStore(defaultServer._uploadStore); // Use the upload path from the Server config, not Location?
+                return;
+            }
+        }
+    }
+
+    this->setRoot(defaultServer._root);
+    this->setIndex(defaultServer._index);
+    this->setPortString(defaultServer._portString);
+    this->setAllowedMethods(defaultServer._allowedMethods);
+    this->setAutoindex(defaultServer._autoindex);
+    std::cout << "autoindex in DS: " << defaultServer._autoindex << std::endl;
+    this->setMaxBodySize(defaultServer._maxBodySize);
+    this->setUploadStore(defaultServer._uploadStore);
+    this->setErrorPage(defaultServer._errorPage);
+    this->setRedirect(std::to_string((defaultServer._redirect.first)), defaultServer._redirect.second);
+    return;
+    
 }
+
 
 /**
  * @brief Process an HTTP request received from a client.
@@ -274,7 +305,7 @@ void Server::checkLocations(std::string path, Server &defaultServer) {
  * @param HttpRequest The HttpRequest object associated with the client.
  * @return The HTTP status code indicating the result of the request processing.
  */
-int Server::processClientRequest(Client &client, const std::string& request, HttpRequest* HttpRequest, Server &defaultServer) {
+int Server::processClientRequest(Client &client, const std::string& request, HttpRequest* HttpRequest, defaultServer defaultServer, std::vector<Server> &servers) {
 	HttpRequest->readRequest(request);
 
 	std::string method = HttpRequest->getMethod();
@@ -282,10 +313,10 @@ int Server::processClientRequest(Client &client, const std::string& request, Htt
     std::string version = HttpRequest->getVersion();
 
 	checkLocations(path, defaultServer);
-    std::cout << "Redirecting " << getRedirect().first << " to " << getRedirect().second << std::endl;
+	checkServer(HttpRequest, servers);
     if (getRedirect().first != 0)
     {
-        return handleRedirect(client, *HttpRequest);
+        return handleRedirect(client);
     }
 	
     int status = validateRequest(method, version);
@@ -293,8 +324,6 @@ int Server::processClientRequest(Client &client, const std::string& request, Htt
 		sendFileResponse(client.getSocket(), "www/html/500.html", status);  //change to a config ones?
 		return status;
 	}
-    //TODO handle the server that is being requested
-    // if (redirect) // TODO handle redirect before handling any other methods
     std::cout << "Method: " << method << std::endl;
 	if (method == "GET" && std::find(this->_allowedMethods.begin(), this->_allowedMethods.end(), "GET") != this->_allowedMethods.end())
 		return handleGetRequest(client, HttpRequest);
@@ -323,15 +352,26 @@ int Server::processClientRequest(Client &client, const std::string& request, Htt
  * @return The HTTP status code indicating the result of the request processing.
  */
 int Server::handleGetRequest(Client &client, HttpRequest* request) {
-    // HttpResponse response;
-    std::string filepath = this->getRoot() + request->getPath();
-    request->setFullPath(filepath);
-
-    if (request->getPath() == "/") {
-        filepath = this->getRoot() + '/' + this->getIndex();
-        request->setFullPath(filepath);
-    }
     
+    std::string filepath = this->getRoot() + request->getPath();
+    
+    // std::cout << "in GET autoindex: " << getAutoindex() << std::endl;
+    if (opendir(filepath.c_str())) {
+    // Check if it's a directory and autoindex is enabled{
+        if (getAutoindex() == "on") {  // Autoindex must be enabled
+            std::string htmlContent = generateDirectoryListing(filepath, request->getPath());
+            client.getHttpResponse()->setHeader("Content-Type", "text/html");
+            client.getHttpResponse()->setHeader("Content-Length", std::to_string(htmlContent.size()));
+            client.getHttpResponse()->setBody(htmlContent);
+            client.getHttpResponse()->buildResponse();
+            client.addToEventPollRemove(client.getSocket(), POLLIN);
+            client.addToEventPollQueue(client.getSocket(), POLLOUT);
+            return 200;
+        }
+        else 
+            request->setFullPath(filepath + getIndex());
+    }
+
     if (filepath.find("/cgi-bin") != std::string::npos) { 
         request->setFullPath(filepath);
         client.startCgi(request);
@@ -341,8 +381,6 @@ int Server::handleGetRequest(Client &client, HttpRequest* request) {
         return sendErrorResponse(client, 404, "www/html/404.html");
     }
     client.prepareFileResponse(readFileContent(filepath));
-    // response.buildResponse();
-
     return 200;
 }
 
@@ -527,57 +565,44 @@ int Server::handleDeleteRequest(Client &client, HttpRequest* request) {
  */
 
 int Server::handlePostRequest(Client &client, HttpRequest* request) {
-    HttpResponse response;
-    try {
-        // std::cout << "[DEBUG] Raw Request Body: \n\n" << request->getBody() << "\n\n" << std::endl; //why empty? Cause apparently it doesn't have, all info is in header
-        if (request->getPath().find("/cgi-bin") != std::string::npos) {
-            request->setFullPath(request->getPath());
-            client.startCgi(request);
-            return 0;
-        }
 
-        std::string uploadPath = getUploadStore(); // Ensure correct upload path
-        // std::cout << "[DEBUG] Upload Path: " << uploadPath << std::endl;
-        if (uploadPath.empty()) {
-            throw std::runtime_error("Upload path not set in configuration");
-        }
-        ensureUploadDirectoryExists(uploadPath);
-        // std::cout << "[DEBUG] Upload directory exists" << std::endl;
-        
-		processMultipartPart(request->getStrReceived(), uploadPath);
+    size_t requestSize = request->getBody().size();
+    std::cout << "[DEBUG] Request size: " << requestSize << std::endl;
+    std::cout << "[DEBUG] Max body size: " << getMaxBodySize() << std::endl;
 
-        std::string boundary = extractBoundary(request->getHeader("Content-Type"));
-
-        std::cout << "[DEBUG] Extracted boundary: " << boundary << std::endl;
-        std::vector<std::string> parts = splitMultipartBody(request->getBody(), boundary);
-         std::cout << "[DEBUG] Total parts detected: " << parts.size() << std::endl;
-        
-
-        for (const std::string& part : parts) {
-			//std::cout << "******* Part ********\n" << part << std::endl;
-            if (!processMultipartPart(part, uploadPath))
-			{
-				response.setStatus(400, "Bad Request");
-				response.setHeader("Content-Type", "text/plain");
-				response.setBody("The request was malformed or missing required parameters.");
-				response.buildResponse();
-				client.addToEventPollRemove(client.getSocket(), POLLIN);
-				return 400;
-			}
-        }
-
-        response.setStatus(201, "Created");
-        response.setHeader("Content-Type", "text/plain");
-        response.setBody("File uploaded successfully.");
-        response.buildResponse();
-        client.addToEventPollRemove(client.getSocket(), POLLIN);
-        
-        // client.sendData(response.getFullResponse());
-        std::cout << "[DEBUG] Upload request processed successfully." << std::endl;
-        return 201;
-    } catch (const std::exception& e) {
-        return handleServerError(client, e, "Error handling POST request");
+    if (requestSize > getMaxBodySize()) {
+        return sendErrorResponse(client, 413, "www/html/413.html");
     }
+
+    if (request->getPath().find("/cgi-bin") != std::string::npos) {
+        request->setFullPath(request->getPath());
+        client.startCgi(request);
+        return 0;
+    }
+
+    std::string uploadPath = getUploadStore(); // Ensure correct upload path
+    if (uploadPath.empty()) {
+        throw std::runtime_error("Upload path not set in configuration");
+    }
+    ensureUploadDirectoryExists(uploadPath);
+    
+    processMultipartPart(request->getStrReceived(), uploadPath);
+
+    std::string boundary = extractBoundary(request->getHeader("Content-Type"));
+    std::vector<std::string> parts = splitMultipartBody(request->getBody(), boundary);
+    
+
+    for (const std::string& part : parts) {
+        processMultipartPart(part, uploadPath);
+    }
+
+    client.getHttpResponse()->setStatus(201, "Created");
+    client.getHttpResponse()->setHeader("Content-Type", "text/plain");
+    client.getHttpResponse()->setBody("File uploaded successfully.");
+    client.getHttpResponse()->buildResponse();
+    client.addToEventPollRemove(client.getSocket(), POLLIN);
+    client.addToEventPollQueue(client.getSocket(), POLLOUT);
+    return 201;
 }
 
 /**
@@ -754,9 +779,8 @@ void Server::saveUploadedFile(const std::string& filePath, const std::string& pa
  *
  * @return The status code of the response
  */
-int Server::handleRedirect(Client& client, HttpRequest& request) {
+int Server::handleRedirect(Client& client) {
     std::cout << "Handling Redirection..." << std::endl;
-    (void)request;
 
     try {
         client.getHttpResponse()->setStatus(getRedirect().first, getStatusMessage(getRedirect().first));
@@ -812,18 +836,17 @@ int Server::handleServerError(Client &client, const std::exception &e, const std
  * @return The status code of the response
  */
 int Server::sendErrorResponse(Client &client, int statusCode, const std::string &errorPagePath) {
-    HttpResponse response;
     std::string errorContent = readFileContent(errorPagePath);
     if (errorContent.empty()) {
         errorContent = "<html><body><h1>" + std::to_string(statusCode) + " - Error</h1></body></html>";
     }
     
-    response.setStatus(statusCode, getStatusMessage(statusCode));
-    response.setHeader("Content-Type", "text/html");
-    response.setBody(errorContent);
-    response.buildResponse();
+    client.getHttpResponse()->setStatus(statusCode, getStatusMessage(statusCode));
+    client.getHttpResponse()->setHeader("Content-Type", "text/html");
+    client.getHttpResponse()->setBody(errorContent);
+    client.getHttpResponse()->buildResponse();
     client.addToEventPollRemove(client.getSocket(), POLLIN);
-    client.sendData(response.getFullResponse());
+    client.addToEventPollQueue(client.getSocket(), POLLOUT);
     return statusCode;
 }
 
@@ -912,5 +935,3 @@ void Server::setRedirect(const std::string& statusCode, const std::string& redir
     _redirect.first = std::stoi(statusCode);
     _redirect.second = redirectPath;
 }
-
-

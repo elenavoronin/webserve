@@ -6,6 +6,10 @@
 #include "../include/Location.hpp"
 #include "../include/Config.hpp"
 #include "../include/Client.hpp"
+#include <iostream>
+#include <vector>
+#include <dirent.h>
+#include <sys/stat.h>
 
 class Server;
 class Location;
@@ -14,8 +18,8 @@ class Client;
 
 # define READ 0
 # define WRITE 1
-# define WRITE_SIZE 100
-# define READ_SIZE 100
+# define WRITE_SIZE 10000
+# define READ_SIZE 10000
 # define BACKLOG 100
 
 std::string             getStatusMessage(int statusCode);
@@ -26,3 +30,4 @@ void                    printTokens(const std::vector<std::string>& tokens);
 bool                    isEmpty(const Location& location);
 void                    printClientsVector(const std::vector<Client>& Clients);
 bool                    isFdStuck(int fd);
+std::string             generateDirectoryListing(const std::string &directoryPath, const std::string &requestPath);

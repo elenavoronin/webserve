@@ -2,28 +2,21 @@ Server makes sure everything is parsed
 POll decides what we're doing not the server
 
 1. use throw instead of std cout or std cerr and have a catch somewhere (lena, djoyke)
-2. handling null characters for requesting images eg assets/nebula.jpg dont handle it like a string (lena) - check reading in chunks (anna)
-3. should we assert more? (all)
-4. close pipe when something goes wrong reading or writing (djoyke)
-5. add CGI scripts for post and delete (djoyke)
-6. make ugly button not ugly in html (djoyke)
-7. eval sheet misery (jan)
-8. do we need broadcast message?
-9. add charset 8 for Content type
-10. handleGet check extension (img. html ..) instead cgi-bin
-11. Directory listing (Lena)
-12. Cgi - infinite loops handling and error handling (Djoyke)
-13. Check errno (Anna)
-14. Check HTTP response status codes(Anna)
-15. Returning after CGI turns off the program
-16. Search for all read/recv/write/send on a socket and check that, if an error is returned, the client is removed.(Anna)
-17. Search for all read/recv/write/send and check if the returned value is correctly checked (checking only -1 or values is not enough, both should be checked).(Anna)
-18. Limit the client body (use: curl -X POST -H "Content-Type: plain/text" --data "BODY IS HERE write something shorter or longer than body limit").
-19. Upload some file to the server and get it back.
-20. siege -c 10 -t 10S http://localhost:8080 doesn't work
-21. implement max body size (lena)
-22. server that is off - make it respond to specific request
+2. Upload some file to the server and get it back (the upload directory needs to be fixed) (anna, lena)
+3. close pipe when something goes wrong reading or writing?? (djoyke)
+4. add CGI scripts for post and delete?? (djoyke)
+5. make the main page (anna)
+6. eval sheet misery (JI)
+7. Cgi - infinite loops handling and error handling (djoyke)
+8. Check errno (anna)
+9. Returning after CGI turns off the program (djoyke)
+10. Search for all read/recv/write/send on a socket and check that, if an error is returned, the client is removed.(anna)
+11. Search for all read/recv/write/send and check if the returned value is correctly checked (checking only -1 or values is not enough, both should be checked).(anna)
 
+
+FOR TESTING:
+server that is off - make it respond to specific request :
+          curl --resolve webserv:8080:0.0.0.0 webserv:8080
 
 
 

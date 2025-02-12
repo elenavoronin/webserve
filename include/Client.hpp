@@ -15,6 +15,10 @@ class HttpResponse;
 class CGI;
 class Server;
 
+struct defaultServer;
+
+
+
 /**
  * @brief The Client class represents a single client connection to the server.
  *
@@ -44,10 +48,9 @@ class Client {
 		void 				setHttpRequest(HttpRequest* httpRequest);
 		void 				setHttpResponse(HttpResponse* httpResponse);
 		int 				writeToSocket();
-		void 				readFromSocket(Server *server, Server &defaultServer);
+		void 				readFromSocket(Server *server, defaultServer defaultServer, std::vector<Server> &servers);
 		void 				closeConnection(EventPoll& eventPoll, int currentPollFd);
 		void				prepareFileResponse(std::string errorContent);
-		void				sendData(const std::string &response);
 		void				addToEventPollRemove(int fd, int eventType);
 		void 				addToEventPollQueue(int fd, int eventType);
 		
@@ -58,4 +61,3 @@ class Client {
 		void 				readFromCgi();
 		void 				writeToCgi();
 };
-

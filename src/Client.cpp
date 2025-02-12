@@ -218,7 +218,7 @@ void Client::readFromCgi() {
  * If the HTTP request headers have not been fully received, continues to read from the socket.
  */
 
-void Client::readFromSocket(Server *server, Server &defaultServer) {
+void Client::readFromSocket(Server *server, defaultServer defaultServer, std::vector<Server> &servers) {
     if (!_HttpRequest) {
         throw std::runtime_error("_HttpRequest is null. Possible use-after-free.");
     }
@@ -255,7 +255,7 @@ void Client::readFromSocket(Server *server, Server &defaultServer) {
 		// if (totalReceived >= contentLength + headerEnd + 4) {  // The 4 is for "\r\n\r\n"
 		// }
 			_HttpRequest->parseBody(_HttpRequest->getStrReceived());
-			server->processClientRequest(*this, _HttpRequest->getStrReceived(), _HttpRequest, defaultServer);
+			server->processClientRequest(*this, _HttpRequest->getStrReceived(), _HttpRequest, defaultServer, servers);
 			_HttpRequest->setHeaderReceived(false);
 			_HttpRequest->clearStrReceived();
 		
@@ -384,25 +384,6 @@ void Client::prepareFileResponse(std::string errorContent) {
 
 bool isFdOpen(int fd) {
     return fcntl(fd, F_GETFD) != -1 || errno != EBADF;
-}
-
-
-void Client::sendData(const std::string &response) {
-    std::cout << "Response sent: " << response.c_str() << std::endl;
-    ssize_t bytesSent = send(_clientSocket, response.c_str(), response.size(), MSG_NOSIGNAL);
-    
-    if (bytesSent == -1) {
-        // Log an error if sending failsstuck
-        std::cerr << "Error: Failed to send response to client socket " << _clientSocket << ". Error: " << strerror(errno) << std::endl;
-    } else if (static_cast<size_t>(bytesSent) < response.size()) {
-        // Log a warning if only part of the response was sent
-        std::cerr << "Warning: Partial response sent to client socket " << _clientSocket 
-                  << ". Sent " << bytesSent << " of " << response.size() << " bytes." << std::endl;
-    } else {
-        // Log success if the entire response was sent
-        std::cout << "Response successfully sent to client socket " << _clientSocket 
-                  << ". Sent " << bytesSent << " bytes." << std::endl;
-    }
 }
 
 
