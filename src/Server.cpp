@@ -330,6 +330,7 @@ int Server::processClientRequest(Client &client, const std::string& request, Htt
 		return handlePostRequest(client, HttpRequest);
 	if (method == "DELETE" && std::find(this->_allowedMethods.begin(), this->_allowedMethods.end(), "DELETE") != this->_allowedMethods.end())
 		return handleDeleteRequest(client, HttpRequest);
+    //TODO 
 	HttpResponse response;
 	response.buildResponse();
 	return 0;
@@ -354,8 +355,10 @@ int Server::handleGetRequest(Client &client, HttpRequest* request) {
     
     std::string filepath = this->getRoot() + request->getPath();
     
-    // std::cout << "in GET autoindex: " << getAutoindex() << std::endl;
-    if (opendir(filepath.c_str())) {
+    std::cout << "Filepath: " << filepath << std::endl;
+    DIR* dir = opendir(filepath.c_str());
+    if (dir) {
+        closedir(dir);
     // Check if it's a directory and autoindex is enabled{
         if (getAutoindex() == "on") {  // Autoindex must be enabled
             std::string htmlContent = generateDirectoryListing(filepath, request->getPath());
@@ -368,18 +371,21 @@ int Server::handleGetRequest(Client &client, HttpRequest* request) {
             return 200;
         }
         else 
+        {
             request->setFullPath(filepath + getIndex());
+        }
     }
-
     if (filepath.find("/cgi-bin") != std::string::npos) { 
         request->setFullPath(filepath);
         client.startCgi(request);
         return 0;
     }
+    std::cout << filepath << std::endl;
+    std::cout << request->getFullPath() << std::endl;
     if (!fileExists(filepath)) {
         return sendErrorResponse(client, 404, "www/html/404.html");
     }
-    client.prepareFileResponse(readFileContent(filepath));
+    client.prepareFileResponse(filepath);
     return 200;
 }
 
@@ -407,29 +413,29 @@ void Server::sendFileResponse(int clientSocket, const std::string& filepath, int
 	close(clientSocket);
 }
 
-/**
- * @brief Read the contents of a file into a string.
- *
- * This function reads the contents of a file specified by the given filepath
- * and returns the contents as a string. If the file does not exist, an error
- * message is printed to stderr and an empty string is returned.
- *
- * @param filepath The path to the file to read.
- * @return The contents of the file as a string.
- */
-std::string Server::readFileContent(const std::string& filepath) {
-    std::ifstream file(filepath, std::ios::binary);
-    if (!file) {
-        std::cerr << "Error: File not found 2: " << filepath << std::endl;
-        return "";
-    }
-    std::ostringstream buffer;
-    buffer << file.rdbuf(); //read file by bytes, go back to poll, check if finished reading
-	//request->_readyToSendBack = true;
-	//std::cout.flush();
-	//std::cout << "BUFFER " << buffer.str() << std::endl;
-    return buffer.str();
-}
+// /**
+//  * @brief Read the contents of a file into a string.
+//  *
+//  * This function reads the contents of a file specified by the given filepath
+//  * and returns the contents as a string. If the file does not exist, an error
+//  * message is printed to stderr and an empty string is returned.
+//  *
+//  * @param filepath The path to the file to read.
+//  * @return The contents of the file as a string.
+//  */
+// std::string Server::readFileContent(const std::string& filepath) {
+//     std::ifstream file(filepath, std::ios::binary);
+//     if (!file) {
+//         std::cerr << "Error: File not found 2: " << filepath << std::endl;
+//         return "";
+//     }
+//     std::ostringstream buffer;
+//     buffer << file.rdbuf(); //read file by bytes, go back to poll, check if finished reading
+// 	//request->_readyToSendBack = true;
+// 	//std::cout.flush();
+// 	//std::cout << "BUFFER " << buffer.str() << std::endl;
+//     return buffer.str();
+// }
 
 /**
  * @brief Send HTTP headers to the client.
