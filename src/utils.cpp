@@ -206,9 +206,6 @@ std::string generateDirectoryListing(const std::string &directoryPath, const std
             continue;
         }
 
-        // std::cout << "[DEBUG] Found: " << fileName << std::endl;
-
-
         // Add file or directory to the HTML response
         html << "<li><a href=\"" << requestPath;
         if (requestPath.back() != '/') {

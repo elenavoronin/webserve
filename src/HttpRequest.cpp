@@ -196,10 +196,8 @@ std::string HttpRequest::getPathToDelete(const std::string& rawRequest) {
 	if (_path.empty()) {
 		throw std::runtime_error("Path to resource not found");
 	}
-	std::string path = "." + _path;
-	std::cout << "path from Delete: " << _path << std::endl;
 
-	return path;
+	return _path;
 }
 
 
@@ -271,7 +269,7 @@ std::string HttpRequest::getServerName() {
 	std::string str = getField("Host");
 	str.erase(std::remove_if(str.begin(), str.end(),
         [](char c) { return !std::isalpha(c); }), str.end());
-	std::cout << "Server name: " << str << std::endl;
+	// std::cout << "Server name: " << str << std::endl;
 	return str;
 }
 
