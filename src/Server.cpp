@@ -277,7 +277,6 @@ void Server::checkLocations(std::string path, defaultServer defaultServer) {
     this->setPortString(defaultServer._portString);
     this->setAllowedMethods(defaultServer._allowedMethods);
     this->setAutoindex(defaultServer._autoindex);
-    std::cout << "autoindex in DS: " << defaultServer._autoindex << std::endl;
     this->setMaxBodySize(defaultServer._maxBodySize);
     this->setUploadStore(defaultServer._uploadStore);
     this->setErrorPage(defaultServer._errorPage);
@@ -511,33 +510,35 @@ int Server::validateRequest(const std::string& method, const std::string& versio
  * @return The HTTP status code indicating the result of the request processing.
  */
 int Server::handleDeleteRequest(Client &client, HttpRequest* request) {
-    HttpResponse response;
-    try {
-        std::string pathToDelete = request->getPathToDelete(request->getRawRequest());
-        if (pathToDelete.empty() || !fileExists(pathToDelete)) {
-            return sendErrorResponse(client, 404, "www/html/404.html");
-        }
 
-        if (pathToDelete.find("/cgi-bin") != std::string::npos) {
-            request->setFullPath(pathToDelete);
-            client.startCgi(request);
-            return 0;
-        }
+    std::string pathToDelete = getRoot() + request->getPathToDelete(request->getRawRequest());
 
-        if (remove(pathToDelete.c_str()) != 0) {
-            throw std::runtime_error("Error deleting file: " + pathToDelete);
-        }
-        
-        response.setStatus(200, getStatusMessage(200));
-        response.setHeader("Content-Type", "text/plain");
-        response.setBody("Data deleted successfully.");
-        response.buildResponse();
-        client.addToEventPollRemove(client.getSocket(), POLLIN);
-        
-        return 200;
-    } catch (const std::exception& e) {
-        return handleServerError(client, e, "Error handling DELETE request");
+
+    if (pathToDelete.empty() || !fileExists(pathToDelete)) {
+        std::cerr << "File empty or does not exist 1: " << pathToDelete << std::endl;
+        return sendErrorResponse(client, 404, "www/html/404.html");
     }
+
+    if (pathToDelete.find("/cgi-bin") != std::string::npos) {
+        std::cerr << "File empty or does not exist in CGI: " << pathToDelete << std::endl;
+        request->setFullPath(pathToDelete);
+        client.startCgi(request);
+        return 0;
+    }
+
+    if (remove(pathToDelete.c_str()) != 0) {
+        std::cerr << "File empty or does not exist 3: " << pathToDelete << std::endl;
+        throw std::runtime_error("Error deleting file: " + pathToDelete);
+    }
+    
+    client.getHttpResponse()->setStatus(200, getStatusMessage(200));
+    client.getHttpResponse()->setHeader("Content-Type", "text/html");
+    client.getHttpResponse()->setBody("Data deleted successfully.");
+    client.getHttpResponse()->buildResponse();
+    client.addToEventPollRemove(client.getSocket(), POLLIN);
+    client.addToEventPollQueue(client.getSocket(), POLLOUT);
+    
+    return 200;
 }
 
 /**
@@ -567,8 +568,6 @@ int Server::handleDeleteRequest(Client &client, HttpRequest* request) {
 int Server::handlePostRequest(Client &client, HttpRequest* request) {
 
     size_t requestSize = request->getBody().size();
-    std::cout << "[DEBUG] Request size: " << requestSize << std::endl;
-    std::cout << "[DEBUG] Max body size: " << getMaxBodySize() << std::endl;
 
     if (requestSize > getMaxBodySize()) {
         return sendErrorResponse(client, 413, "www/html/413.html");

@@ -126,7 +126,7 @@ void CGI::executeCgi() {
     }
 
 	// std::string cgiProgramString = "/home/akrepkov/Desktop/webserv_git/git/www/html/assets/cat.jpeg";
-	std::string cgiProgramString = "./www/html" + _path;
+	std::string cgiProgramString = "www/html" + _path;
     const char* cgiProgram = cgiProgramString.c_str();
     const char* argv[] = {"/usr/bin/python3", cgiProgram, nullptr};
 

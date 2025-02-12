@@ -124,7 +124,7 @@
         // Check if queryParams contains 'name' and 'image' parameters, then display them
         if (queryParams.name && queryParams.image) {
             document.getElementById('userName').textContent = queryParams.name;
-            document.getElementById('uploadedImage').src = `/uploads/${queryParams.image}`; // Adjust the path to match where your image is stored
+            document.getElementById('uploadedImage').src = `/upload/${queryParams.image}`; // Adjust the path to match where your image is stored
         } else {
             document.getElementById('userName').textContent = 'No name provided';
             document.getElementById('uploadedImage').style.display = 'none'; // Hide image if not provided
