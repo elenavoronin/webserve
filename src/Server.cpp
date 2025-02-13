@@ -45,7 +45,7 @@ int Server::getListenerSocket(){
     }
 	for (newConnect = servinfo; newConnect != NULL; newConnect= newConnect->ai_next){
 		if ((serverSocket = socket(newConnect->ai_family, newConnect->ai_socktype, newConnect->ai_protocol)) == -1){ //creates a socket
-            std::cerr << "Socket creation failed: " << strerror(errno) << std::endl;
+            throw std::runtime_error("Socket Error");
             continue;
 		}
         setsockopt(serverSocket, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt)); //allows the program to reuse the address

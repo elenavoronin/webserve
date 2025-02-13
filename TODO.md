@@ -4,9 +4,8 @@ POll decides what we're doing not the server
 1. use throw instead of std cout or std cerr and have a catch somewhere (lena, djoyke)
 2. make the main page (anna)
 3. eval sheet misery (JI)
-4. Check errno (anna)
-5. Search for all read/recv/write/send on a socket and check that, if an error is returned, the client is removed.(anna)
-6. Search for all read/recv/write/send and check if the returned value is correctly checked (checking only -1 or values is not enough, both should be checked).(anna)
+4. Search for all read/recv/write/send on a socket and check that, if an error is returned, the client is removed.(anna)
+5. Search for all read/recv/write/send and check if the returned value is correctly checked (checking only -1 or values is not enough, both should be checked).(anna)
 
 
 FOR TESTING:
