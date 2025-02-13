@@ -78,7 +78,6 @@ bool Config::validateParsedData(Server &server) {
     defaultServer _defaultS;
     _defaultS._allowedMethods = server.getAllowedMethods();
     _defaultS._autoindex = server.getAutoindex();
-    _defaultS._errorPage = server.getErrorPage();
     _defaultS._index = server.getIndex();
     _defaultS._maxBodySize = server.getMaxBodySize();
     _defaultS._portString = server.getPortStr();
@@ -86,8 +85,8 @@ bool Config::validateParsedData(Server &server) {
     _defaultS._root = server.getRoot();
     _defaultS._serverName = server.getServerName();
     _defaultS._uploadStore = server.getUploadStore();
+    _defaultS._errorPages = server.getErrorPages();
 
-    server.setDefaultServer(_defaultS);
     return true;
 }
 
@@ -177,6 +176,8 @@ void Config::parseLocationTokens(const std::vector<std::string>& tokens, Locatio
             newLocation.setCgiExtension(value);
         } else if (key == "cgi_path") {
             newLocation.setCgiPath(value);
+        } else if (key == "error_page" && !tokens[1].empty() && !tokens[2].empty()) {
+            newLocation.setErrorPage(tokens[1], tokens[2]);
         } else if (key == "return") {
             if (!tokens[1].empty() && !tokens[2].empty())
                 newLocation.setRedirect(tokens[1], tokens[2]);
@@ -216,7 +217,6 @@ std::vector<Server> Config::parseConfig(std::ifstream &file) {
     currentServer.getLocations()["keys"].reserve(100);
     Location newLocation;
     std::string pathName;
-    std::vector<std::string> errorPages;
     bool insideServerBlock = false;
     bool insideLocationBlock = false;
     // bool locationComplete = false;
@@ -255,7 +255,6 @@ std::vector<Server> Config::parseConfig(std::ifstream &file) {
                     throw std::runtime_error("Error in config file: Invalid server block detected.");
                 }
                 currentServer = Server(); // Reset for next server block
-                errorPages.clear();
                 continue;
             }
             // Now handle key-value pairs inside blocks
@@ -293,10 +292,9 @@ std::vector<Server> Config::parseConfig(std::ifstream &file) {
                         }
                         currentServer.setAllowedMethods(methods);
                     }
-                    if (key == "error_page") {
-                            errorPages.push_back(tokens[2]);
+                    if (key == "error_page" && !tokens[1].empty() && !tokens[2].empty()) {
+                            currentServer.setErrorPage(tokens[1], tokens[2]);
                         }
-                        currentServer.setErrorPage(errorPages);
                     }
                 }
             if (insideLocationBlock) {
@@ -430,7 +428,7 @@ int Config::checkConfig(const std::string &config_file) {
             throw std::runtime_error("Error in config file: Invalid servers.");
             return -1;
         }
-        // printConfigParse(_servers);
+        printConfigParse(_servers);
         addPollFds();
     } catch (const std::exception &e) {
         std::cerr << "Configuration error: " << e.what() << std::endl;

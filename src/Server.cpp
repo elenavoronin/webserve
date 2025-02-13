@@ -161,7 +161,6 @@ void Server::handlePollEvent(EventPoll &eventPoll, int i, defaultServer defaultS
 
     // Handle readable events
     if (currentPollFd.revents & POLLIN) {
-		// std::cout << "POLLIN" << std::endl;
         try {
             if (event_fd != client->getSocket() && event_fd == client->getCgiRead()) {
                 client->readFromCgi();
@@ -220,7 +219,7 @@ void Server::checkServer(HttpRequest* HttpRequest, std::vector<Server> &servers)
 	this->setAllowedMethods(newServer.getAllowedMethods());
 	this->setAutoindex(newServer.getAutoindex());
 	this->setMaxBodySize(newServer.getMaxBodySize());
-	this->setErrorPage(newServer.getErrorPage());
+	this->setErrorPages(newServer.getErrorPages());
 	this->setRedirect(std::to_string(newServer.getRedirect().first), newServer.getRedirect().second);
 	this->setUploadStore(newServer.getUploadStore());
 	this->setMaxBodySize(newServer.getMaxBodySize());
@@ -260,7 +259,7 @@ void Server::checkLocations(std::string path, defaultServer defaultServer) {
                 if (loc.getMaxBodySize() != 0)
                     this->setMaxBodySize(loc.getMaxBodySize());
                 if (!loc.getErrorPages().empty())
-                    this->setErrorPage(loc.getErrorPages());
+                    this->setErrorPages(loc.getErrorPages());
                 if (loc.getRedirect().first != 0)
                     this->setRedirect(std::to_string(loc.getRedirect().first), loc.getRedirect().second);
                 if (!loc.getUploadPath().empty())
@@ -279,7 +278,7 @@ void Server::checkLocations(std::string path, defaultServer defaultServer) {
     this->setAutoindex(defaultServer._autoindex);
     this->setMaxBodySize(defaultServer._maxBodySize);
     this->setUploadStore(defaultServer._uploadStore);
-    this->setErrorPage(defaultServer._errorPage);
+    this->setErrorPages(defaultServer._errorPages);
     this->setRedirect(std::to_string((defaultServer._redirect.first)), defaultServer._redirect.second);
     return;
     
@@ -355,10 +354,12 @@ int Server::handleGetRequest(Client &client, HttpRequest* request) {
     
     std::string filepath = this->getRoot() + request->getPath();
     
-    std::cout << "Filepath: " << filepath << std::endl;
     DIR* dir = opendir(filepath.c_str());
     if (dir) {
         closedir(dir);
+        if (access(filepath.c_str(), R_OK | X_OK) == 0) {
+            return sendErrorResponse(client, 403, "www/html/403.html");
+        }
     // Check if it's a directory and autoindex is enabled{
         if (getAutoindex() == "on") {  // Autoindex must be enabled
             std::string htmlContent = generateDirectoryListing(filepath, request->getPath());
@@ -382,8 +383,11 @@ int Server::handleGetRequest(Client &client, HttpRequest* request) {
     }
     std::cout << filepath << std::endl;
     std::cout << request->getFullPath() << std::endl;
-    if (!fileExists(filepath)) {
+    if (access(filepath.c_str(), F_OK) != 0) {
         return sendErrorResponse(client, 404, "www/html/404.html");
+    }
+    if (access(filepath.c_str(), R_OK) != 0) {
+        return sendErrorResponse(client, 403, "www/html/403.html");
     }
     client.prepareFileResponse(filepath);
     return 200;
@@ -413,29 +417,29 @@ void Server::sendFileResponse(int clientSocket, const std::string& filepath, int
 	close(clientSocket);
 }
 
-// /**
-//  * @brief Read the contents of a file into a string.
-//  *
-//  * This function reads the contents of a file specified by the given filepath
-//  * and returns the contents as a string. If the file does not exist, an error
-//  * message is printed to stderr and an empty string is returned.
-//  *
-//  * @param filepath The path to the file to read.
-//  * @return The contents of the file as a string.
-//  */
-// std::string Server::readFileContent(const std::string& filepath) {
-//     std::ifstream file(filepath, std::ios::binary);
-//     if (!file) {
-//         std::cerr << "Error: File not found 2: " << filepath << std::endl;
-//         return "";
-//     }
-//     std::ostringstream buffer;
-//     buffer << file.rdbuf(); //read file by bytes, go back to poll, check if finished reading
-// 	//request->_readyToSendBack = true;
-// 	//std::cout.flush();
-// 	//std::cout << "BUFFER " << buffer.str() << std::endl;
-//     return buffer.str();
-// }
+/**
+ * @brief Read the contents of a file into a string.
+ *
+ * This function reads the contents of a file specified by the given filepath
+ * and returns the contents as a string. If the file does not exist, an error
+ * message is printed to stderr and an empty string is returned.
+ *
+ * @param filepath The path to the file to read.
+ * @return The contents of the file as a string.
+ */
+std::string Server::readFileContent(const std::string& filepath) {
+    std::ifstream file(filepath, std::ios::binary);
+    if (!file) {
+        std::cerr << "Error: File not found 2: " << filepath << std::endl;
+        return "";
+    }
+    std::ostringstream buffer;
+    buffer << file.rdbuf(); //read file by bytes, go back to poll, check if finished reading
+	//request->_readyToSendBack = true;
+	//std::cout.flush();
+	//std::cout << "BUFFER " << buffer.str() << std::endl;
+    return buffer.str();
+}
 
 /**
  * @brief Send HTTP headers to the client.
@@ -841,6 +845,12 @@ int Server::handleServerError(Client &client, const std::exception &e, const std
  * @return The status code of the response
  */
 int Server::sendErrorResponse(Client &client, int statusCode, const std::string &errorPagePath) {
+    std::string errorPath;
+    if(getErrorPage(statusCode) != "")
+        errorPath = getErrorPage(statusCode);
+    else
+        errorPath = errorPagePath;
+        
     std::string errorContent = readFileContent(errorPagePath);
     if (errorContent.empty()) {
         errorContent = "<html><body><h1>" + std::to_string(statusCode) + " - Error</h1></body></html>";

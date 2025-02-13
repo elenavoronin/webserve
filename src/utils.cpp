@@ -106,15 +106,18 @@ void printInfoServer(const Server &server) {
     }
     std::cout << std::endl;
 
-    // Store the result of getErrorPage() to avoid dangling references
-    const std::vector<std::string>& errorPages = server.getErrorPage();
-    std::cout << "Error Pages: ";
-    for (std::vector<std::string>::const_iterator it = errorPages.begin(); it != errorPages.end(); ++it) {
-        std::cout << *it << " ";
+    // Retrieve the error pages map
+    const std::map<int, std::string>& errorPages = server.getErrorPages();
+
+    std::cout << "Error Pages:" << std::endl;
+    for (std::map<int, std::string>::const_iterator it = errorPages.begin(); it != errorPages.end(); ++it) {
+        std::cout << "Status Code: " << it->first << " -> Page: " << it->second << std::endl;
     }
-    std::cout << std::endl;
 
     std::cout << "---------------------------" << std::endl;
+
+
+
 }
 
 /**
@@ -135,12 +138,17 @@ void printInfoLocations(const Location &location) {
     }
     //std::cout << std::endl;
 
-    const std::vector<std::string>& errorPages = location.getErrorPages();
-    //std::cout << "    Error Pages: ";
-    for (std::vector<std::string>::const_iterator it = errorPages.begin(); it != errorPages.end(); ++it) {
-        std::cout << *it << " ";
+    // Retrieve the error pages map
+    const std::map<int, std::string>& errorPages = location.getErrorPages();
+
+    std::cout << "Error Pages:" << std::endl;
+    for (std::map<int, std::string>::const_iterator it = errorPages.begin(); it != errorPages.end(); ++it) {
+        std::cout << "Status Code: " << it->first << " -> Page: " << it->second << std::endl;
     }
-    std::cout << std::endl;
+
+    std::cout << "---------------------------" << std::endl;
+
+
 
     std::cout << "    CGI pass: " << location.getCgiPass() << std::endl;
     std::cout << "    CGI path: " << location.getCgiPath() << std::endl;

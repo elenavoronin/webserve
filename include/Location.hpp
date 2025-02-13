@@ -16,7 +16,7 @@ class Location {
     std::string                           _root;
     std::string                           _index;
     std::string                           _return;
-    std::vector<std::string>              _errorPages;
+    std::map<int, std::string>            _errorPages;
     std::vector<std::string>              _allowedMethods;
     std::string                           _autoindex;
     std::string                           _cgiPass;
@@ -40,8 +40,9 @@ public:
     void                        setIndex(const std::string& index);
     void                        setRedirect(const std::string& statusCode, const std::string& redirectPath);
     void                        setMaxBodySize(const size_t& _maxBodySize);
-    void                        setErrorPages(const std::vector<std::string>& errorPages);
+    void                        setErrorPage(const std::string &statusCode, const std::string &path) { int code = std::stoi(statusCode); _errorPages[code] = path;}
     void                        setUploadPath(const std::string& uploadPath);
+    void                        setErrorPages(const std::map<int, std::string>& errorPages) {_errorPages = errorPages;}
     
     const                       std::string& getRoot() const { return _root; }
     const                       std::vector<std::string>& getAllowedMethods() const { return _allowedMethods; }
@@ -53,8 +54,9 @@ public:
     const                       std::pair<int, std::string>& getRedirect() const { return _redirect; }
     const                       std::string& getReturn() const { return _return; }
     const                       size_t& getMaxBodySize() const { return _maxBodySize; }
-    const                       std::vector<std::string>& getErrorPages() const { return _errorPages; }
+    const                       std::string getErrorPages(int statusCode) const {try {return _errorPages.at(statusCode); } catch (const std::out_of_range&) {return "";}}
     const                       std::string& getUploadPath() const { return _uploadPath; }
     void                        clearLocation();
+    std::map<int, std::string>  getErrorPages() const {return this->_errorPages;}
 
 };
