@@ -136,7 +136,7 @@ void printInfoLocations(const Location &location) {
     for (std::vector<std::string>::const_iterator it = allowedMethods.begin(); it != allowedMethods.end(); ++it) {
         std::cout << *it << " ";
     }
-    //std::cout << std::endl;
+    std::cout << std::endl;
 
     // Retrieve the error pages map
     const std::map<int, std::string>& errorPages = location.getErrorPages();
@@ -146,12 +146,8 @@ void printInfoLocations(const Location &location) {
         std::cout << "Status Code: " << it->first << " -> Page: " << it->second << std::endl;
     }
 
-    std::cout << "---------------------------" << std::endl;
+    // std::cout << "---------------------------" << std::endl;
 
-
-
-    std::cout << "    CGI pass: " << location.getCgiPass() << std::endl;
-    std::cout << "    CGI path: " << location.getCgiPath() << std::endl;
     std::cout << "    Redirect to : "  << location.getRedirect().first << " " << location.getRedirect().second << std::endl;
     std::cout << std::endl;
     std::cout << "---------------------------" << std::endl;

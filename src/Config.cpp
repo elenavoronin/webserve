@@ -87,6 +87,8 @@ bool Config::validateParsedData(Server &server) {
     _defaultS._uploadStore = server.getUploadStore();
     _defaultS._errorPages = server.getErrorPages();
 
+    server.setDefaultServer(_defaultS);
+
     return true;
 }
 
@@ -238,7 +240,6 @@ std::vector<Server> Config::parseConfig(std::ifstream &file) {
             }
             if (insideLocationBlock && tokens[0] == "}" ) {
                 insideLocationBlock = false;
-                // locationComplete = false;
                 if (validateParsedLocation(newLocation))
                 {
                     currentServer.setLocation(pathName, newLocation);
@@ -428,7 +429,7 @@ int Config::checkConfig(const std::string &config_file) {
             throw std::runtime_error("Error in config file: Invalid servers.");
             return -1;
         }
-        printConfigParse(_servers);
+        // printConfigParse(_servers);
         addPollFds();
     } catch (const std::exception &e) {
         std::cerr << "Configuration error: " << e.what() << std::endl;

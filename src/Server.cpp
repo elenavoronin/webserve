@@ -240,10 +240,11 @@ void Server::checkServer(HttpRequest* HttpRequest, std::vector<Server> &servers)
  * @todo figure out when to reset server information to default
  */
 void Server::checkLocations(std::string path, defaultServer defaultServer) {
-    std::cout << "Server Name " << getServerName() << std::endl;
+    std::cout << "path:  " << path  << std::endl;
 
     for (const auto& location : this->getLocations()) {
-        if (path == location.first) {
+        std::string newPath = path.substr(0, location.first.size());
+        if (newPath == location.first) {
             if (!location.second.empty()) {
                 Location loc = location.second[0];
                 if (!loc.getRoot().empty())
@@ -270,7 +271,6 @@ void Server::checkLocations(std::string path, defaultServer defaultServer) {
             }
         }
     }
-
     this->setRoot(defaultServer._root);
     this->setIndex(defaultServer._index);
     this->setPortString(defaultServer._portString);
@@ -319,8 +319,7 @@ int Server::processClientRequest(Client &client, const std::string& request, Htt
 	
     int status = validateRequest(method, version);
 	if (status != 200) {
-		sendFileResponse(client.getSocket(), "www/html/500.html", status);  //change to a config ones?
-		return status;
+		return sendErrorResponse(client, status, "");
 	}
     std::cout << "Method: " << method << std::endl;
 	if (method == "GET" && std::find(this->_allowedMethods.begin(), this->_allowedMethods.end(), "GET") != this->_allowedMethods.end())
@@ -329,10 +328,9 @@ int Server::processClientRequest(Client &client, const std::string& request, Htt
 		return handlePostRequest(client, HttpRequest);
 	if (method == "DELETE" && std::find(this->_allowedMethods.begin(), this->_allowedMethods.end(), "DELETE") != this->_allowedMethods.end())
 		return handleDeleteRequest(client, HttpRequest);
-    //TODO 
-	HttpResponse response;
-	response.buildResponse();
-	return 0;
+    else
+        
+    return 0;
 }
 
 /**
@@ -353,11 +351,11 @@ int Server::processClientRequest(Client &client, const std::string& request, Htt
 int Server::handleGetRequest(Client &client, HttpRequest* request) {
     
     std::string filepath = this->getRoot() + request->getPath();
-    
+    std::cout << " filepath before directory check: " << filepath << std::endl;
     DIR* dir = opendir(filepath.c_str());
     if (dir) {
         closedir(dir);
-        if (access(filepath.c_str(), R_OK | X_OK) == 0) {
+        if (access(filepath.c_str(), R_OK | X_OK) != 0) {
             return sendErrorResponse(client, 403, "www/html/403.html");
         }
     // Check if it's a directory and autoindex is enabled{
@@ -373,16 +371,18 @@ int Server::handleGetRequest(Client &client, HttpRequest* request) {
         }
         else 
         {
-            request->setFullPath(filepath + getIndex());
+            if (filepath.back() != '/')
+                request->setFullPath(filepath + "/" + getIndex()) ;
+            else
+                request->setFullPath(filepath + getIndex()) ;
         }
     }
+
     if (filepath.find("/cgi-bin") != std::string::npos) { 
         request->setFullPath(filepath);
         client.startCgi(request);
         return 0;
     }
-    std::cout << filepath << std::endl;
-    std::cout << request->getFullPath() << std::endl;
     if (access(filepath.c_str(), F_OK) != 0) {
         return sendErrorResponse(client, 404, "www/html/404.html");
     }
@@ -494,10 +494,11 @@ void Server::sendBody(int clientSocket, const std::string& body) {
  */
 int Server::validateRequest(const std::string& method, const std::string& version) {
 	if (method != "GET" && method != "POST" && method != "DELETE") {
-		std::cerr << "Error: Unsupported HTTP method." << std::endl;
-		return 405; // Method Not Allowed
+		return 405;
 	}
-
+    if (method.empty()) {
+        return 405;
+    }
 	if (version != "HTTP/1.1") {
 		std::cerr << "Error: Invalid HTTP version. Only HTTP/1.1 is supported." << std::endl;
 		return 400;
@@ -850,7 +851,7 @@ int Server::sendErrorResponse(Client &client, int statusCode, const std::string 
         errorPath = getErrorPage(statusCode);
     else
         errorPath = errorPagePath;
-        
+    std::cout << "error path: " << errorPath << std::endl;
     std::string errorContent = readFileContent(errorPagePath);
     if (errorContent.empty()) {
         errorContent = "<html><body><h1>" + std::to_string(statusCode) + " - Error</h1></body></html>";
