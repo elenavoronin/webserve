@@ -240,8 +240,6 @@ void Server::checkServer(HttpRequest* HttpRequest, std::vector<Server> &servers)
  * @todo figure out when to reset server information to default
  */
 void Server::checkLocations(std::string path, defaultServer defaultServer) {
-    std::cout << "path:  " << path  << std::endl;
-
     for (const auto& location : this->getLocations()) {
         std::string newPath = path.substr(0, location.first.size());
         if (newPath == location.first) {
@@ -351,7 +349,6 @@ int Server::processClientRequest(Client &client, const std::string& request, Htt
 int Server::handleGetRequest(Client &client, HttpRequest* request) {
     
     std::string filepath = this->getRoot() + request->getPath();
-    std::cout << " filepath before directory check: " << filepath << std::endl;
     DIR* dir = opendir(filepath.c_str());
     if (dir) {
         closedir(dir);
@@ -389,7 +386,12 @@ int Server::handleGetRequest(Client &client, HttpRequest* request) {
     if (access(filepath.c_str(), R_OK) != 0) {
         return sendErrorResponse(client, 403, "www/html/403.html");
     }
-    client.prepareFileResponse(filepath);
+    client.getHttpResponse()->setHeader("Content-Type", "text/html");
+    client.getHttpResponse()->setHeader("Content-Length", std::to_string(readFileContent(filepath).size()));
+    client.getHttpResponse()->setBody(readFileContent(filepath));
+    client.getHttpResponse()->buildResponse();
+    client.addToEventPollRemove(client.getSocket(), POLLIN);
+    client.addToEventPollQueue(client.getSocket(), POLLOUT);
     return 200;
 }
 
@@ -791,26 +793,21 @@ void Server::saveUploadedFile(const std::string& filePath, const std::string& pa
  */
 int Server::handleRedirect(Client& client) {
     std::cout << "Handling Redirection..." << std::endl;
+    client.getHttpResponse()->setStatus(getRedirect().first, getStatusMessage(getRedirect().first));
+    client.getHttpResponse()->setHeader("Location", getRedirect().second);
+    client.getHttpResponse()->setHeader("Content-Type", "text/html");
+    
+    std::string body = "<html><body><h1>Redirecting...</h1>"
+                        "<p>If you are not redirected automatically, "
+                        "<a href=\"" + getRedirect().second + "\">click here</a>.</p></body></html>";
+    client.getHttpResponse()->setBody(body);
+    client.getHttpResponse()->buildResponse();
+    
+    client.addToEventPollRemove(client.getSocket(), POLLIN);
+    client.addToEventPollQueue(client.getSocket(), POLLOUT);
+    // std::cout << "Redirected to: " << getRedirect().second << " with status code: " << getRedirect().first << std::endl;
 
-    try {
-        client.getHttpResponse()->setStatus(getRedirect().first, getStatusMessage(getRedirect().first));
-        client.getHttpResponse()->setHeader("Location", getRedirect().second);
-        client.getHttpResponse()->setHeader("Content-Type", "text/html");
-        
-        std::string body = "<html><body><h1>Redirecting...</h1>"
-                           "<p>If you are not redirected automatically, "
-                           "<a href=\"" + getRedirect().second + "\">click here</a>.</p></body></html>";
-        client.getHttpResponse()->setBody(body);
-        client.getHttpResponse()->buildResponse();
-        
-        client.addToEventPollRemove(client.getSocket(), POLLIN);
-		client.addToEventPollQueue(client.getSocket(), POLLOUT);
-        std::cout << "Redirected to: " << getRedirect().second << " with status code: " << getRedirect().first << std::endl;
-
-        return getRedirect().first;
-    } catch (const std::exception& e) {
-        return handleServerError(client, e, "Error handling redirection request");
-    }
+    return getRedirect().first;
 }
 
 /**
@@ -894,32 +891,13 @@ bool Server::fileExists(const std::string& path) {
 void Server::eraseClient(int event_fd) {
     // Find all clients in _clients where the socket matches event_fd.
     auto it = std::find_if(_clients.begin(), _clients.end(), [&](const Client &c) {
-            // Log each comparison for debugging
-            // std::cout << "Checking client with socket FD: " << c.getSocket()
-            //           << " against target FD: " << event_fd << std::endl;
-            
-            // Return true if this client should be removed
             return c.getSocket() == event_fd;
         }
     );
 
-    // Check if any clients were marked for removal
     if (it != _clients.end()) {
-        // Log removal
-        // std::cout << "Removing client with FD: " << event_fd 
-        //           << ". Total clients before removal: " << _clients.size() << std::endl;
-
-        // Physically remove the clients from the container
         _clients.erase(it);
 		_clients.shrink_to_fit();
-
-        // Log success
-        // std::cout << "We are removing this fd: "<< event_fd << " Client removed. Total clients after removal: " << _clients.size() << std::endl;
-        // std::cout << "Client capacity after removal: " << _clients.capacity() << std::endl;
-		// printClientsVector(_clients);
-    } else {
-        // Log if no matching client was found
-        // std::cerr << "Warning: No client found with FD: " << event_fd << std::endl;
     }
 }
 

@@ -197,7 +197,7 @@ std::string generateDirectoryListing(const std::string &directoryPath, const std
     struct dirent *entry;
     struct stat fileStat;
     if ((dir = opendir(directoryPath.c_str())) == NULL) {
-        std::cerr << "[ERROR] Failed to open directory: " << directoryPath << std::endl;
+        throw std::runtime_error("Failed to open directory: " + directoryPath);
         return "<html><body><h1>403 Forbidden</h1><p>Directory listing not allowed.</p></body></html>";
     }
 

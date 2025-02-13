@@ -15,7 +15,11 @@ bool Config::validateConfig(std::vector<Server> &servers) {
             }
             if (it1->getPortStr() == it2->getPortStr()) {
                 Server server2 = *it2;
-                server2.setOnOff(false);   //we turn off this server
+                Server server1 = *it1;
+                if (server2.getServerName() == "localhost")
+                    server1.setOnOff(false);
+                else
+                    server2.setOnOff(false);
             }
             ++it2;
         }
@@ -303,8 +307,7 @@ std::vector<Server> Config::parseConfig(std::ifstream &file) {
             }
         }
     }  catch (const std::exception &e) {
-        std::cerr << "Parsing error: " << e.what() << std::endl;
-        throw;
+        throw std::runtime_error("Error in config file: " + std::string(e.what()));
     }
     return servers;
 }
@@ -378,13 +381,12 @@ void Config::pollLoop() {
                 Server* activeServer = nullptr;
 
                 for (Server &currentServer : _servers) {
-                    if (!defaultServer)
+                    if (!defaultServer && currentServer.getOnOff() == true)
                         defaultServer = &currentServer;
                     if (currentServer.getOnOff() == true)
                         activeServer = &currentServer;
                     Server* selectedServer = activeServer ? activeServer : defaultServer;
 					std::vector<Server> &servers = _servers;
-
                     if (fd == currentServer.getListenerFd()) {
                         // Handle new connection
                         selectedServer->handleNewConnection(_eventPoll);
