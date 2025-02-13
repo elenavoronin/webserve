@@ -332,7 +332,6 @@ void Client::closeConnection(EventPoll& eventPoll, int currentPollFd) {
  */
 void Client::prepareFileResponse(std::string errorContent) {
     std::string requestedFile = _HttpRequest->getFullPath();
-
 	/*
 	TODO : totally wrong approach searching by folder like this
 	*/

@@ -68,7 +68,7 @@ test: $(OBJTEST)
 clean:
 	@ rm -rf $(OBJDIR) $(OBJTESTDIR)
 	@ rm  -rf *.txt
-	@ rm  -rf ./www/upload/
+	@ rm  -rf ./www/html/upload/
 
 fclean: clean
 	@ rm -f $(NAME) $(TESTNAME)

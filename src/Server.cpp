@@ -161,7 +161,6 @@ void Server::handlePollEvent(EventPoll &eventPoll, int i, defaultServer defaultS
 
     // Handle readable events
     if (currentPollFd.revents & POLLIN) {
-		// std::cout << "POLLIN" << std::endl;
         try {
             if (event_fd != client->getSocket() && event_fd == client->getCgiRead()) {
                 client->readFromCgi();
@@ -220,7 +219,7 @@ void Server::checkServer(HttpRequest* HttpRequest, std::vector<Server> &servers)
 	this->setAllowedMethods(newServer.getAllowedMethods());
 	this->setAutoindex(newServer.getAutoindex());
 	this->setMaxBodySize(newServer.getMaxBodySize());
-	this->setErrorPage(newServer.getErrorPage());
+	this->setErrorPages(newServer.getErrorPages());
 	this->setRedirect(std::to_string(newServer.getRedirect().first), newServer.getRedirect().second);
 	this->setUploadStore(newServer.getUploadStore());
 	this->setMaxBodySize(newServer.getMaxBodySize());
@@ -241,10 +240,9 @@ void Server::checkServer(HttpRequest* HttpRequest, std::vector<Server> &servers)
  * @todo figure out when to reset server information to default
  */
 void Server::checkLocations(std::string path, defaultServer defaultServer) {
-    std::cout << "Server Name " << getServerName() << std::endl;
-
     for (const auto& location : this->getLocations()) {
-        if (path == location.first) {
+        std::string newPath = path.substr(0, location.first.size());
+        if (newPath == location.first) {
             if (!location.second.empty()) {
                 Location loc = location.second[0];
                 if (!loc.getRoot().empty())
@@ -260,7 +258,7 @@ void Server::checkLocations(std::string path, defaultServer defaultServer) {
                 if (loc.getMaxBodySize() != 0)
                     this->setMaxBodySize(loc.getMaxBodySize());
                 if (!loc.getErrorPages().empty())
-                    this->setErrorPage(loc.getErrorPages());
+                    this->setErrorPages(loc.getErrorPages());
                 if (loc.getRedirect().first != 0)
                     this->setRedirect(std::to_string(loc.getRedirect().first), loc.getRedirect().second);
                 if (!loc.getUploadPath().empty())
@@ -271,7 +269,6 @@ void Server::checkLocations(std::string path, defaultServer defaultServer) {
             }
         }
     }
-
     this->setRoot(defaultServer._root);
     this->setIndex(defaultServer._index);
     this->setPortString(defaultServer._portString);
@@ -279,7 +276,7 @@ void Server::checkLocations(std::string path, defaultServer defaultServer) {
     this->setAutoindex(defaultServer._autoindex);
     this->setMaxBodySize(defaultServer._maxBodySize);
     this->setUploadStore(defaultServer._uploadStore);
-    this->setErrorPage(defaultServer._errorPage);
+    this->setErrorPages(defaultServer._errorPages);
     this->setRedirect(std::to_string((defaultServer._redirect.first)), defaultServer._redirect.second);
     return;
     
@@ -320,8 +317,7 @@ int Server::processClientRequest(Client &client, const std::string& request, Htt
 	
     int status = validateRequest(method, version);
 	if (status != 200) {
-		sendFileResponse(client.getSocket(), "www/html/500.html", status);  //change to a config ones?
-		return status;
+		return sendErrorResponse(client, status, "");
 	}
     std::cout << "Method: " << method << std::endl;
 	if (method == "GET" && std::find(this->_allowedMethods.begin(), this->_allowedMethods.end(), "GET") != this->_allowedMethods.end())
@@ -330,9 +326,9 @@ int Server::processClientRequest(Client &client, const std::string& request, Htt
 		return handlePostRequest(client, HttpRequest);
 	if (method == "DELETE" && std::find(this->_allowedMethods.begin(), this->_allowedMethods.end(), "DELETE") != this->_allowedMethods.end())
 		return handleDeleteRequest(client, HttpRequest);
-	HttpResponse response;
-	response.buildResponse();
-	return 0;
+    else
+        
+    return 0;
 }
 
 /**
@@ -353,9 +349,12 @@ int Server::processClientRequest(Client &client, const std::string& request, Htt
 int Server::handleGetRequest(Client &client, HttpRequest* request) {
     
     std::string filepath = this->getRoot() + request->getPath();
-    
-    // std::cout << "in GET autoindex: " << getAutoindex() << std::endl;
-    if (opendir(filepath.c_str())) {
+    DIR* dir = opendir(filepath.c_str());
+    if (dir) {
+        closedir(dir);
+        if (access(filepath.c_str(), R_OK | X_OK) != 0) {
+            return sendErrorResponse(client, 403, "www/html/403.html");
+        }
     // Check if it's a directory and autoindex is enabled{
         if (getAutoindex() == "on") {  // Autoindex must be enabled
             std::string htmlContent = generateDirectoryListing(filepath, request->getPath());
@@ -368,7 +367,12 @@ int Server::handleGetRequest(Client &client, HttpRequest* request) {
             return 200;
         }
         else 
-            request->setFullPath(filepath + getIndex());
+        {
+            if (filepath.back() != '/')
+                request->setFullPath(filepath + "/" + getIndex()) ;
+            else
+                request->setFullPath(filepath + getIndex()) ;
+        }
     }
 
     if (filepath.find("/cgi-bin") != std::string::npos) { 
@@ -376,10 +380,18 @@ int Server::handleGetRequest(Client &client, HttpRequest* request) {
         client.startCgi(request);
         return 0;
     }
-    if (!fileExists(filepath)) {
+    if (access(filepath.c_str(), F_OK) != 0) {
         return sendErrorResponse(client, 404, "www/html/404.html");
     }
-    client.prepareFileResponse(readFileContent(filepath));
+    if (access(filepath.c_str(), R_OK) != 0) {
+        return sendErrorResponse(client, 403, "www/html/403.html");
+    }
+    client.getHttpResponse()->setHeader("Content-Type", "text/html");
+    client.getHttpResponse()->setHeader("Content-Length", std::to_string(readFileContent(filepath).size()));
+    client.getHttpResponse()->setBody(readFileContent(filepath));
+    client.getHttpResponse()->buildResponse();
+    client.addToEventPollRemove(client.getSocket(), POLLIN);
+    client.addToEventPollQueue(client.getSocket(), POLLOUT);
     return 200;
 }
 
@@ -484,10 +496,11 @@ void Server::sendBody(int clientSocket, const std::string& body) {
  */
 int Server::validateRequest(const std::string& method, const std::string& version) {
 	if (method != "GET" && method != "POST" && method != "DELETE") {
-		std::cerr << "Error: Unsupported HTTP method." << std::endl;
-		return 405; // Method Not Allowed
+		return 405;
 	}
-
+    if (method.empty()) {
+        return 405;
+    }
 	if (version != "HTTP/1.1") {
 		std::cerr << "Error: Invalid HTTP version. Only HTTP/1.1 is supported." << std::endl;
 		return 400;
@@ -780,26 +793,21 @@ void Server::saveUploadedFile(const std::string& filePath, const std::string& pa
  */
 int Server::handleRedirect(Client& client) {
     std::cout << "Handling Redirection..." << std::endl;
+    client.getHttpResponse()->setStatus(getRedirect().first, getStatusMessage(getRedirect().first));
+    client.getHttpResponse()->setHeader("Location", getRedirect().second);
+    client.getHttpResponse()->setHeader("Content-Type", "text/html");
+    
+    std::string body = "<html><body><h1>Redirecting...</h1>"
+                        "<p>If you are not redirected automatically, "
+                        "<a href=\"" + getRedirect().second + "\">click here</a>.</p></body></html>";
+    client.getHttpResponse()->setBody(body);
+    client.getHttpResponse()->buildResponse();
+    
+    client.addToEventPollRemove(client.getSocket(), POLLIN);
+    client.addToEventPollQueue(client.getSocket(), POLLOUT);
+    // std::cout << "Redirected to: " << getRedirect().second << " with status code: " << getRedirect().first << std::endl;
 
-    try {
-        client.getHttpResponse()->setStatus(getRedirect().first, getStatusMessage(getRedirect().first));
-        client.getHttpResponse()->setHeader("Location", getRedirect().second);
-        client.getHttpResponse()->setHeader("Content-Type", "text/html");
-        
-        std::string body = "<html><body><h1>Redirecting...</h1>"
-                           "<p>If you are not redirected automatically, "
-                           "<a href=\"" + getRedirect().second + "\">click here</a>.</p></body></html>";
-        client.getHttpResponse()->setBody(body);
-        client.getHttpResponse()->buildResponse();
-        
-        client.addToEventPollRemove(client.getSocket(), POLLIN);
-		client.addToEventPollQueue(client.getSocket(), POLLOUT);
-        std::cout << "Redirected to: " << getRedirect().second << " with status code: " << getRedirect().first << std::endl;
-
-        return getRedirect().first;
-    } catch (const std::exception& e) {
-        return handleServerError(client, e, "Error handling redirection request");
-    }
+    return getRedirect().first;
 }
 
 /**
@@ -835,6 +843,12 @@ int Server::handleServerError(Client &client, const std::exception &e, const std
  * @return The status code of the response
  */
 int Server::sendErrorResponse(Client &client, int statusCode, const std::string &errorPagePath) {
+    std::string errorPath;
+    if(getErrorPage(statusCode) != "")
+        errorPath = getErrorPage(statusCode);
+    else
+        errorPath = errorPagePath;
+    std::cout << "error path: " << errorPath << std::endl;
     std::string errorContent = readFileContent(errorPagePath);
     if (errorContent.empty()) {
         errorContent = "<html><body><h1>" + std::to_string(statusCode) + " - Error</h1></body></html>";
@@ -877,32 +891,13 @@ bool Server::fileExists(const std::string& path) {
 void Server::eraseClient(int event_fd) {
     // Find all clients in _clients where the socket matches event_fd.
     auto it = std::find_if(_clients.begin(), _clients.end(), [&](const Client &c) {
-            // Log each comparison for debugging
-            // std::cout << "Checking client with socket FD: " << c.getSocket()
-            //           << " against target FD: " << event_fd << std::endl;
-            
-            // Return true if this client should be removed
             return c.getSocket() == event_fd;
         }
     );
 
-    // Check if any clients were marked for removal
     if (it != _clients.end()) {
-        // Log removal
-        // std::cout << "Removing client with FD: " << event_fd 
-        //           << ". Total clients before removal: " << _clients.size() << std::endl;
-
-        // Physically remove the clients from the container
         _clients.erase(it);
 		_clients.shrink_to_fit();
-
-        // Log success
-        // std::cout << "We are removing this fd: "<< event_fd << " Client removed. Total clients after removal: " << _clients.size() << std::endl;
-        // std::cout << "Client capacity after removal: " << _clients.capacity() << std::endl;
-		// printClientsVector(_clients);
-    } else {
-        // Log if no matching client was found
-        // std::cerr << "Warning: No client found with FD: " << event_fd << std::endl;
     }
 }
 

@@ -106,15 +106,18 @@ void printInfoServer(const Server &server) {
     }
     std::cout << std::endl;
 
-    // Store the result of getErrorPage() to avoid dangling references
-    const std::vector<std::string>& errorPages = server.getErrorPage();
-    std::cout << "Error Pages: ";
-    for (std::vector<std::string>::const_iterator it = errorPages.begin(); it != errorPages.end(); ++it) {
-        std::cout << *it << " ";
+    // Retrieve the error pages map
+    const std::map<int, std::string>& errorPages = server.getErrorPages();
+
+    std::cout << "Error Pages:" << std::endl;
+    for (std::map<int, std::string>::const_iterator it = errorPages.begin(); it != errorPages.end(); ++it) {
+        std::cout << "Status Code: " << it->first << " -> Page: " << it->second << std::endl;
     }
-    std::cout << std::endl;
 
     std::cout << "---------------------------" << std::endl;
+
+
+
 }
 
 /**
@@ -133,17 +136,18 @@ void printInfoLocations(const Location &location) {
     for (std::vector<std::string>::const_iterator it = allowedMethods.begin(); it != allowedMethods.end(); ++it) {
         std::cout << *it << " ";
     }
-    //std::cout << std::endl;
-
-    const std::vector<std::string>& errorPages = location.getErrorPages();
-    //std::cout << "    Error Pages: ";
-    for (std::vector<std::string>::const_iterator it = errorPages.begin(); it != errorPages.end(); ++it) {
-        std::cout << *it << " ";
-    }
     std::cout << std::endl;
 
-    std::cout << "    CGI pass: " << location.getCgiPass() << std::endl;
-    std::cout << "    CGI path: " << location.getCgiPath() << std::endl;
+    // Retrieve the error pages map
+    const std::map<int, std::string>& errorPages = location.getErrorPages();
+
+    std::cout << "Error Pages:" << std::endl;
+    for (std::map<int, std::string>::const_iterator it = errorPages.begin(); it != errorPages.end(); ++it) {
+        std::cout << "Status Code: " << it->first << " -> Page: " << it->second << std::endl;
+    }
+
+    // std::cout << "---------------------------" << std::endl;
+
     std::cout << "    Redirect to : "  << location.getRedirect().first << " " << location.getRedirect().second << std::endl;
     std::cout << std::endl;
     std::cout << "---------------------------" << std::endl;
@@ -193,7 +197,7 @@ std::string generateDirectoryListing(const std::string &directoryPath, const std
     struct dirent *entry;
     struct stat fileStat;
     if ((dir = opendir(directoryPath.c_str())) == NULL) {
-        std::cerr << "[ERROR] Failed to open directory: " << directoryPath << std::endl;
+        throw std::runtime_error("Failed to open directory: " + directoryPath);
         return "<html><body><h1>403 Forbidden</h1><p>Directory listing not allowed.</p></body></html>";
     }
 

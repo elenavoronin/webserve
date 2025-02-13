@@ -11,6 +11,7 @@ Location::Location() : _root(), _index(),  _errorPages(),
       _maxBodySize(0), _cgiExtension(), _redirect(){}
 Location::~Location() {}
 
+
 void Location::setRoot(const std::string& root) {
     this->_root = root;
 }
@@ -40,10 +41,6 @@ void Location::setIndex(const std::string& index) {
 }
 
 
-void Location::setErrorPages(const std::vector<std::string>& errorPages) {
-    _errorPages = errorPages;
-}
-
 void Location::setMaxBodySize(const size_t& maxBodySize) {
     _maxBodySize = maxBodySize;
 }
@@ -65,7 +62,7 @@ void Location::setUploadPath(const std::string& uploadPath) {
 void Location::clearLocation() {
     _root.clear();                 // Clear the root path
     _index.clear();                // Clear the index
-    _errorPages.clear();           // Clear the error pages vector
+    _errorPages.clear();           // Clear the error pages vector 
     _allowedMethods.clear();       // Clear the allowed methods vector
     _autoindex.clear();           // Reset autoindex to default (false)
     _cgiPass.clear();              // Clear the CGI pass path

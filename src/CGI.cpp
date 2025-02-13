@@ -119,13 +119,11 @@ void CGI::initializeEnvVars(HttpRequest* request) {
  *              - Todo save status code somewhere
  */
 void CGI::executeCgi() {
-    // Remove query string from _path
     std::size_t queryPos = _path.find("?");
     if (queryPos != std::string::npos) {
         _path = _path.substr(0, queryPos);
     }
 
-	// std::string cgiProgramString = "/home/akrepkov/Desktop/webserv_git/git/www/html/assets/cat.jpeg";
 	std::string cgiProgramString = "www/html" + _path;
     const char* cgiProgram = cgiProgramString.c_str();
     const char* argv[] = {"/usr/bin/python3", cgiProgram, nullptr};
@@ -133,11 +131,6 @@ void CGI::executeCgi() {
     dup2(_fromCgiPipe[WRITE], STDOUT_FILENO);
     close(_fromCgiPipe[READ]);
     close(_fromCgiPipe[WRITE]);
-
-    // std::cerr << "Executing CGI script with execve: " << argv[0] << " " << argv[1] << std::endl;
-    // for (const auto& envVar : _envVars) {
-    //     std::cerr << "Env: " << envVar << std::endl;
-    // }
     execve(argv[0], const_cast<char* const*>(argv), _env.data());	
 	perror("execve failed");
 	exit(EXIT_FAILURE);

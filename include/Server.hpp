@@ -37,7 +37,7 @@ struct defaultServer {
 	std::string 						_index;
 	std::string 						_autoindex;
 	std::string 						_uploadStore;
-	std::vector<std::string> 			_errorPage;
+	std::map<int, std::string> 			_errorPages;
 	std::vector<std::string> 			_allowedMethods;
 	size_t 								_maxBodySize;
 	std::pair<int, std::string>			_redirect;
@@ -57,7 +57,7 @@ class Server  {
 		std::string                       				_autoindex;
 		size_t											_maxBodySize;
         std::string                 					_uploadStore;
-		std::vector<std::string>						_errorPage;
+		std::map<int, std::string>						_errorPages;
 		std::map<std::string, std::vector<Location>>	_locations;
 		int 											_listener_fd;
 		std::vector<Client> 							_clients;
@@ -101,11 +101,12 @@ class Server  {
         void 											setUploadStore(const std::string &upload_store) { _uploadStore = upload_store;}
         void 											setAllowedMethods(const std::vector<std::string> &AllowedMethods) { _allowedMethods = AllowedMethods;}
         void 											setIndex(const std::string &index) { _index = index;}
-		void 											setErrorPage(const std::vector<std::string>& errorPages) {_errorPage = errorPages;}
+		void 											setErrorPage(const std::string statusCode, const std::string& path) { int code = std::stoi(statusCode); _errorPages[code] = path;}
 		void 											setLocation(const std::string& path, const Location& location) {_locations[path].push_back(location);}
 		void											setListenerFd(int listener_fd) {_listener_fd = listener_fd;}
 		void											setOnOff(bool on) {_on = on;}
 		void											setDefaultServer(defaultServer defaultServer) {_defaultServer = defaultServer;}	
+		void											setErrorPages(const std::map<int, std::string>& errorPages) {_errorPages = errorPages;}
 
 		std::string										extractBoundary(const std::string& contentType);
 		std::vector<std::string>						splitMultipartBody(const std::string& requestBody, const std::string& boundary);
@@ -126,7 +127,8 @@ class Server  {
 		std::vector<std::string> 						getAllowedMethods() const {return this->_allowedMethods;}
 		std::string										getAutoindex() const {return this->_autoindex;}
 		std::string 									getUploadStore() const {return this->_uploadStore;}
-		std::vector<std::string> 						getErrorPage() const {return this->_errorPage;}
+		std::string										getErrorPage(int statusCode) const {try {return _errorPages.at(statusCode); } catch (const std::out_of_range&) {return "";}}
+		std::map<int, std::string>						getErrorPages() const {return this->_errorPages;}
 		int												getListenerFd() const {return this->_listener_fd;}
 		std::pair<int, std::string>						getRedirect() const { return this->_redirect;}
 		bool											getOnOff() const {return this->_on;}
