@@ -378,8 +378,8 @@ int Server::handleGetRequest(Client &client, HttpRequest* request) {
 
     if (filepath == "www/html/")
         filepath = filepath + getIndex();
-    std::cout << "Filepath: " << filepath << std::endl;
-    std::cout << "getIndex " << getIndex() << std::endl;
+    // std::cout << "Filepath: " << filepath << std::endl;
+    // std::cout << "getIndex " << getIndex() << std::endl;
     if (filepath.find("/cgi-bin") != std::string::npos) { 
         request->setFullPath(filepath);
         client.startCgi(request);
@@ -853,7 +853,7 @@ int Server::sendErrorResponse(Client &client, int statusCode, const std::string 
         errorPath = getErrorPage(statusCode);
     else
         errorPath = errorPagePath;
-    std::cout << "error path: " << errorPath << std::endl;
+    // std::cout << "error path: " << errorPath << std::endl;
     std::string errorContent = readFileContent(errorPagePath);
     if (errorContent.empty()) {
         errorContent = "<html><body><h1>" + std::to_string(statusCode) + " - Error</h1></body></html>";
