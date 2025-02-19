@@ -172,7 +172,7 @@ void Client::startCgi(HttpRequest *request){
     _eventPoll->addPollFdEventQueue(_CGI->getWriteFd(), POLLOUT);
     _eventPoll->ToremovePollEventFd(_clientSocket, POLLIN);
 
-    std::cerr   << "CGI process started. Read FD: " << _CGI->getReadFd()
+    std::cout   << "CGI process started. Read FD: " << _CGI->getReadFd()
                 << ", Write FD: " << _CGI->getWriteFd() << std::endl;
 }
 
@@ -194,7 +194,7 @@ void Client::readFromCgi() {
         _CGI->readCgiOutput();
         if (_CGI->isCgiComplete()) {
             std::cerr << "CGI process completed. Preparing response." << std::endl;
-            // std::cerr << _CGI->getCgiOutput() << std::endl;
+            std::cerr << " CGI output: " <<  _CGI->getCgiOutput() << std::endl;
             _HttpResponse->setFullResponse(_CGI->getCgiOutput());
             _eventPoll->addPollFdEventQueue(_clientSocket, POLLOUT);
             _eventPoll->ToremovePollEventFd(_CGI->getReadFd(), POLLIN);

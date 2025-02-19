@@ -164,7 +164,6 @@ void CGI::readCgiOutput() {
     _cgiOutput.append(buffer, bytes_read);
     std::cerr << "Read " << bytes_read << " bytes from CGI output. Total output size: " 
               << _cgiOutput.size() << " bytes." << std::endl;
-    std::cerr << "BYTES RECIEVED " << _receivedBodySize << std::endl;
             //   << "Current CGI output: " << _cgiOutput << std::endl;
               
     // Parse headers if not sent
@@ -184,22 +183,20 @@ void CGI::readCgiOutput() {
             parseHeaders(headers);
             _receivedBodySize = _cgiOutput.size() - headers.size() - 5;
 
+
             std::cerr << "Headers received and parsed. Content-Length: " 
                 << _contentLength << std::endl;
         }
         else {
             _receivedBodySize += bytes_read;
+
         }
     }
-    // Check if the body size matches Content-Length
-    else {
-        _receivedBodySize += bytes_read;
-        std::cerr << "BYTES RECIEVED " << _receivedBodySize << std::endl;
-        if (_receivedBodySize >= _contentLength) {
-        std::cerr << "Body size matches Content-Length. Marking as complete." << std::endl;
-        markCgiComplete();
-        std::cerr << "Body fully received. Marking CGI as complete." << _cgiComplete << std::endl;
-        }
+    _receivedBodySize += bytes_read;
+    if (_receivedBodySize >= _contentLength) {
+    std::cerr << "Body size matches Content-Length. Marking as complete." << std::endl;
+    markCgiComplete();
+    std::cerr << "Body fully received. Marking CGI as complete." << _cgiComplete << std::endl;
     }
 }
 
