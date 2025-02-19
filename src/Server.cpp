@@ -376,7 +376,7 @@ int Server::handleGetRequest(Client &client, HttpRequest* request) {
         }
     }
 
-    if (filepath.back() == '/')
+    if (filepath == "www/html/")
         filepath = filepath + getIndex();
     std::cout << "Filepath: " << filepath << std::endl;
     std::cout << "getIndex " << getIndex() << std::endl;
