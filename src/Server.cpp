@@ -309,6 +309,7 @@ int Server::processClientRequest(Client &client, const std::string& request, Htt
     std::string version = HttpRequest->getVersion();
 
 	checkLocations(path, defaultServer);
+    std::cout << "path " << path << std::endl;
 	checkServer(HttpRequest, servers);
     if (getRedirect().first != 0)
     {
@@ -375,6 +376,10 @@ int Server::handleGetRequest(Client &client, HttpRequest* request) {
         }
     }
 
+    if (filepath.back() == '/')
+        filepath = filepath + getIndex();
+    std::cout << "Filepath: " << filepath << std::endl;
+    std::cout << "getIndex " << getIndex() << std::endl;
     if (filepath.find("/cgi-bin") != std::string::npos) { 
         request->setFullPath(filepath);
         client.startCgi(request);
