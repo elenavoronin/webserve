@@ -55,7 +55,6 @@ class CGI {
 		void 				parseQueryString(HttpRequest* request);
 		void 				readCgiOutput();
 		void 				writeCgiInput();
-		void 				sendResponse(int client_socket, const std::string& cgi_output);
 		void 				executeCgi();
 		void				clearCgiOutput();
 		bool				areHeadersSent() const;
@@ -63,6 +62,8 @@ class CGI {
 		bool				isCgiComplete() const;
 		void				markCgiComplete();
 		void				parseHeaders(const std::string& headers);
+		void				setPath(std::string path);
+		std::string			getPath() const;
 		//make endCGI() 
 
 		int 				getReadFd() const;

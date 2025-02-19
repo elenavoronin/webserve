@@ -376,12 +376,12 @@ int Server::handleGetRequest(Client &client, HttpRequest* request) {
         }
     }
 
+
     if (filepath == "www/html/")
         filepath = filepath + getIndex();
-    // std::cout << "Filepath: " << filepath << std::endl;
     // std::cout << "getIndex " << getIndex() << std::endl;
-    if (filepath.find("/cgi-bin") != std::string::npos) { 
-        request->setFullPath(filepath);
+    if (filepath.find("/cgi-bin") != std::string::npos) {
+        request->setFullPath(request->getPath());
         client.startCgi(request);
         return 0;
     }

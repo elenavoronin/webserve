@@ -162,11 +162,12 @@ int Client::getCgiWrite(){
  *
  * @param request The HttpRequest object to initialize the CGI object with.
  */
-void Client::startCgi(HttpRequest *request) {
+void Client::startCgi(HttpRequest *request){
 	if (this->_CGI != NULL)
 		throw std::runtime_error("already initialized");
         
 	this->_CGI = new CGI(request);
+    this->_CGI->setPath(request->getFullPath());
     _eventPoll->addPollFdEventQueue(_CGI->getReadFd(), POLLIN);
     _eventPoll->addPollFdEventQueue(_CGI->getWriteFd(), POLLOUT);
     _eventPoll->ToremovePollEventFd(_clientSocket, POLLIN);

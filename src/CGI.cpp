@@ -9,7 +9,6 @@ CGI::CGI(HttpRequest *request) {
     _cgiComplete = false;
     _headersSent = false;
 
-
     if (!setupPipes()) 
         return;
 
@@ -111,7 +110,7 @@ void CGI::initializeEnvVars(HttpRequest* request) {
  *              Redirects `stdout` to `_fromCgiPipe[WRITE]` so the output can be read back by the parent process.
  *              This function is meant to be called in the child process created by `fork`.
  * 
- * @todo        - Complete server configuration for CGI execution.
+ * @todo        
  *              - Add error handling for `execve`.
  *              - Implement dynamic script path generation based on server configuration??
  *              - Use Server object to set up the environment variables when properly configured
@@ -124,8 +123,8 @@ void CGI::executeCgi() {
         _path = _path.substr(0, queryPos);
     }
 
-	std::string cgiProgramString = "www/html" + _path;
-    const char* cgiProgram = cgiProgramString.c_str();
+    std::string scriptPath = "www/html" + _path;
+    const char* cgiProgram = scriptPath.c_str();
     const char* argv[] = {"/usr/bin/python3", cgiProgram, nullptr};
 
     dup2(_fromCgiPipe[WRITE], STDOUT_FILENO);
@@ -368,4 +367,12 @@ void CGI::markCgiComplete() {
 
 pid_t CGI::getPid() const {
     return _pid;
+}
+
+void CGI::setPath(std::string path){
+    _path = path;
+}
+
+std::string CGI::getPath() const {
+    return _path;
 }
