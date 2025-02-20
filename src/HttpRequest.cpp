@@ -18,7 +18,6 @@ HttpRequest::~HttpRequest(){}
  * @param       path    The value to assign to the path field.
  * 
  * @return      The assigned path value.
- * @todo		Do i need to use root instead of hardcoded is this correct?
  */
 void	HttpRequest::setPath(std::string path) {
 	_path = path;
@@ -30,7 +29,6 @@ void	HttpRequest::setPath(std::string path) {
  * @param       path    The value to assign to the path field.
  * 
  * @return      The assigned path value.
- * @todo		Do i need to use root instead of hardcoded is this correct? get it from location?
  */
 void	HttpRequest::setFullPath(std::string path) {
 	_fullPath = path;
@@ -196,7 +194,6 @@ std::string HttpRequest::getPathToDelete(const std::string& rawRequest) {
 	if (_path.empty()) {
 		throw std::runtime_error("Path to resource not found");
 	}
-
 	return _path;
 }
 
@@ -241,7 +238,6 @@ bool HttpRequest::getBodyReceived(){
  * 
  * @details     Extracts the method, path, version, and headers from the HTTP request 
  *              and stores them in the internal request map.
- * @todo		Do i need the map or the private variables???
  */
 void HttpRequest::readRequest(std::string request){
 
@@ -269,7 +265,6 @@ std::string HttpRequest::getServerName() {
 	std::string str = getField("Host");
 	str.erase(std::remove_if(str.begin(), str.end(),
         [](char c) { return !std::isalpha(c); }), str.end());
-	// std::cout << "Server name: " << str << std::endl;
 	return str;
 }
 
@@ -321,7 +316,6 @@ std::string HttpRequest::getRequestHeader() {
 }
 
 void HttpRequest::parseBody(const std::string& rawRequest) {
-	// std::cout << "This Is RawRequest in Parse Body\n " <<  rawRequest << "\n *****"<< std:: endl;
     // Find the double CRLF that separates headers and body
     size_t headerEnd = rawRequest.find("\r\n\r\n");
     if (headerEnd == std::string::npos) {
@@ -336,7 +330,6 @@ void HttpRequest::parseBody(const std::string& rawRequest) {
         _body.clear();  // No body
     }
 	setBody(_body);
-	// std::cout << "This Is Body in Parse Body " <<  this->_body << "\n *****" << std:: endl;
 }
 
 void HttpRequest::parseHeaders(const std::string& rawRequest) {
@@ -358,5 +351,4 @@ void HttpRequest::parseHeaders(const std::string& rawRequest) {
         }
     }
 	setHeader(rawRequest.substr(0, headerEnd));
-	//std::cout << "ONLY HEADER " <<  rawRequest.substr(0, headerEnd) << std::endl;
 }

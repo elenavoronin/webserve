@@ -14,6 +14,5 @@ int main(int argc, char **argv) {
         config.checkConfig("configs/default.conf");
     else
         config.checkConfig(argv[1]);
-	
     return 0;
 }

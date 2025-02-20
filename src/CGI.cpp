@@ -4,7 +4,7 @@
  * @brief       Constructor for the CGI class.
  */
 CGI::CGI(HttpRequest *request) {
-    _cgiInput = request->getField("body"); // May be empty for GET requests
+    _cgiInput = request->getField("body");
     _inputIndex = 0;
     _cgiComplete = false;
     _headersSent = false;
@@ -15,7 +15,6 @@ CGI::CGI(HttpRequest *request) {
     _pid = fork();
     if (_pid == -1) {
         throw std::runtime_error("Fork failed!");
-        // TODO set http response error
         return;
     }
     else if (_pid == 0) {
@@ -44,9 +43,6 @@ CGI::~CGI(){
  * 
  * @details     If the request method is GET, this function extracts the query string 
  *              from the request path and stores it in `_queryParams`.
- * 
- * @todo        - Ensure `_method` is properly set before calling this function.
- *              - Add error handling in case the query string is malformed.
  */
 void CGI::parseQueryString(HttpRequest* request) {
     if (_method == "GET") {
@@ -68,9 +64,7 @@ void CGI::parseQueryString(HttpRequest* request) {
  * @details     Sets up key CGI environment variables like REQUEST_METHOD, QUERY_STRING, CONTENT_TYPE, 
  *              SCRIPT_NAME, and CONTENT_LENGTH. Converts these into a format that can be passed to `execve`.
  * 
- * @todo        - Verify if other environment variables are needed.
- *              - Handle cases where environment variables might be missing or malformed.
- *              - Ensure proper memory management for `_env` in case of re-initialization.
+ * @todo         - Handle cases where environment variables might be missing or malformed.
  */
 void CGI::initializeEnvVars(HttpRequest* request) {
     _method = request->getField("method");
@@ -98,7 +92,7 @@ void CGI::initializeEnvVars(HttpRequest* request) {
     for (const auto& var : _envVars) {
         _env.push_back(const_cast<char*>(var.c_str()));
     }
-    _env.push_back(nullptr); // End the environment variable list
+    _env.push_back(nullptr);
 }
 
 /**
@@ -110,12 +104,7 @@ void CGI::initializeEnvVars(HttpRequest* request) {
  *              Redirects `stdout` to `_fromCgiPipe[WRITE]` so the output can be read back by the parent process.
  *              This function is meant to be called in the child process created by `fork`.
  * 
- * @todo        
- *              - Add error handling for `execve`.
- *              - Implement dynamic script path generation based on server configuration??
- *              - Use Server object to set up the environment variables when properly configured
- *              - Check if the script path should be dynamically generated based on the server configuration.
- *              - Todo save status code somewhere
+ * @todo         - Add error handling for `execve`.
  */
 void CGI::executeCgi() {
     std::size_t queryPos = _path.find("?");
@@ -139,13 +128,6 @@ void CGI::executeCgi() {
  * @brief Reads the output from the CGI process via the pipe and sends it to the client.
  * 
  * @param client_socket The socket through which the server communicates with the client.
- * @todo                - Implement error handling if something goes wrong before sending the repsonse
- *                      - put buffer to 10 and have a read loop. after buffer is read return to poll and pass that 
- *                      - go back to the server and then continue reading
- *                      - handle 
- *                      - implement error handling 
- *                      - maybe use vector of characters to have less trouble with images
- *                      - remove comments
  */
 void CGI::readCgiOutput() {
     char buffer[READ_SIZE];
@@ -155,48 +137,30 @@ void CGI::readCgiOutput() {
         throw std::runtime_error("Error reading from pipe");
     }
     else if (bytes_read == 0) {
-        std::cout << "EOF reached mark complete" << std::endl;
         markCgiComplete();
-        std::cerr << "Finished reading CGI output. Marking as complete." << _cgiComplete << std::endl;
         return;
     }
-    // Append data to output
-    _cgiOutput.append(buffer, bytes_read);
-    std::cerr << "Read " << bytes_read << " bytes from CGI output. Total output size: " 
-              << _cgiOutput.size() << " bytes." << std::endl;
-            //   << "Current CGI output: " << _cgiOutput << std::endl;
-              
-    // Parse headers if not sent
+    _cgiOutput.append(buffer, bytes_read);           
+
     if (!_headersSent) {
 
         auto headers_end = _cgiOutput.find("\r\n\r\n");
         if (headers_end == std::string::npos) {
-            std::cerr << "Headers not yet complete. Waiting for more data." << std::endl;
-            return; // Wait for more data in the next read
+            return;
         }
         else if (headers_end != std::string::npos) {
             _headersSent = true;
-
-            // Extract headers
             std::string headers = _cgiOutput.substr(0, headers_end);
-            // std::cout << headers << std::endl;
             parseHeaders(headers);
             _receivedBodySize = _cgiOutput.size() - headers.size() - 5;
-
-
-            std::cerr << "Headers received and parsed. Content-Length: " 
-                << _contentLength << std::endl;
         }
         else {
             _receivedBodySize += bytes_read;
-
         }
     }
     _receivedBodySize += bytes_read;
     if (_receivedBodySize >= _contentLength) {
-    std::cerr << "Body size matches Content-Length. Marking as complete." << std::endl;
-    markCgiComplete();
-    std::cerr << "Body fully received. Marking CGI as complete." << _cgiComplete << std::endl;
+        markCgiComplete();
     }
 }
 
@@ -217,7 +181,6 @@ void CGI::parseHeaders(const std::string& headers) {
     std::istringstream headerStream(headers);
     std::string line;
     while (std::getline(headerStream, line)) {
-        // std::cout << "line contains: " << line << std::endl;
         if (line.back() == '\r') {
             line.pop_back();
         }
@@ -225,16 +188,13 @@ void CGI::parseHeaders(const std::string& headers) {
             std::string contentLengthStr = line.substr(15);
         try {
             _contentLength = std::stoi(contentLengthStr);
-            std::cerr << "Content-Length extracted: " << _contentLength << std::endl;
         } 
         catch (const std::exception& e) {
-            std::cerr << "Invalid Content-Length header: " << contentLengthStr << std::endl;
             throw std::runtime_error("Invalid Content-Length value");
         }
         return;
         }
     }
-    std::cerr << "Content-Length header not found in headers." << std::endl;
     throw std::runtime_error("Missing Content-Length header");
 }
 
@@ -244,33 +204,22 @@ void CGI::parseHeaders(const std::string& headers) {
  * This function writes chunks of the input data to the CGI process. The amount of data to write is limited by the
  * `WRITE_SIZE` constant. If the remaining data is less than `WRITE_SIZE`, only the remaining bytes are written.
  * The function keeps track of how much data has been written via the `_inputIndex` variable.
- *
- * @todo        - Implement error handling if something goes wrong with the write
  */
 void CGI::writeCgiInput() {
 
     if (_inputIndex >= _cgiInput.size()) {
         close(_toCgiPipe[WRITE]); // Signal EOF to the CGI process
-        std::cerr << "Finished writing to CGI. Closed write pipe." << std::endl;
         return;
     }
 
     unsigned long bytesToWrite = WRITE_SIZE;
     unsigned long bytesWritten = 0;
-    
-    std::cerr << "Writing to CGI: " << bytesToWrite << " bytes at index " << _inputIndex 
-          << " (total size: " << _cgiInput.size() << ")" << std::endl;
-
-    std::cout << "----------Writing to CGI---------" << std::endl;
-    std::cout << " INPUT index is : " << _inputIndex << std::endl;
 
     if (bytesToWrite > _cgiInput.size() - _inputIndex) {
         bytesToWrite = _cgiInput.size() - _inputIndex;
     }
-    std::cerr << "Writing to CGI: " << _cgiInput.substr(_inputIndex, bytesToWrite) << std::endl;
     bytesWritten = write(_toCgiPipe[WRITE], _cgiInput.data() + _inputIndex, bytesToWrite);
-    if (bytesWritten <= 0) { //TODO omparison of unsigned expression < 0 is always false so set to <= instead of 0 to compile
-        perror("Error writing to CGI pipe");
+    if (bytesWritten <= 0) {
         throw std::runtime_error("Failed to write to CGI process");
     }
     _inputIndex += bytesWritten;
@@ -318,7 +267,6 @@ void CGI::handleChildProcess(HttpRequest* request) {
 void CGI::handleParentProcess() {
     close(_fromCgiPipe[WRITE]);
     close(_toCgiPipe[READ]);
-    //set everthing in HTTPresponse object
 }
 
 /**

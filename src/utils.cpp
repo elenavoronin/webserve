@@ -44,10 +44,9 @@ for (std::vector<Server>::const_iterator serverIt = servers.begin(); serverIt !=
     printInfoServer(*serverIt);
     std::map<std::string, std::vector<Location>> locations = serverIt->getLocations();
     for (std::map<std::string, std::vector<Location>>::const_iterator locIt = locations.begin(); locIt != locations.end(); ++locIt) {
-        //std::cout << "Location Path: " << locIt->first << std::endl;
         const std::vector<Location>& locationVector = locIt->second;
             for (std::vector<Location>::const_iterator vecIt = locationVector.begin(); vecIt != locationVector.end(); ++vecIt) {
-                printInfoLocations(*vecIt); // Print information about the location
+                printInfoLocations(*vecIt);
             }
 }
 }
@@ -62,14 +61,10 @@ std::cout << "---------------------------" << std::endl;
  * separator. The last string is not followed by a comma space separator.
  */
 void printTokens(const std::vector<std::string>& tokens) {
-    //std::cout << "Tokens: ";
     for (size_t i = 0; i < tokens.size(); ++i) {
-        //std::cout << tokens[i];
         if (i != tokens.size() - 1) {
-            //std::cout << ", ";
         }
     }
-    //std::cout << std::endl;
 }
 
 /**
@@ -115,9 +110,6 @@ void printInfoServer(const Server &server) {
     }
 
     std::cout << "---------------------------" << std::endl;
-
-
-
 }
 
 /**
@@ -145,8 +137,6 @@ void printInfoLocations(const Location &location) {
     for (std::map<int, std::string>::const_iterator it = errorPages.begin(); it != errorPages.end(); ++it) {
         std::cout << "Status Code: " << it->first << " -> Page: " << it->second << std::endl;
     }
-
-    // std::cout << "---------------------------" << std::endl;
 
     std::cout << "    Redirect to : "  << location.getRedirect().first << " " << location.getRedirect().second << std::endl;
     std::cout << std::endl;
@@ -180,7 +170,6 @@ std::map<int, int> stuckFdCounter;  // Track stuck FDs
 bool isFdStuck(int fd) {
     stuckFdCounter[fd]++;
 
-    // If an FD has been in POLLIN/POLLOUT state too many times, it's likely stuck
     if (stuckFdCounter[fd] > 5) {  // Adjust threshold as needed
         stuckFdCounter.erase(fd);  // Remove it from tracking
         return true;  // FD is stuck

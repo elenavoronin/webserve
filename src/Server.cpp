@@ -69,7 +69,6 @@ int Server::getListenerSocket(){
         close(serverSocket);
         return -1;
     }
-	// //std::cout << "serverSocket " << serverSocket << std::endl;
     return serverSocket;
 }
 
@@ -81,17 +80,15 @@ int Server::getListenerSocket(){
  *
  * @param eventPoll The EventPoll to add the listening socket to
  * @return The file descriptor of the listening socket
- * @todo check that listener_fd is properly initialized and not overwritten elsewhere
  */
 int Server::reportReady(EventPoll &eventPoll){
-	int listener = getListenerSocket(); // Set up and get a listening socket
+	int listener = getListenerSocket();
     if (listener == -1){
         std::cerr << "error on port: " << getPortStr() << std::endl;
 		throw std::runtime_error("Error get listener socket");
 	}
-    // Add the listener to EventPoll
     eventPoll.addPollFdEventQueue(listener, POLLIN);
-    return listener; //TODO do we need to treturn listeren or should listener be a private variable?
+    return listener;
 }
 
 /**
@@ -112,15 +109,10 @@ void Server::handleNewConnection(EventPoll &eventPoll){
         perror("Error accepting new connection");
         return;
     }
-	
-    // std::cout << "OPEN!!! New connection accepted on fd: " << new_fd << std::endl;
 
 	Client newClient(new_fd, eventPoll);
-    // Add the new client directly to the clients vector
     _clients.push_back(newClient);
     eventPoll.addPollFdEventQueue(new_fd, POLLIN);
-
-    //std::cout << "Added new client to EventPoll with fd: " << new_fd << std::endl;
 }
 
 /**
@@ -134,7 +126,6 @@ void Server::handleNewConnection(EventPoll &eventPoll){
  * @param eventPoll The EventPoll object containing the pollfds
  * @param i The index into the pollfds vector
  * @param defaultServer The default Server object
- * @todo  divide into smaller functions doing one thing
  * @todo throw instead of error or cout
  */
 void Server::handlePollEvent(EventPoll &eventPoll, int i, defaultServer defaultServer, std::vector<Server> &servers) {
@@ -153,8 +144,6 @@ void Server::handlePollEvent(EventPoll &eventPoll, int i, defaultServer defaultS
     }
 
     if (!client) {
-        // std::cerr << "Client not found for fd: " << event_fd << std::endl;
-		    // client->closeConnection(eventPoll, currentPollFd.fd);
 		    eraseClient(event_fd);
         return;
     }
@@ -181,7 +170,6 @@ void Server::handlePollEvent(EventPoll &eventPoll, int i, defaultServer defaultS
                 client->writeToCgi();
             } else {
                 if (client->writeToSocket() > 0) {
-					// std::cout << "WritetoSocket error fd: " << event_fd << std::endl;
 					client->closeConnection(eventPoll, currentPollFd.fd);
 					eraseClient(event_fd);
 				}
@@ -195,7 +183,6 @@ void Server::handlePollEvent(EventPoll &eventPoll, int i, defaultServer defaultS
 
     // Handle hangup or disconnection events
     if (currentPollFd.revents & (POLLHUP | POLLRDHUP)) {
-		std::cout << "does this happen: POLLHUP && POLLRDHUP" << std::endl;
         client->closeConnection(eventPoll, currentPollFd.fd);
 		eraseClient(event_fd);
     }
@@ -309,7 +296,6 @@ int Server::processClientRequest(Client &client, const std::string& request, Htt
     std::string version = HttpRequest->getVersion();
 
 	checkLocations(path, defaultServer);
-    std::cout << "path " << path << std::endl;
 	checkServer(HttpRequest, servers);
     if (getRedirect().first != 0)
     {
@@ -320,7 +306,6 @@ int Server::processClientRequest(Client &client, const std::string& request, Htt
 	if (status != 200) {
 		return sendErrorResponse(client, status, "");
 	}
-    std::cout << "Method: " << method << std::endl;
 	if (method == "GET" && std::find(this->_allowedMethods.begin(), this->_allowedMethods.end(), "GET") != this->_allowedMethods.end())
 		return handleGetRequest(client, HttpRequest);
 	if (method == "POST" && std::find(this->_allowedMethods.begin(), this->_allowedMethods.end(), "POST") != this->_allowedMethods.end())
@@ -375,11 +360,8 @@ int Server::handleGetRequest(Client &client, HttpRequest* request) {
                 request->setFullPath(filepath + getIndex()) ;
         }
     }
-
-
     if (filepath == "www/html/")
         filepath = filepath + getIndex();
-    // std::cout << "getIndex " << getIndex() << std::endl;
     if (filepath.find("/cgi-bin") != std::string::npos) {
         request->setFullPath(request->getPath());
         client.startCgi(request);
@@ -410,13 +392,12 @@ int Server::handleGetRequest(Client &client, HttpRequest* request) {
  * @param clientSocket The socket to send the response to.
  * @param filepath The path to the file to send.
  * @param statusCode The HTTP status code to send in the response.
- * @todo check sendHeaders() for passing content type not hard coded
  */
 void Server::sendFileResponse(int clientSocket, const std::string& filepath, int statusCode) {
 	std::string fileContent = readFileContent(filepath);
 	if (fileContent.empty()) {
 		sendHeaders(clientSocket, 404, "text/html");
-		sendBody(clientSocket, "<html><body>404 - File Not Found</body></html>"); //TODO change error pages to server stuff
+		sendBody(clientSocket, "<html><body>404 - File Not Found</body></html>");
 	} else {
 		sendHeaders(clientSocket, statusCode, "text/html");
 		sendBody(clientSocket, fileContent);
@@ -437,14 +418,10 @@ void Server::sendFileResponse(int clientSocket, const std::string& filepath, int
 std::string Server::readFileContent(const std::string& filepath) {
     std::ifstream file(filepath, std::ios::binary);
     if (!file) {
-        std::cerr << "Error: File not found 2: " << filepath << std::endl;
         return "";
     }
     std::ostringstream buffer;
-    buffer << file.rdbuf(); //read file by bytes, go back to poll, check if finished reading
-	//request->_readyToSendBack = true;
-	//std::cout.flush();
-	//std::cout << "BUFFER " << buffer.str() << std::endl;
+    buffer << file.rdbuf();
     return buffer.str();
 }
 
@@ -465,9 +442,7 @@ void Server::sendHeaders(int clientSocket, int statusCode, const std::string& co
     std::string statusMessage = getStatusMessage(statusCode);
     std::ostringstream headers;
     headers << "HTTP/1.1 " << statusCode << " " << statusMessage << "\r\n";
-    // For persistent connections (such as in HTTP/1.1), you would leave the client in the pfds list to handle further requests.
-    // For non-persistent connections (such as in HTTP/1.0), it's appropriate to remove the client after processing the request.
-    headers << "Content-Type: " << contentType << "\r\n\r\n"; // Default is text/html
+    headers << "Content-Type: " << contentType << "\r\n\r\n";
     std::string headersStr = headers.str();
     send(clientSocket, headersStr.c_str(), headersStr.size(), 0);
 }
@@ -523,16 +498,18 @@ int Server::validateRequest(const std::string& method, const std::string& versio
  * error response is sent, such as a 404 Not Found or 500 Internal Server Error.
  * @param client The client object associated with the request.
  * @param request The HttpRequest object associated with the client.
- * @todo
+ * @todo ask LENA HOW ON EARTH DO YOU DELETE STUFF
  * 
  * @return The HTTP status code indicating the result of the request processing.
  */
 int Server::handleDeleteRequest(Client &client, HttpRequest* request) {
 
-    std::string pathToDelete = getRoot() + request->getPathToDelete(request->getRawRequest());
+    // std::string pathToDelete = request->getPathToDelete(request->getRawRequest());
+    std::string pathToDelete = "." + request->getPath();
 
 
     if (pathToDelete.empty() || !fileExists(pathToDelete)) {
+        std::cout << "pathToDelete: " << pathToDelete << std::endl;
         std::cerr << "File empty or does not exist 1: " << pathToDelete << std::endl;
         return sendErrorResponse(client, 404, "www/html/404.html");
     }
@@ -572,8 +549,6 @@ int Server::handleDeleteRequest(Client &client, HttpRequest* request) {
  * @param client The client object associated with the request.
  * @param request The HttpRequest object containing the details of the POST request.
  * @return The HTTP status code indicating the result of the request processing.
- * @todo check if body size exceeds a predefined limit (error 413 Request Too Large)
- * @todo Error (400 Bad Request): If there was a problem with the data.
  * 
  * @note The boundary in multipart/form-data separates different parts of an HTTP request body, 
  * including text fields and file uploads. 
@@ -597,7 +572,7 @@ int Server::handlePostRequest(Client &client, HttpRequest* request) {
         return 0;
     }
 
-    std::string uploadPath = getUploadStore(); // Ensure correct upload path
+    std::string uploadPath = getUploadStore();
     if (uploadPath.empty()) {
         throw std::runtime_error("Upload path not set in configuration");
     }
@@ -686,13 +661,11 @@ std::vector<std::string> Server::splitMultipartBody(const std::string& requestBo
 		startPos += boundary.length();
 		endPos = requestBody.find(boundary, startPos);
 		if (endPos != std::string::npos) {
-			std::cout << "Inside " << startPos  << " and " << endPos<< std::endl;
 			std::string part = requestBody.substr(startPos, endPos - startPos);
 			size_t partStart = part.find_first_not_of("\r\n");
 			size_t partEnd = part.find_last_not_of("\r\n");
 			if (partStart != std::string::npos && partEnd != std::string::npos) {
 				parts.push_back(part.substr(partStart, partEnd - partStart + 1));
-				//std::cout << "***********PART ********" << part.substr(partStart, partEnd - partStart + 1) << std::endl;
 			}
 			startPos = endPos;
 		}
@@ -718,15 +691,15 @@ std::vector<std::string> Server::splitMultipartBody(const std::string& requestBo
 std::string Server::extractFilename(const std::string& headers) {
     size_t filenamePos = headers.find("filename=");
     if (filenamePos == std::string::npos) {
-        return "";  // No filename found
+        return "";
     }
 
-    size_t start = filenamePos + 10; // Move past 'filename="'
+    size_t start = filenamePos + 10;
     size_t end = headers.find("\"", start);
     if (end == std::string::npos) {
-        return ""; // Malformed header
+        return "";
     }
-    return headers.substr(start, end - start); // Extract filename
+    return headers.substr(start, end - start);
 }
 
 /**
@@ -742,18 +715,15 @@ std::string Server::extractFilename(const std::string& headers) {
 int Server::processMultipartPart(const std::string& part, const std::string& uploadPath) {
     // Find Content-Disposition header
     size_t headerEnd = part.find("\r\n\r\n");
-    if (headerEnd == std::string::npos) return 0; // Skip malformed parts
+    if (headerEnd == std::string::npos) return 0;
 
-    std::string headers = part.substr(0, headerEnd);  // Extract headers
+    std::string headers = part.substr(0, headerEnd);
 
     // Extract filename
     std::string filename = extractFilename(part);
     if (filename.empty()) {
 		return -1;
-        // filename = "uploaded_file"; // Default filename
     }
-	// std::cout << "Filename " << filename << std::endl;
-    // Save file content
     std::string savePath = uploadPath + filename;
     saveUploadedFile(savePath, part, headerEnd + 4);
 	return 0;
@@ -792,12 +762,9 @@ void Server::saveUploadedFile(const std::string& filePath, const std::string& pa
  *
  * @param client The client connection to send the response to
  * @param request The HTTP request (not used currently)
- * @todo I still need to parse the request
- *
  * @return The status code of the response
  */
 int Server::handleRedirect(Client& client) {
-    std::cout << "Handling Redirection..." << std::endl;
     client.getHttpResponse()->setStatus(getRedirect().first, getStatusMessage(getRedirect().first));
     client.getHttpResponse()->setHeader("Location", getRedirect().second);
     client.getHttpResponse()->setHeader("Content-Type", "text/html");
@@ -810,7 +777,6 @@ int Server::handleRedirect(Client& client) {
     
     client.addToEventPollRemove(client.getSocket(), POLLIN);
     client.addToEventPollQueue(client.getSocket(), POLLOUT);
-    // std::cout << "Redirected to: " << getRedirect().second << " with status code: " << getRedirect().first << std::endl;
 
     return getRedirect().first;
 }
@@ -853,7 +819,6 @@ int Server::sendErrorResponse(Client &client, int statusCode, const std::string 
         errorPath = getErrorPage(statusCode);
     else
         errorPath = errorPagePath;
-    // std::cout << "error path: " << errorPath << std::endl;
     std::string errorContent = readFileContent(errorPagePath);
     if (errorContent.empty()) {
         errorContent = "<html><body><h1>" + std::to_string(statusCode) + " - Error</h1></body></html>";
@@ -894,7 +859,6 @@ bool Server::fileExists(const std::string& path) {
  * @param event_fd The event file descriptor to search for
  */
 void Server::eraseClient(int event_fd) {
-    // Find all clients in _clients where the socket matches event_fd.
     auto it = std::find_if(_clients.begin(), _clients.end(), [&](const Client &c) {
             return c.getSocket() == event_fd;
         }

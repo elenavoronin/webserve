@@ -1,8 +1,5 @@
 #pragma once
 
-// class Server;
-// class Client;
-
 #include <sstream>
 #include <fstream>
 #include <vector>

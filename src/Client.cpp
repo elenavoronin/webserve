@@ -10,11 +10,8 @@ Client::Client(int clientSocket, EventPoll& eventPoll) :
 
 /**
  * @brief client desctructor.
- *
- * @todo add deletes in here.
  */
 Client::~Client(){
-    // std::cout << "Client destructor called: " << getSocket() << std::endl;
     delete _HttpRequest;
     delete _HttpResponse;
     delete _CGI;
@@ -56,7 +53,7 @@ Client::Client(const Client& copy)
  * @return A reference to the copied Client object.
  */
 Client& Client::operator=(const Client& copy) {    
-    if (this == &copy) return *this; // Handle self-assignment
+    if (this == &copy) return *this;
 
     // Cleanup existing resources
     delete _HttpRequest;
@@ -230,8 +227,7 @@ void Client::readFromSocket(Server *server, defaultServer defaultServer, std::ve
     // Try to receive data
     int received = recv(_clientSocket, buf, sizeof(buf), 0);
     if (received == 0) {
-        //throw std::runtime_error("Client closed connection");
-		return ; //??????????????????????????????????????????????????????
+		return ;
 
     } 
 	if (received < 0) {
@@ -246,20 +242,13 @@ void Client::readFromSocket(Server *server, defaultServer defaultServer, std::ve
             if (static_cast<int>(_HttpRequest->getStrReceived().length() - _HttpRequest->getStrReceived().find("\r\n\r\n") - 4) >= contentLength)
                 _HttpRequest->setHeaderReceived(true);
 				_HttpRequest->parseHeaders(_HttpRequest->getStrReceived());
-				//std::cout << "******* HOST " << _HttpRequest->getField("Host") << " ****************"  << std::endl;
         }
     }
     if (_HttpRequest->isHeaderReceived()) {
-		// size_t totalReceived = _HttpRequest->getStrReceived().length();
-		// size_t headerEnd = _HttpRequest->getStrReceived().find("\r\n\r\n");
-		// std::cout << "Total Received " << _HttpRequest->getStrReceived().length() << " content length " << contentLength << std::endl;
-		// if (totalReceived >= contentLength + headerEnd + 4) {  // The 4 is for "\r\n\r\n"
-		// }
 			_HttpRequest->parseBody(_HttpRequest->getStrReceived());
 			server->processClientRequest(*this, _HttpRequest->getStrReceived(), _HttpRequest, defaultServer, servers);
 			_HttpRequest->setHeaderReceived(false);
 			_HttpRequest->clearStrReceived();
-		
     }
 }
 
@@ -284,7 +273,6 @@ int Client::writeToSocket() {
 
     if (bytesWritten > 0) {
         _responseIndex += bytesWritten;
-        // std::cout << "Response index: " << _responseIndex << std::endl;
     }
 
     if (_responseIndex >= _HttpResponse->getFullResponse().size()) {
@@ -327,9 +315,7 @@ void Client::closeConnection(EventPoll& eventPoll, int currentPollFd) {
  * and the file response should be sent. It builds the HTTP response using the
  * HttpResponse object and adds POLLOUT to the EventPoll, so that the response
  * can be written to the client socket when it is ready.
- * 
- * @todo add response status code
- * @todo add timeout?
+ * @todo do right approach for searching folder
  */
 void Client::prepareFileResponse(std::string errorContent) {
     std::string requestedFile = _HttpRequest->getFullPath();
@@ -339,13 +325,12 @@ void Client::prepareFileResponse(std::string errorContent) {
 	std::string ContentType = "text/html";
 	if (requestedFile.find("images") != std::string::npos || requestedFile.find("upload") != std::string::npos)
 		ContentType = "image/jpeg";
-	//std::cout << "***** Content Type " << _HttpRequest->getStrReceived() << std::endl;
+
     size_t position = requestedFile.find('?');
-    
     if (position != std::string::npos) {
         requestedFile = requestedFile.substr(0, position);   
     }
-    // //read file
+
     std::ifstream file(requestedFile);
     if (!file.is_open()) {
 		
@@ -354,9 +339,6 @@ void Client::prepareFileResponse(std::string errorContent) {
         _HttpResponse->setBody(errorContent);
         _HttpResponse->buildResponse();
 
-        std::cerr << "File not found: " << requestedFile << std::endl;
-
-        // Prepare to send the 404 response
         _eventPoll->ToremovePollEventFd(_clientSocket, POLLIN);
         _eventPoll->addPollFdEventQueue(_clientSocket, POLLOUT);
 
@@ -368,15 +350,13 @@ void Client::prepareFileResponse(std::string errorContent) {
 		
 		// Set the response headers and body
 		_HttpResponse->setStatus(200, "OK");
-		_HttpResponse->setHeader("Content-Type", ContentType); //ANNA changed from  "text/html" to ContentType
+		_HttpResponse->setHeader("Content-Type", ContentType);
 		_HttpResponse->setBody(buffer.str());
 		_HttpResponse->buildResponse();
 
 		// Prepare the client socket for writing the response
 		_eventPoll->ToremovePollEventFd(_clientSocket, POLLIN);
 		_eventPoll->addPollFdEventQueue(_clientSocket, POLLOUT);
-
-		// std::cout << "Prepared response for: " << requestedFile << " with Content-Type: " << contentType << std::endl;
 	}
 }
 

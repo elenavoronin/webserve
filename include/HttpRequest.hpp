@@ -69,4 +69,3 @@ class HttpRequest {
 		const std::map<std::string, std::string>& 			getAllHeaders() const;
 		std::string 										getServerName();
 };
-	//std::string _bodyReceived;// Raw HTTP request string

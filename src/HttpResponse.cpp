@@ -32,7 +32,6 @@ void HttpResponse::setStatus(int code, const std::string& message) {
  * 
  * @param       key         The header name (e.g., "Content-Type").
  * @param       value       The header value (e.g., "text/html").
- * @todo        update content lenght etc with the lenght of cgi if cgi calles
  */
 void HttpResponse::setHeader(const std::string& key, const std::string& value) {
 	_headers[key] = value;
@@ -98,38 +97,27 @@ void HttpResponse::setBody(const std::string& content) {
  *              and body. The headers and body are separated by a blank line.
  * 
  * @return      A string representing the entire HTTP response.
- * 
- * @todo        - Fix redundant status code addition in response.
- *              - Handle edge cases for invalid headers or body content.
  */
 void HttpResponse::buildResponse() {
 
 	_fullResponse.clear();
 	_headersOnly.clear();
 	
-	// Build the HTTP status line
 	std::string statusCodeString = std::to_string(_statusCode);
 	std::string statusLine = "HTTP/1.1 " + statusCodeString + " " + _statusMessage + "\r\n";
 	
-	// Build the headers
 	std::ostringstream headersStream;
-	// Ensure `Connection: close` is added to prevent hanging requests
-    // _headers["Connection"] = "close";
 	for (const auto& header : _headers) {
-		// The header name and value are separated by a colon and a space
 		headersStream << header.first << ": " << header.second << "\r\n";
 	}
-	headersStream << "\r\n"; // End headers section
+	headersStream << "\r\n";
 
-	// Store headers-only for later retrieval
 	_headersOnly = statusLine + headersStream.str();
-	
-	// Build the full response
+
 	_fullResponse = _headersOnly;
 	if (!_body.empty()) {
 		_fullResponse += _body;	
 	}
-	// std::cout << _fullResponse << std::endl; // Debug output
 }
 
 /**
