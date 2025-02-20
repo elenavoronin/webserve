@@ -1,5 +1,6 @@
 1. use throw instead of std cout or std cerr and have a catch somewhere (lena, djoyke)
 2. Search for all read/recv/write/send and check if the returned value is correctly checked (checking only -1 or values is not enough, both should be checked).(anna)
+3. remove todos
 
 
 FOR TESTING:
