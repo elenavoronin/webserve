@@ -285,7 +285,6 @@ std::vector<Server> Config::parseConfig(std::ifstream &file) {
                         else
                             currentServer.setRedirect("0", "");
                     } else if (key == "max_body_size") {
-                        std::cout << value << std::endl;
                         value = value.substr(0, value.size());
                         size_t maxSize = std::stoul(value);
                         currentServer.setMaxBodySize(maxSize);

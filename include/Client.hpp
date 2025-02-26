@@ -9,6 +9,7 @@
 #include "EventPoll.hpp"
 #include "Server.hpp"
 #include <unistd.h>
+#include <fcntl.h>
 
 class HttpRequest;
 class HttpResponse;
@@ -50,7 +51,6 @@ class Client {
 		int 				writeToSocket();
 		void 				readFromSocket(Server *server, defaultServer defaultServer, std::vector<Server> &servers);
 		void 				closeConnection(EventPoll& eventPoll, int currentPollFd);
-		void				prepareFileResponse(std::string errorContent);
 		void				addToEventPollRemove(int fd, int eventType);
 		void 				addToEventPollQueue(int fd, int eventType);
 		

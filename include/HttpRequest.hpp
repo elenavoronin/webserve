@@ -11,7 +11,6 @@
  * This class provides functionality to parse HTTP request headers and bodies,
  * store key-value pairs of request fields, and determine request states such as
  * whether headers have been fully received.
- * @todo  make _readyToSendBack private
  */
 class HttpRequest {
 
@@ -29,7 +28,6 @@ class HttpRequest {
 		std::string									_header;
 		bool 										_bodyReceived = false;
 	public:
-		bool 										_readyToSendBack = false; // Flag indicating whether the request is ready to send a response.
 
 		HttpRequest();
 		~HttpRequest();
@@ -66,6 +64,5 @@ class HttpRequest {
 		std::string 										getRequestHeader();	
 		void 												parseHeaders(const std::string& rawRequest);
 		void												parseBody(const std::string& rawRequest);
-		const std::map<std::string, std::string>& 			getAllHeaders() const;
 		std::string 										getServerName();
 };

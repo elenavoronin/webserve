@@ -37,8 +37,6 @@ int Server::getListenerSocket(){
 	hints.ai_flags = AI_PASSIVE; //makes the program automatically fill in the IP 
     
     std::string bindAddress = (getServerName() == "localhost") ? "127.0.0.1" : "0.0.0.0";
-
-    std::cout << "Binding to: " << getServerName() << " on port " << getPortStr() << std::endl;
     if ((status = getaddrinfo(bindAddress.c_str(), getPortStr().c_str(), &hints, &servinfo)) != 0) {
         throw std::runtime_error("Error get Address information");
         return 1;
@@ -100,13 +98,12 @@ int Server::reportReady(EventPoll &eventPoll){
  * can be monitored for incoming data.
  *
  * @param eventPoll The EventPoll to add the new client to
- * @todo replace perror with throw
  */
 void Server::handleNewConnection(EventPoll &eventPoll){
 
 	int new_fd = accept(_listener_fd, nullptr, nullptr);
     if (new_fd == -1) {
-        perror("Error accepting new connection");
+        throw std::runtime_error("Error accepting new connection");
         return;
     }
 
@@ -126,7 +123,6 @@ void Server::handleNewConnection(EventPoll &eventPoll){
  * @param eventPoll The EventPoll object containing the pollfds
  * @param i The index into the pollfds vector
  * @param defaultServer The default Server object
- * @todo throw instead of error or cout
  */
 void Server::handlePollEvent(EventPoll &eventPoll, int i, defaultServer defaultServer, std::vector<Server> &servers) {
     Client *client = nullptr;
@@ -164,7 +160,6 @@ void Server::handlePollEvent(EventPoll &eventPoll, int i, defaultServer defaultS
     }
     // Handle writable events
     if (currentPollFd.revents & POLLOUT) {
-
         try {
             if (event_fd != client->getSocket() && event_fd == client->getCgiWrite()) {
                 client->writeToCgi();
@@ -224,7 +219,6 @@ void Server::checkServer(HttpRequest* HttpRequest, std::vector<Server> &servers)
  * defined in the location.
  *
  * @param path The path to check against the server's locations.
- * @todo figure out when to reset server information to default
  */
 void Server::checkLocations(std::string path, defaultServer defaultServer) {
     for (const auto& location : this->getLocations()) {
@@ -496,33 +490,24 @@ int Server::validateRequest(const std::string& method, const std::string& versio
  * then attempts to delete it. If successful, a 200 OK response is sent back to the client.
  * If the resource does not exist or any error occurs during deletion, an appropriate
  * error response is sent, such as a 404 Not Found or 500 Internal Server Error.
+ * 
  * @param client The client object associated with the request.
  * @param request The HttpRequest object associated with the client.
- * @todo ask LENA HOW ON EARTH DO YOU DELETE STUFF
- * 
  * @return The HTTP status code indicating the result of the request processing.
  */
 int Server::handleDeleteRequest(Client &client, HttpRequest* request) {
 
-    // std::string pathToDelete = request->getPathToDelete(request->getRawRequest());
     std::string pathToDelete = "." + request->getPath();
 
-
     if (pathToDelete.empty() || !fileExists(pathToDelete)) {
-        std::cout << "pathToDelete: " << pathToDelete << std::endl;
-        std::cerr << "File empty or does not exist 1: " << pathToDelete << std::endl;
         return sendErrorResponse(client, 404, "www/html/404.html");
     }
-
     if (pathToDelete.find("/cgi-bin") != std::string::npos) {
-        std::cerr << "File empty or does not exist in CGI: " << pathToDelete << std::endl;
         request->setFullPath(pathToDelete);
         client.startCgi(request);
         return 0;
     }
-
     if (remove(pathToDelete.c_str()) != 0) {
-        std::cerr << "File empty or does not exist 3: " << pathToDelete << std::endl;
         throw std::runtime_error("Error deleting file: " + pathToDelete);
     }
     

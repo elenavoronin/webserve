@@ -20,7 +20,6 @@ CGI::CGI(HttpRequest *request) {
     else if (_pid == 0) {
         handleChildProcess(request);
     } else {
-        std ::cout << "going to parent process" << std::endl;
         handleParentProcess();
     }
 }
@@ -29,7 +28,6 @@ CGI::CGI(HttpRequest *request) {
  * @brief       Destructor for the CGI class.
  */
 CGI::~CGI(){
-    std::cout << "destructor called" << std::endl;
     close(_toCgiPipe[WRITE]);
     close(_toCgiPipe[READ]);
     close(_fromCgiPipe[WRITE]);
@@ -63,8 +61,6 @@ void CGI::parseQueryString(HttpRequest* request) {
  * 
  * @details     Sets up key CGI environment variables like REQUEST_METHOD, QUERY_STRING, CONTENT_TYPE, 
  *              SCRIPT_NAME, and CONTENT_LENGTH. Converts these into a format that can be passed to `execve`.
- * 
- * @todo         - Handle cases where environment variables might be missing or malformed.
  */
 void CGI::initializeEnvVars(HttpRequest* request) {
     _method = request->getField("method");
@@ -73,7 +69,8 @@ void CGI::initializeEnvVars(HttpRequest* request) {
     if (_method == "GET") {
         parseQueryString(request);
         _envVars.push_back("QUERY_STRING=" + _queryParams);
-    } else if (_method == "POST") {
+    } 
+    else if (_method == "POST") {
         std::string contentLength = request->getField("Content-Length");
         if (!contentLength.empty()) {
             _envVars.push_back("CONTENT_LENGTH=" + contentLength);
@@ -103,8 +100,6 @@ void CGI::initializeEnvVars(HttpRequest* request) {
  * @details     Uses `execve` to run the CGI script (`hello.py`) with the environment variables set up in `_env`.
  *              Redirects `stdout` to `_fromCgiPipe[WRITE]` so the output can be read back by the parent process.
  *              This function is meant to be called in the child process created by `fork`.
- * 
- * @todo         - Add error handling for `execve`.
  */
 void CGI::executeCgi() {
     std::size_t queryPos = _path.find("?");
@@ -119,9 +114,8 @@ void CGI::executeCgi() {
     dup2(_fromCgiPipe[WRITE], STDOUT_FILENO);
     close(_fromCgiPipe[READ]);
     close(_fromCgiPipe[WRITE]);
-    execve(argv[0], const_cast<char* const*>(argv), _env.data());	
-	perror("execve failed");
-	exit(EXIT_FAILURE);
+    if (execve(argv[0], const_cast<char* const*>(argv), _env.data()) == -1)
+        throw std::runtime_error("Failed to execute CGI script");
 }
 
 /**
@@ -229,16 +223,15 @@ void CGI::writeCgiInput() {
  * @brief Sets up the pipes for interprocess communication between the CGI process and the server.
 
  * @return true if the pipe setup was successful, false otherwise.
- * @todo change perror to throw
  */
 bool CGI::setupPipes() {
 
     if (pipe(_fromCgiPipe) == -1) {
-        perror("pipe failed");
+        throw std::runtime_error("_fromCgiPipe failed");
         return false;
     }
     if (pipe(_toCgiPipe) == -1) {
-        perror("pipe failed");
+        throw std::runtime_error("_toCgiPipe failed");
         close(_fromCgiPipe[READ]);
         close(_fromCgiPipe[WRITE]);
         return false;

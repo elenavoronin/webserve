@@ -168,9 +168,6 @@ void Client::startCgi(HttpRequest *request){
     _eventPoll->addPollFdEventQueue(_CGI->getReadFd(), POLLIN);
     _eventPoll->addPollFdEventQueue(_CGI->getWriteFd(), POLLOUT);
     _eventPoll->ToremovePollEventFd(_clientSocket, POLLIN);
-
-    std::cout   << "CGI process started. Read FD: " << _CGI->getReadFd()
-                << ", Write FD: " << _CGI->getWriteFd() << std::endl;
 }
 
 /**
@@ -183,15 +180,12 @@ void Client::startCgi(HttpRequest *request){
  * CGI process.
  */
 void Client::readFromCgi() {
-    std::cout << "CGI completed? " << _CGI->isCgiComplete() << std::endl;
     if (!_CGI) {
         throw std::runtime_error("CGI object is not initialized.");
     }
     try {
         _CGI->readCgiOutput();
         if (_CGI->isCgiComplete()) {
-            std::cerr << "CGI process completed. Preparing response." << std::endl;
-            std::cerr << " CGI output: " <<  _CGI->getCgiOutput() << std::endl;
             _HttpResponse->setFullResponse(_CGI->getCgiOutput());
             _eventPoll->addPollFdEventQueue(_clientSocket, POLLOUT);
             _eventPoll->ToremovePollEventFd(_CGI->getReadFd(), POLLIN);
@@ -200,7 +194,6 @@ void Client::readFromCgi() {
         }
     } catch (const std::exception& e) {
         std::cerr << "Error while reading from CGI: " << e.what() << std::endl;
-        // Handle cleanup or error response
     }
 }
 
@@ -307,60 +300,6 @@ void Client::closeConnection(EventPoll& eventPoll, int currentPollFd) {
         close(_clientSocket);
     }
 }
-
-/**
- * @brief Prepares a file response for the client by building the response and adding POLLOUT to the EventPoll.
- *
- * This method should be called when the client connection has been fully handled
- * and the file response should be sent. It builds the HTTP response using the
- * HttpResponse object and adds POLLOUT to the EventPoll, so that the response
- * can be written to the client socket when it is ready.
- * @todo do right approach for searching folder
- */
-void Client::prepareFileResponse(std::string errorContent) {
-    std::string requestedFile = _HttpRequest->getFullPath();
-	/*
-	TODO : totally wrong approach searching by folder like this
-	*/
-	std::string ContentType = "text/html";
-	if (requestedFile.find("images") != std::string::npos || requestedFile.find("upload") != std::string::npos)
-		ContentType = "image/jpeg";
-
-    size_t position = requestedFile.find('?');
-    if (position != std::string::npos) {
-        requestedFile = requestedFile.substr(0, position);   
-    }
-
-    std::ifstream file(requestedFile);
-    if (!file.is_open()) {
-		
-        _HttpResponse->setStatus(404, "Not Found");
-        _HttpResponse->setHeader("Content-Type", "text/html");
-        _HttpResponse->setBody(errorContent);
-        _HttpResponse->buildResponse();
-
-        _eventPoll->ToremovePollEventFd(_clientSocket, POLLIN);
-        _eventPoll->addPollFdEventQueue(_clientSocket, POLLOUT);
-
-        return;
-    } else {
-        std::stringstream buffer;
-        buffer << file.rdbuf();
-        file.close();
-		
-		// Set the response headers and body
-		_HttpResponse->setStatus(200, "OK");
-		_HttpResponse->setHeader("Content-Type", ContentType);
-		_HttpResponse->setBody(buffer.str());
-		_HttpResponse->buildResponse();
-
-		// Prepare the client socket for writing the response
-		_eventPoll->ToremovePollEventFd(_clientSocket, POLLIN);
-		_eventPoll->addPollFdEventQueue(_clientSocket, POLLOUT);
-	}
-}
-
-#include <fcntl.h>
 
 bool isFdOpen(int fd) {
     return fcntl(fd, F_GETFD) != -1 || errno != EBADF;

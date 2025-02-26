@@ -29,7 +29,6 @@
 #include <stdexcept>
 #include <utility>
 
-
 struct defaultServer {
 	std::string 						_serverName;
 	std::string 						_portString;
@@ -44,7 +43,6 @@ struct defaultServer {
 };
 
 class Client; 
-// class Location;
 class HttpRequest; 
 class Server  {
 	private:
@@ -64,7 +62,6 @@ class Server  {
 		std::pair<int, std::string>						_redirect;
 		defaultServer									_defaultServer;
 
-		
 	public:
 		
 		Server();
@@ -79,7 +76,6 @@ class Server  {
 		void 											handleNewConnection(EventPoll &eventPoll);
 		void 											handlePollEvent(EventPoll &eventPoll, int i, defaultServer defaultServer, std::vector<Server> &servers);
 		void											eraseClient(int event_fd);
-		// void 										broadcastMessage(int sender_fd, char *buf, int received, std::vector<struct pollfd> &pfds, int listener);
 		/*Handle requests*/	
 		int 											processClientRequest(Client &client, const std::string& request, HttpRequest* Http, defaultServer defaultServer, std::vector<Server> &servers);
 		int 											handleGetRequest(Client &client, HttpRequest* request);
@@ -132,7 +128,6 @@ class Server  {
 		int												getListenerFd() const {return this->_listener_fd;}
 		std::pair<int, std::string>						getRedirect() const { return this->_redirect;}
 		bool											getOnOff() const {return this->_on;}
-		void											resetLocations(Server &defaultServer);
 		defaultServer									getDefaultServer() const {return this->_defaultServer;}
 		void 											checkServer(HttpRequest* HttpRequest, std::vector<Server> &servers);
 };
