@@ -341,15 +341,14 @@ void Config::pollLoop() {
 
 
         std::vector<pollfd> &pfds = _eventPoll.getPollEventFd();
-        int pollResult = poll(pfds.data(), pfds.size(), -1);
+        int pollResult = poll(pfds.data(), pfds.size(), 10000);
         if (pollResult == -1) {
             throw std::runtime_error("Poll failed!");
         }
-        if (pollResult == 0) {
-            throw std::runtime_error("Poll timed out!");
-        }
-
         // Iterate over the pollfds to handle events
+		if (pollResult == 0) {
+			throw std::runtime_error("Poll timed out!");
+		}
         for (size_t i = 0; i < pfds.size(); i++) {
             if (pfds[i].revents & POLLERR) {
 				if (pfds[i].revents & POLLERR) {

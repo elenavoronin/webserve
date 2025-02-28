@@ -104,7 +104,7 @@ class Server  {
 		void											setDefaultServer(defaultServer defaultServer) {_defaultServer = defaultServer;}	
 		void											setErrorPages(const std::map<int, std::string>& errorPages) {_errorPages = errorPages;}
 
-		std::string										extractBoundary(const std::string& contentType);
+		std::string										extractBoundary(Client &client, const std::string& contentType);
 		std::vector<std::string>						splitMultipartBody(const std::string& requestBody, const std::string& boundary);
 		std::string										extractFilename(const std::string& headers);
 		int												processMultipartPart(const std::string& part, const std::string& uploadPath);

@@ -1,5 +1,6 @@
 #include "../include/CGI.hpp"
 
+
 /**
  * @brief       Constructor for the CGI class.
  */
@@ -20,7 +21,14 @@ CGI::CGI(HttpRequest *request) {
     else if (_pid == 0) {
         handleChildProcess(request);
     } else {
+        int status;
+        waitpid(_pid, &status, 0); //TODO, added waitpid, do we need it here?
         handleParentProcess();
+        if (WIFEXITED(status)) {
+            std::cout << "Python script executed successfully." << std::endl;
+        } else {
+            std::cout << "Python script execution was interrupted." << std::endl;
+        }
     }
 }
 

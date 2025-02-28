@@ -1,10 +1,16 @@
 #!/usr/bin/env python3
 
 import cgi
+import time
+import sys
 
 # Parse form data
 form = cgi.FieldStorage()
 name = form.getvalue('name', 'Guest')
+
+while True:
+	time.sleep(5)  # Simulate a delay
+
 
 # Generate response
 body = f"""

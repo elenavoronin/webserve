@@ -37,6 +37,7 @@ int Server::getListenerSocket(){
 	hints.ai_flags = AI_PASSIVE; //makes the program automatically fill in the IP 
     
     std::string bindAddress = (getServerName() == "localhost") ? "127.0.0.1" : "0.0.0.0";
+
     if ((status = getaddrinfo(bindAddress.c_str(), getPortStr().c_str(), &hints, &servinfo)) != 0) {
         throw std::runtime_error("Error get Address information");
         return 1;
@@ -98,12 +99,13 @@ int Server::reportReady(EventPoll &eventPoll){
  * can be monitored for incoming data.
  *
  * @param eventPoll The EventPoll to add the new client to
+ * @todo replace perror with throw
  */
 void Server::handleNewConnection(EventPoll &eventPoll){
 
 	int new_fd = accept(_listener_fd, nullptr, nullptr);
     if (new_fd == -1) {
-        throw std::runtime_error("Error accepting new connection");
+        perror("Error accepting new connection");
         return;
     }
 
@@ -123,6 +125,7 @@ void Server::handleNewConnection(EventPoll &eventPoll){
  * @param eventPoll The EventPoll object containing the pollfds
  * @param i The index into the pollfds vector
  * @param defaultServer The default Server object
+ * @todo throw instead of error or cout
  */
 void Server::handlePollEvent(EventPoll &eventPoll, int i, defaultServer defaultServer, std::vector<Server> &servers) {
     Client *client = nullptr;
@@ -160,6 +163,7 @@ void Server::handlePollEvent(EventPoll &eventPoll, int i, defaultServer defaultS
     }
     // Handle writable events
     if (currentPollFd.revents & POLLOUT) {
+
         try {
             if (event_fd != client->getSocket() && event_fd == client->getCgiWrite()) {
                 client->writeToCgi();
@@ -219,6 +223,7 @@ void Server::checkServer(HttpRequest* HttpRequest, std::vector<Server> &servers)
  * defined in the location.
  *
  * @param path The path to check against the server's locations.
+ * @todo figure out when to reset server information to default
  */
 void Server::checkLocations(std::string path, defaultServer defaultServer) {
     for (const auto& location : this->getLocations()) {
@@ -490,23 +495,27 @@ int Server::validateRequest(const std::string& method, const std::string& versio
  * then attempts to delete it. If successful, a 200 OK response is sent back to the client.
  * If the resource does not exist or any error occurs during deletion, an appropriate
  * error response is sent, such as a 404 Not Found or 500 Internal Server Error.
- * 
  * @param client The client object associated with the request.
  * @param request The HttpRequest object associated with the client.
+ * @todo ask LENA HOW ON EARTH DO YOU DELETE STUFF
+ * added _root to the path for deleting - anna
+ * 
  * @return The HTTP status code indicating the result of the request processing.
  */
 int Server::handleDeleteRequest(Client &client, HttpRequest* request) {
 
-    std::string pathToDelete = "." + request->getPath();
+    std::string pathToDelete = _root + request->getPath();
 
     if (pathToDelete.empty() || !fileExists(pathToDelete)) {
         return sendErrorResponse(client, 404, "www/html/404.html");
     }
+
     if (pathToDelete.find("/cgi-bin") != std::string::npos) {
         request->setFullPath(pathToDelete);
         client.startCgi(request);
         return 0;
     }
+
     if (remove(pathToDelete.c_str()) != 0) {
         throw std::runtime_error("Error deleting file: " + pathToDelete);
     }
@@ -565,13 +574,17 @@ int Server::handlePostRequest(Client &client, HttpRequest* request) {
     
     processMultipartPart(request->getStrReceived(), uploadPath);
 
-    std::string boundary = extractBoundary(request->getHeader("Content-Type"));
-    std::vector<std::string> parts = splitMultipartBody(request->getBody(), boundary);
-    
-
-    for (const std::string& part : parts) {
-        processMultipartPart(part, uploadPath);
-    }
+    std::string boundary = extractBoundary(client, request->getHeader("Content-Type"));
+	if (boundary.empty())
+		return 406;
+	// std::string UserAgent = request->getField("User-Agent");
+	// if (UserAgent.find("curl") != std::string::npos){
+	// 	boundary = "\r\n" + boundary;
+	// }
+	std::vector<std::string> parts = splitMultipartBody(request->getBody(), boundary);
+	for (const std::string& part : parts) {
+		processMultipartPart(part, uploadPath);
+	}
 
     client.getHttpResponse()->setStatus(201, "Created");
     client.getHttpResponse()->setHeader("Content-Type", "text/plain");
@@ -607,16 +620,17 @@ void Server::ensureUploadDirectoryExists(const std::string& path) {
  * @throws      std::runtime_error  If the Content-Type is not multipart/form-data,
  *                                  or if the boundary is missing.
  */
-std::string Server::extractBoundary(const std::string& contentType) {
+std::string Server::extractBoundary(Client &client, const std::string& contentType) {
     if (contentType.find("multipart/form-data") == std::string::npos) {
-        throw std::runtime_error("Unsupported Content-Type: Only multipart/form-data is supported.");
+        sendErrorResponse(client, 406, "www/html/406.html");
+		return "";
+        //throw std::runtime_error("Unsupported Content-Type: Only multipart/form-data is supported.");
     }
 
     size_t boundaryPos = contentType.find("boundary=");
     if (boundaryPos == std::string::npos) {
         throw std::runtime_error("Malformed multipart/form-data request: Missing boundary.");
     }
-
     return "--" + contentType.substr(boundaryPos + 9); // Extract boundary
 }
 
@@ -655,8 +669,9 @@ std::vector<std::string> Server::splitMultipartBody(const std::string& requestBo
 			startPos = endPos;
 		}
 		else {
-			std::string part = requestBody.substr(startPos, requestBody.length() - startPos);
-			parts.push_back(part.substr(startPos, requestBody.length() - startPos + 1));
+			int remaining_length = requestBody.length() - startPos;
+			std::string part = requestBody.substr(startPos, remaining_length);
+			parts.push_back(part);
 		}
 	}
     return parts;
