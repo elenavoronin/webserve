@@ -20,6 +20,7 @@ class HttpRequest {
 		bool 										_headerReceived = false;			// Flag indicating whether the request headers have been fully received.
 		std::string									_fullPath;
 		std::string									_path;
+		std::string									_pathToCgi;
 		std::string									_method;
 		std::string									_version;
 		std::string 								_body;
@@ -51,6 +52,7 @@ class HttpRequest {
 		void 												setBody(std::string& body);
 		void 												setHeader(std::string input);
 		void 												setBodyReceived(bool received);
+		void												setPathToCgi(std::string path);
 
 		bool 												getBodyReceived();
 		std::string 										getPath();
@@ -65,4 +67,5 @@ class HttpRequest {
 		void 												parseHeaders(const std::string& rawRequest);
 		void												parseBody(const std::string& rawRequest);
 		std::string 										getServerName();
+		std::string											getPathToCgi();
 };

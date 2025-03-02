@@ -9,6 +9,7 @@ CGI::CGI(HttpRequest *request) {
     _inputIndex = 0;
     _cgiComplete = false;
     _headersSent = false;
+    _cgiPath = request->getPathToCgi();
 
     if (!setupPipes()) 
         return;
@@ -102,17 +103,27 @@ void CGI::initializeEnvVars(HttpRequest* request) {
  * @details     Uses `execve` to run the CGI script (`hello.py`) with the environment variables set up in `_env`.
  *              Redirects `stdout` to `_fromCgiPipe[WRITE]` so the output can be read back by the parent process.
  *              This function is meant to be called in the child process created by `fork`.
+ * @todo        Add check if python 3 is installed?
  */
 void CGI::executeCgi() {
-    std::size_t queryPos = _path.find("?");
-    if (queryPos != std::string::npos) {
-        _path = _path.substr(0, queryPos);
-    }
-
     std::cout << "CGI Path: " << _cgiPath << std::endl;
 
-    std::string scriptPath = "www/html" + _path;
-    const char* cgiProgram = scriptPath.c_str();
+    std::size_t queryPos = _cgiPath.find("?");
+    if (queryPos != std::string::npos) {
+        _cgiPath = _cgiPath.substr(0, queryPos);
+        std::cout << "cgiPath after is: " << _cgiPath << std::endl;
+    }
+    size_t last_index = _cgiPath.rfind("/");
+    if (last_index != std::string::npos) {
+        _path = _cgiPath.substr(0, last_index);
+        _pass = _cgiPath.substr(last_index + 1);
+    }
+
+    if (chdir(_path.c_str()) == -1) {
+        throw std::runtime_error("Failed to change directory"); //need to do something
+    }
+
+    const char* cgiProgram = _pass.c_str();
     const char* argv[] = {"/usr/bin/python3", cgiProgram, nullptr};
 
     dup2(_fromCgiPipe[WRITE], STDOUT_FILENO);
