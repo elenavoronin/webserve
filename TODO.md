@@ -53,15 +53,3 @@ curl -v -X POST -H "Content-Type: multipart/form-data" -F "file=@Makefile" http:
 Show it in the browser:
 http://localhost:8080/upload/Makefile
 
-
-void Client::writeToCgi() {
-    if (!_CGI) {
-        throw std::runtime_error("CGI object is not initialized.");
-    }
-    _CGI->writeCgiInput(); // if goes wrong (make into fucntion)
-        //     waitpid check code here 
-        //     close all cgi processes
-        //     set error __code and geef internal error response code
-        //     sendErrorResponse
-        // }
-}
