@@ -11,11 +11,12 @@ http://example.com/ (http://example.com/)). (Lena)
 
 9. localhost:8080///// should give error page (low prio)
 
-10. Evaluator can add infinite loop to script, need to catch it, ADD TIMEOUT! (Djoyke)
+10. Evaluator can add infinite loop to script, need to catch it, ADD TIMEOUT! if headers not there triggers timeout (solved by time)(Djoyke)
 
 11. Prepare POST for CGI (djoyke)
 
-12. Handle script errors CGI (djoyke) (if headers not there throw error)
+12. Handle script errors CGI (djoyke) 
+
 
 
 FOR TESTING:
@@ -51,3 +52,4 @@ Upload text (for example Makefile)
 curl -v -X POST -H "Content-Type: multipart/form-data" -F "file=@Makefile" http://localhost:8080/cat_upload.html
 Show it in the browser:
 http://localhost:8080/upload/Makefile
+

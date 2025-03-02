@@ -20,7 +20,8 @@ CGI::CGI(HttpRequest *request) {
     }
     else if (_pid == 0) {
         handleChildProcess(request);
-    } else {
+    } 
+    else {
         handleParentProcess();
     }
 }
@@ -107,6 +108,8 @@ void CGI::executeCgi() {
     if (queryPos != std::string::npos) {
         _path = _path.substr(0, queryPos);
     }
+
+    // if (chdir())
 
     std::string scriptPath = "www/html" + _path;
     const char* cgiProgram = scriptPath.c_str();
@@ -281,7 +284,7 @@ int CGI::getWriteFd() const {
 }
 
 const std::string& CGI::getCgiOutput() const {
-        return _cgiOutput;
+    return _cgiOutput;
 }
 
 void CGI::clearCgiOutput() {
