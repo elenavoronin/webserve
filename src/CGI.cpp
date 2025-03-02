@@ -9,6 +9,7 @@ CGI::CGI(HttpRequest *request) {
     _inputIndex = 0;
     _cgiComplete = false;
     _headersSent = false;
+    _cgiPath = request->getPathToCgi();
 
     if (!setupPipes()) 
         return;
@@ -109,7 +110,7 @@ void CGI::executeCgi() {
         _path = _path.substr(0, queryPos);
     }
 
-    // if (chdir())
+    std::cout << "CGI Path: " << _cgiPath << std::endl;
 
     std::string scriptPath = "www/html" + _path;
     const char* cgiProgram = scriptPath.c_str();

@@ -261,11 +261,21 @@ void HttpRequest::readRequest(std::string request){
 	}
 }
 
+/**
+ * @brief       Retrieves the server name from the "Host" request field.
+ * 
+ * @return      The server name as a string, with any non-alphabetic characters
+ *              removed.
+ */
 std::string HttpRequest::getServerName() {
 	std::string str = getField("Host");
 	str.erase(std::remove_if(str.begin(), str.end(),
         [](char c) { return !std::isalpha(c); }), str.end());
 	return str;
+}
+
+std::string HttpRequest::getPathToCgi() {
+	return _pathToCgi;
 }
 
 /**
@@ -351,4 +361,8 @@ void HttpRequest::parseHeaders(const std::string& rawRequest) {
         }
     }
 	setHeader(rawRequest.substr(0, headerEnd));
+}
+
+void HttpRequest::setPathToCgi(std::string path) {
+	_pathToCgi = path;
 }
