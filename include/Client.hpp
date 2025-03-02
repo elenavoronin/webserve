@@ -47,7 +47,7 @@ class Client {
 		void 				setHttpRequest(HttpRequest* httpRequest);
 		void 				setHttpResponse(HttpResponse* httpResponse);
 		int 				writeToSocket();
-		void 				readFromSocket(Server *server, defaultServer defaultServer, std::vector<Server> &servers);
+		void 				readFromSocket(Server *server, defaultServer defaultS, std::vector<defaultServer> servers);
 		void 				closeConnection(EventPoll& eventPoll, int currentPollFd);
 		void				addToEventPollRemove(int fd, int eventType);
 		void 				addToEventPollQueue(int fd, int eventType);
