@@ -175,6 +175,7 @@ void Server::handlePollEvent(EventPoll &eventPoll, int i, defaultServer defaultS
             }
         } catch (const std::runtime_error &e) {
             std::cerr << "Write error: " << e.what() << std::endl;
+            handleCgiError(event_fd, client);
             client->closeConnection(eventPoll, currentPollFd.fd);
 			eraseClient(event_fd);
         }
@@ -182,8 +183,17 @@ void Server::handlePollEvent(EventPoll &eventPoll, int i, defaultServer defaultS
 
     // Handle hangup or disconnection events
     if (currentPollFd.revents & (POLLHUP | POLLRDHUP)) {
+        handleCgiError(event_fd, client);
         client->closeConnection(eventPoll, currentPollFd.fd);
 		eraseClient(event_fd);
+    }
+}
+
+void Server::handleCgiError(int event_fd, Client* client) {
+    if (event_fd != client->getSocket() && (event_fd == client->getCgiRead() || event_fd == client->getCgiWrite())) {
+        int cgiExitStatus;
+        waitpid(client->getCGI()->getPid(), &cgiExitStatus, WNOHANG);
+        sendErrorResponse(*client, 504, "www/html/504.html");
     }
 }
 
