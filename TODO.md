@@ -5,7 +5,7 @@ http://example.com/ (http://example.com/)). (Lena)
 
 4. Something weird with locations, requesting /no when autoindex is off should displaye www/html/root2/no/index.html, but it's an empty page, also not for location /bin the notindex.html. ergo looks like something with index files in location blocks doesnt work correctly (Lena)
 
-7. Kind of more on top of the second todo, curl -X PUT localhost:8080, this doesn't display the error page, but just a string 
+7. Kind of more on top of the second todo, curl -X PUT localhost:8080, this doesn't display the error page, but just a string (Leno?)
 
 8. void Config::pollLoop()  runs too many times for the CGI added debugging message (Djoyke? Low prio)
 
@@ -19,7 +19,6 @@ http://example.com/ (http://example.com/)). (Lena)
 
 13. Handle script errors CGI (djoyke) (if headers not there throw error)
 
-14. Respond sent through the script? Is it right, is it ok?
 
 FOR TESTING:
 server that is off - make it respond to specific request :
