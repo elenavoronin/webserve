@@ -9,7 +9,6 @@ CGI::CGI(HttpRequest *request) {
     _inputIndex = 0;
     _cgiComplete = false;
     _headersSent = false;
-    _cgiPath = request->getPathToCgi();
 
     if (!setupPipes()) 
         return;

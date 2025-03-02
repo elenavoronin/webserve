@@ -274,10 +274,6 @@ std::string HttpRequest::getServerName() {
 	return str;
 }
 
-std::string HttpRequest::getPathToCgi() {
-	return _pathToCgi;
-}
-
 /**
  * @brief       Trims leading and trailing whitespace from a string.
  * 
@@ -361,8 +357,4 @@ void HttpRequest::parseHeaders(const std::string& rawRequest) {
         }
     }
 	setHeader(rawRequest.substr(0, headerEnd));
-}
-
-void HttpRequest::setPathToCgi(std::string path) {
-	_pathToCgi = path;
 }
