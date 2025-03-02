@@ -7,17 +7,15 @@ http://example.com/ (http://example.com/)). (Lena)
 
 7. Kind of more on top of the second todo, curl -X PUT localhost:8080, this doesn't display the error page, but just a string (Leno?)
 
-8. void Config::pollLoop()  runs too many times for the CGI added debugging message (Djoyke? Low prio)
+8. chdir before execve and change hard coded root stuff (getRoot does not return root) (Djoyke)
 
-9. chdir before execve and change hard coded root stuff (getRoot does not return root) (Djoyke)
+9. localhost:8080///// should give error page (low prio)
 
-10. localhost:8080///// should give error page (low prio)
+10. Evaluator can add infinite loop to script, need to catch it, ADD TIMEOUT! (Djoyke)
 
-11. Evaluator can add infinite loop to script, need to catch it, ADD TIMEOUT! (Djoyke)
+11. Prepare POST for CGI (djoyke)
 
-12. Prepare POST for CGI (djoyke)
-
-13. Handle script errors CGI (djoyke) (if headers not there throw error)
+12. Handle script errors CGI (djoyke) (if headers not there throw error)
 
 
 FOR TESTING:
