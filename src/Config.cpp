@@ -337,6 +337,7 @@ void Config::addPollFds() {
  * Events are handled by calling the appropriate handler functions on the servers.
  */
 void Config::pollLoop() {
+
     while (true) {
         // Update the event list from the add/remove queues
         _eventPoll.updateEventList();
@@ -344,6 +345,7 @@ void Config::pollLoop() {
 
         std::vector<pollfd> &pfds = _eventPoll.getPollEventFd();
         int pollResult = poll(pfds.data(), pfds.size(), -1);
+		// std::cout << "pollResult" << std::endl;
         if (pollResult == -1) {
             throw std::runtime_error("Poll failed!");
         }
@@ -376,10 +378,10 @@ void Config::pollLoop() {
                     if (fd == currentServer.getListenerFd()) {
                         // Handle new connection
                         selectedServer->handleNewConnection(_eventPoll);
+						std::cout << "NEW" << std::endl;
                     } else {
                         // Handle events for existing connections
                         selectedServer->handlePollEvent(_eventPoll, i, selectedServer->getDefaultServer(), _defaultServers);
-                        
                     }
     
                 }
