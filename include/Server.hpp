@@ -83,7 +83,6 @@ class Server  {
 		int 											handleDeleteRequest(Client &client, HttpRequest* request);
 		int												handleRedirect(Client& client);
 		void 											checkLocations(std::string path, defaultServer defaultServer);
-		void 											sendFileResponse(int clientSocket, const std::string& filepath, int statusCode);
 		std::string 									readFileContent(const std::string& filepath);
 		void 											sendHeaders(int clientSocket, int statusCode, const std::string& contentType);
 		void 											sendBody(int clientSocket, const std::string& body);
@@ -113,6 +112,7 @@ class Server  {
 		int												sendErrorResponse(Client &client, int statusCode, const std::string &errorPagePath);
 		bool											fileExists(const std::string& path);
 		void 											ensureUploadDirectoryExists(const std::string& path);
+		void											handleCgiError(int event_fd, Client* client);
 
 		std::map<std::string, std::vector<Location>> 	getLocations() const {return _locations;}
 		std::string 									getPortStr() const {return this->_portString;}

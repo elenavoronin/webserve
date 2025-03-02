@@ -305,7 +305,6 @@ bool isFdOpen(int fd) {
     return fcntl(fd, F_GETFD) != -1 || errno != EBADF;
 }
 
-
 /**
  * @brief Writes the client's input to the CGI process via the pipe.
  *
@@ -328,4 +327,8 @@ void Client::addToEventPollRemove(int fd, int eventType) {
 
 void Client::addToEventPollQueue(int fd, int eventType) {
     _eventPoll->addPollFdEventQueue(fd, eventType);
+}
+
+CGI* Client::getCGI() const {
+    return _CGI;
 }
