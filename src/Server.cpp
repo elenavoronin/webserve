@@ -334,6 +334,7 @@ int Server::processClientRequest(Client &client, const std::string& request, Htt
 int Server::handleGetRequest(Client &client, HttpRequest* request) {
     
     std::string filepath = this->getRoot() + request->getPath();
+    std::cout << "filepath: " << filepath << std::endl;
     DIR* dir = opendir(filepath.c_str());
     if (dir) {
         closedir(dir);
@@ -356,7 +357,17 @@ int Server::handleGetRequest(Client &client, HttpRequest* request) {
             if (filepath.back() != '/')
                 request->setFullPath(filepath + "/" + getIndex()) ;
             else
-                request->setFullPath(filepath + getIndex()) ;
+                request->setFullPath(filepath + getIndex());
+            if (access(request->getFullPath().c_str(), F_OK) != 0) {
+                return sendErrorResponse(client, 404, "www/html/404.html");
+            }
+            client.getHttpResponse()->setHeader("Content-Type", "text/html");
+            client.getHttpResponse()->setHeader("Content-Length", std::to_string(readFileContent(filepath).size()));
+            client.getHttpResponse()->setBody(readFileContent(request->getFullPath()));
+            client.getHttpResponse()->buildResponse();
+            client.addToEventPollRemove(client.getSocket(), POLLIN);
+            client.addToEventPollQueue(client.getSocket(), POLLOUT);
+            return 200;
         }
     }
     if (filepath == "www/html/")
