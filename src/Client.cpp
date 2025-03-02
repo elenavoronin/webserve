@@ -164,7 +164,7 @@ void Client::startCgi(HttpRequest *request){
 		throw std::runtime_error("already initialized");
         
 	this->_CGI = new CGI(request);
-    this->_CGI->setPath(request->getFullPath());
+    // this->_CGI->setPath(request->getFullPath());
     _eventPoll->addPollFdEventQueue(_CGI->getReadFd(), POLLIN);
     _eventPoll->addPollFdEventQueue(_CGI->getWriteFd(), POLLOUT);
     _eventPoll->ToremovePollEventFd(_clientSocket, POLLIN);

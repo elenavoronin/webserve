@@ -337,6 +337,7 @@ int Server::processClientRequest(Client &client, const std::string& request, Htt
 int Server::handleGetRequest(Client &client, HttpRequest* request) {
     
     std::string filepath = this->getRoot() + request->getPath();
+    request->setPathToCgi(filepath);
     DIR* dir = opendir(filepath.c_str());
     if (dir) {
         closedir(dir);
@@ -496,6 +497,7 @@ int Server::validateRequest(const std::string& method, const std::string& versio
 int Server::handleDeleteRequest(Client &client, HttpRequest* request) {
 
     std::string pathToDelete = _root + request->getPath();
+    request->setPathToCgi(pathToDelete); // TODO DO we need this? 
 
     if (pathToDelete.empty() || !fileExists(pathToDelete)) {
         return sendErrorResponse(client, 404, "www/html/404.html");
@@ -553,6 +555,8 @@ int Server::handlePostRequest(Client &client, HttpRequest* request) {
 
     if (request->getPath().find("/cgi-bin") != std::string::npos) {
         request->setFullPath(request->getPath());
+        std::string filepath = this->getRoot() + request->getPath(); //TODO is this overkill?
+        request->setPathToCgi(filepath);
         client.startCgi(request);
         return 0;
     }
