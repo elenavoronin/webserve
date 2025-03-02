@@ -329,3 +329,11 @@ void Client::addToEventPollRemove(int fd, int eventType) {
 void Client::addToEventPollQueue(int fd, int eventType) {
     _eventPoll->addPollFdEventQueue(fd, eventType);
 }
+
+void Client::setStartTime(std::chrono::steady_clock::time_point start_time){
+	_start_time = start_time;
+};
+
+std::chrono::steady_clock::time_point Client::getStartTime() const{
+	return _start_time;
+}

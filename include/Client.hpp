@@ -10,6 +10,8 @@
 #include "Server.hpp"
 #include <unistd.h>
 #include <fcntl.h>
+#include <chrono>
+#include <ctime>
 
 class HttpRequest;
 class HttpResponse;
@@ -34,6 +36,8 @@ class Client {
 		CGI*			_CGI;
 		EventPoll*		_eventPoll;
 		unsigned long	_responseIndex;
+		std::chrono::steady_clock::time_point			_start_time;
+
 
 	public:
 		Client(int clientSocket, EventPoll& eventPoll);
@@ -60,4 +64,9 @@ class Client {
 		void 				startCgi(HttpRequest *request);
 		void 				readFromCgi();
 		void 				writeToCgi();
+
+
+
+		void 				setStartTime(std::chrono::steady_clock::time_point start_time);
+		std::chrono::steady_clock::time_point  				getStartTime() const;
 };

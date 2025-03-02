@@ -110,6 +110,8 @@ void Server::handleNewConnection(EventPoll &eventPoll){
     }
 
 	Client newClient(new_fd, eventPoll);
+	std::chrono::steady_clock::time_point start_time = std::chrono::steady_clock::now();
+	newClient.setStartTime(start_time);
     _clients.push_back(newClient);
     eventPoll.addPollFdEventQueue(new_fd, POLLIN);
 }
@@ -146,6 +148,16 @@ void Server::handlePollEvent(EventPoll &eventPoll, int i, defaultServer defaultS
 		    eraseClient(event_fd);
         return;
     }
+	// std::chrono::steady_clock::time_point now = std::chrono::steady_clock::now();
+	// std::chrono::duration<double, std::micro> elapsed = now - client->getStartTime();
+	// std::cout << "Elapsed" << std::chrono::duration_cast<std::chrono::seconds>(elapsed).count() << std::endl;
+	// if (std::chrono::duration_cast<std::chrono::seconds>(elapsed).count() >= 5) {  // Timeout after 5 seconds
+	// 	std::cerr << "Timeout: Connection/Process " << currentPollFd.fd << " took too long, closing...\n";
+	// 	sendErrorResponse(*client, 408, "www/html/408.html");
+	// 	client->closeConnection(eventPoll, currentPollFd.fd);
+	// 	eraseClient(event_fd);
+	// 	return ;
+	// }
 
     // Handle readable events
     if (currentPollFd.revents & POLLIN) {
