@@ -127,7 +127,7 @@ void Server::handleNewConnection(EventPoll &eventPoll){
  * @param defaultServer The default Server object
  * @todo throw instead of error or cout
  */
-void Server::handlePollEvent(EventPoll &eventPoll, int i, defaultServer defaultServer, std::vector<Server> &servers) {
+void Server::handlePollEvent(EventPoll &eventPoll, int i, defaultServer defaultS, std::vector<defaultServer> servers) {
     Client *client = nullptr;
     pollfd &currentPollFd = eventPoll.getPollEventFd()[i];
     int event_fd = currentPollFd.fd;
@@ -153,7 +153,7 @@ void Server::handlePollEvent(EventPoll &eventPoll, int i, defaultServer defaultS
             if (event_fd != client->getSocket() && event_fd == client->getCgiRead()) {
                 client->readFromCgi();
             } else {
-                client->readFromSocket(this, defaultServer, servers);
+                client->readFromSocket(this, defaultS, servers);
             }
         } catch (const std::runtime_error &e) {
             std::cerr << "Read error: " << e.what() << std::endl;
@@ -187,29 +187,24 @@ void Server::handlePollEvent(EventPoll &eventPoll, int i, defaultServer defaultS
     }
 }
 
-void Server::checkServer(HttpRequest* HttpRequest, std::vector<Server> &servers) {
-	if (getServerName() == HttpRequest->getServerName())
+void Server::checkServer(HttpRequest* HttpRequest, std::vector<defaultServer> servers) {
+    if (getServerName() == HttpRequest->getServerName())
 		return;
 	Server newServer;
-	for (std::vector<Server>::iterator it = servers.begin(); it != servers.end(); ++it) {
-		if (it->getServerName() == HttpRequest->getServerName()) {
-		newServer = *it;
-		break ;
+	for (std::vector<defaultServer>::iterator it = servers.begin(); it != servers.end(); ++it) {
+        if (it->_serverName == HttpRequest->getServerName()) {
+			this->setServerName(it->_serverName);
+            this->setPortString(it->_portString);
+            this->setRoot(it->_root);
+            this->setIndex(it->_index);
+            this->setAllowedMethods(it->_allowedMethods);
+            this->setAutoindex(it->_autoindex);
+            this->setMaxBodySize(it->_maxBodySize);
+            this->setErrorPages(it->_errorPages);
+            this->setRedirect(std::to_string(it->_redirect.first), it->_redirect.second);
+            this->setUploadStore(it->_uploadStore);
 		}
 	}
-
-	this->setServerName(newServer.getServerName());
-	this->setPortString(newServer.getPortStr());
-	this->setRoot(newServer.getRoot());
-	this->setIndex(newServer.getIndex());
-	this->setAllowedMethods(newServer.getAllowedMethods());
-	this->setAutoindex(newServer.getAutoindex());
-	this->setMaxBodySize(newServer.getMaxBodySize());
-	this->setErrorPages(newServer.getErrorPages());
-	this->setRedirect(std::to_string(newServer.getRedirect().first), newServer.getRedirect().second);
-	this->setUploadStore(newServer.getUploadStore());
-	this->setMaxBodySize(newServer.getMaxBodySize());
-	
 }
 
 
@@ -287,23 +282,22 @@ void Server::checkLocations(std::string path, defaultServer defaultServer) {
  * @param HttpRequest The HttpRequest object associated with the client.
  * @return The HTTP status code indicating the result of the request processing.
  */
-int Server::processClientRequest(Client &client, const std::string& request, HttpRequest* HttpRequest, defaultServer defaultServer, std::vector<Server> &servers) {
+int Server::processClientRequest(Client &client, const std::string& request, HttpRequest* HttpRequest, defaultServer defaultS, std::vector<defaultServer> servers) {
 	HttpRequest->readRequest(request);
 
 	std::string method = HttpRequest->getMethod();
     std::string path = HttpRequest->getPath();
     std::string version = HttpRequest->getVersion();
 
-	checkLocations(path, defaultServer);
+	checkLocations(path, defaultS);
 	checkServer(HttpRequest, servers);
     if (getRedirect().first != 0)
     {
         return handleRedirect(client);
     }
-	
     int status = validateRequest(method, version);
 	if (status != 200) {
-		return sendErrorResponse(client, status, "");
+		return sendErrorResponse(client, status, "www/html/" + std::to_string(status) + ".html");
 	}
 	if (method == "GET" && std::find(this->_allowedMethods.begin(), this->_allowedMethods.end(), "GET") != this->_allowedMethods.end())
 		return handleGetRequest(client, HttpRequest);
@@ -361,6 +355,7 @@ int Server::handleGetRequest(Client &client, HttpRequest* request) {
             if (access(request->getFullPath().c_str(), F_OK) != 0) {
                 return sendErrorResponse(client, 404, "www/html/404.html");
             }
+            std::cout << "getFullPath: " << request->getFullPath() << std::endl;
             client.getHttpResponse()->setHeader("Content-Type", "text/html");
             client.getHttpResponse()->setHeader("Content-Length", std::to_string(readFileContent(filepath).size()));
             client.getHttpResponse()->setBody(readFileContent(request->getFullPath()));
