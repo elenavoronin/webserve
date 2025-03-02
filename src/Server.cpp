@@ -392,29 +392,6 @@ int Server::handleGetRequest(Client &client, HttpRequest* request) {
 }
 
 /**
- * @brief Send a file response to the client.
- *
- * This function reads the contents of the specified file and sends it as the body
- * of an HTTP response to the client. If the file does not exist, a 404 Not Found
- * response is sent with a simple HTML page indicating that the file was not found.
- *
- * @param clientSocket The socket to send the response to.
- * @param filepath The path to the file to send.
- * @param statusCode The HTTP status code to send in the response.
- */
-void Server::sendFileResponse(int clientSocket, const std::string& filepath, int statusCode) {
-	std::string fileContent = readFileContent(filepath);
-	if (fileContent.empty()) {
-		sendHeaders(clientSocket, 404, "text/html");
-		sendBody(clientSocket, "<html><body>404 - File Not Found</body></html>");
-	} else {
-		sendHeaders(clientSocket, statusCode, "text/html");
-		sendBody(clientSocket, fileContent);
-	}
-	close(clientSocket);
-}
-
-/**
  * @brief Read the contents of a file into a string.
  *
  * This function reads the contents of a file specified by the given filepath
