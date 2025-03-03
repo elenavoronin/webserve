@@ -197,7 +197,7 @@ void Server::handleCgiError(int event_fd, Client* client) {
         waitpid(client->getCGI()->getPid(), &cgiExitStatus, WNOHANG);
         client->addToEventPollRemove(client->getCgiRead(), POLLIN);
         client->addToEventPollRemove(client->getCgiWrite(), POLLOUT);
-        sendErrorResponse(*client, 500, "www/html/500.html");
+        sendErrorResponse(*client, 500);
     }
 }
 
