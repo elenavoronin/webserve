@@ -158,7 +158,6 @@ void Server::handlePollEvent(EventPoll &eventPoll, int i, defaultServer defaultS
                 client->readFromSocket(this, defaultS, servers);
             }
         } catch (const std::runtime_error &e) {
-            std::cerr << "Read error: " << e.what() << std::endl;
             client->closeConnection(eventPoll, currentPollFd.fd);
 			eraseClient(event_fd);
         }
@@ -176,7 +175,6 @@ void Server::handlePollEvent(EventPoll &eventPoll, int i, defaultServer defaultS
 				}
             }
         } catch (const std::runtime_error &e) {
-            std::cerr << "Write error: " << e.what() << std::endl;
             handleCgiError(event_fd, client);
             client->closeConnection(eventPoll, currentPollFd.fd);
 			eraseClient(event_fd);
@@ -850,8 +848,10 @@ int Server::sendErrorResponse(Client &client, int statusCode) {
     client.getHttpResponse()->setHeader("Content-Type", "text/html");
     client.getHttpResponse()->setBody(errorContent);
     client.getHttpResponse()->buildResponse();
+
     client.addToEventPollRemove(client.getSocket(), POLLIN);
     client.addToEventPollQueue(client.getSocket(), POLLOUT);
+    
     return statusCode;
 }
 
