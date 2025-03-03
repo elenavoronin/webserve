@@ -120,7 +120,8 @@ void CGI::executeCgi() {
     }
 
     if (chdir(_path.c_str()) == -1) {
-        throw std::runtime_error("Failed to change directory"); //need to do something
+        std::cerr << "Failed to change directory to " << _path << std::endl;
+        exit(EXIT_FAILURE);
     }
 
     const char* cgiProgram = _pass.c_str();
@@ -129,8 +130,10 @@ void CGI::executeCgi() {
     dup2(_fromCgiPipe[WRITE], STDOUT_FILENO);
     close(_fromCgiPipe[READ]);
     close(_fromCgiPipe[WRITE]);
-    if (execve(argv[0], const_cast<char* const*>(argv), _env.data()) == -1)
-        throw std::runtime_error("Failed to execute CGI script");
+    if (execve(argv[0], const_cast<char* const*>(argv), _env.data()) == -1){
+        std::cerr << "Failed execute execve " << std::endl;
+        exit(EXIT_FAILURE);
+    }    
 }
 
 /**

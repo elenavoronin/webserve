@@ -164,7 +164,6 @@ void Client::startCgi(HttpRequest *request){
 		throw std::runtime_error("already initialized");
         
 	this->_CGI = new CGI(request);
-    // this->_CGI->setPath(request->getFullPath());
     _eventPoll->addPollFdEventQueue(_CGI->getReadFd(), POLLIN);
     _eventPoll->addPollFdEventQueue(_CGI->getWriteFd(), POLLOUT);
     _eventPoll->ToremovePollEventFd(_clientSocket, POLLIN);
@@ -335,4 +334,8 @@ void Client::setStartTime(std::chrono::steady_clock::time_point start_time){
 
 std::chrono::steady_clock::time_point Client::getStartTime() const{
 	return _start_time;
+}
+
+CGI* Client::getCGI() const {
+    return _CGI;
 }

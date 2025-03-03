@@ -64,8 +64,6 @@ class Client {
 		void 				writeToCgi();
 		CGI*				getCGI() const;
 
-
-
 		void 				setStartTime(std::chrono::steady_clock::time_point start_time);
 		std::chrono::steady_clock::time_point  				getStartTime() const;
 };

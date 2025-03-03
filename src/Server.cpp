@@ -148,16 +148,6 @@ void Server::handlePollEvent(EventPoll &eventPoll, int i, defaultServer defaultS
 		    eraseClient(event_fd);
         return;
     }
-	// std::chrono::steady_clock::time_point now = std::chrono::steady_clock::now();
-	// std::chrono::duration<double, std::micro> elapsed = now - client->getStartTime();
-	// std::cout << "Elapsed" << std::chrono::duration_cast<std::chrono::seconds>(elapsed).count() << std::endl;
-	// if (std::chrono::duration_cast<std::chrono::seconds>(elapsed).count() >= 5) {  // Timeout after 5 seconds
-	// 	std::cerr << "Timeout: Connection/Process " << currentPollFd.fd << " took too long, closing...\n";
-	// 	sendErrorResponse(*client, 408, "www/html/408.html");
-	// 	client->closeConnection(eventPoll, currentPollFd.fd);
-	// 	eraseClient(event_fd);
-	// 	return ;
-	// }
 
     // Handle readable events
     if (currentPollFd.revents & POLLIN) {
@@ -205,7 +195,9 @@ void Server::handleCgiError(int event_fd, Client* client) {
     if (event_fd != client->getSocket() && (event_fd == client->getCgiRead() || event_fd == client->getCgiWrite())) {
         int cgiExitStatus;
         waitpid(client->getCGI()->getPid(), &cgiExitStatus, WNOHANG);
-        sendErrorResponse(*client, 504, "www/html/504.html");
+        client->addToEventPollRemove(client->getCgiRead(), POLLIN);
+        client->addToEventPollRemove(client->getCgiWrite(), POLLOUT);
+        sendErrorResponse(*client, 500, "www/html/500.html");
     }
 }
 
@@ -227,7 +219,6 @@ void Server::checkServer(HttpRequest* HttpRequest, std::vector<defaultServer> se
 		}
 	}
 }
-
 
 /**
  * @brief Checks and updates the server's root based on the given path.
@@ -283,7 +274,6 @@ void Server::checkLocations(std::string path, defaultServer defaultServer) {
     return;
     
 }
-
 
 /**
  * @brief Process an HTTP request received from a client.

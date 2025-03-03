@@ -4,9 +4,6 @@
 
 3. Prepare POST for CGI (djoyke)
 
-4. check if python3 is installend? (djoyke)
-
-
 
 FOR TESTING:
 server that is off - make it respond to specific request :
