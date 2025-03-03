@@ -336,3 +336,8 @@ void Client::setStartTime(std::chrono::steady_clock::time_point start_time){
 std::chrono::steady_clock::time_point Client::getStartTime() const{
 	return _start_time;
 }
+
+
+CGI* Client::getCGI() const {
+    return _CGI;
+}

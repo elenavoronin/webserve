@@ -110,7 +110,7 @@ class Server  {
 		int												processMultipartPart(const std::string& part, const std::string& uploadPath);
 		void											saveUploadedFile(const std::string& filePath, const std::string& part, size_t dataStart);
 		int												handleServerError(Client &client, const std::exception &e, const std::string &errorMessage);
-		int												sendErrorResponse(Client &client, int statusCode, const std::string &errorPagePath);
+		int												sendErrorResponse(Client &client, int statusCode);
 		bool											fileExists(const std::string& path);
 		void 											ensureUploadDirectoryExists(const std::string& path);
 		void											handleCgiError(int event_fd, Client* client);
