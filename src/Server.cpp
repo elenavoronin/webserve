@@ -205,7 +205,7 @@ void Server::handleCgiError(int event_fd, Client* client) {
     if (event_fd != client->getSocket() && (event_fd == client->getCgiRead() || event_fd == client->getCgiWrite())) {
         int cgiExitStatus;
         waitpid(client->getCGI()->getPid(), &cgiExitStatus, WNOHANG);
-        sendErrorResponse(*client, 504, "www/html/504.html");
+        sendErrorResponse(*client, 504);
     }
 }
 
@@ -318,7 +318,7 @@ int Server::processClientRequest(Client &client, const std::string& request, Htt
     }
     int status = validateRequest(method, version);
 	if (status != 200) {
-		return sendErrorResponse(client, status, "www/html/" + std::to_string(status) + ".html");
+		return sendErrorResponse(client, status);
 	}
 	if (method == "GET" && std::find(this->_allowedMethods.begin(), this->_allowedMethods.end(), "GET") != this->_allowedMethods.end())
 		return handleGetRequest(client, HttpRequest);
@@ -354,7 +354,7 @@ int Server::handleGetRequest(Client &client, HttpRequest* request) {
     if (dir) {
         closedir(dir);
         if (access(filepath.c_str(), R_OK | X_OK) != 0) {
-            return sendErrorResponse(client, 403, "www/html/403.html");
+            return sendErrorResponse(client, 403);
         }
     // Check if it's a directory and autoindex is enabled{
         if (getAutoindex() == "on") {  // Autoindex must be enabled
@@ -374,9 +374,8 @@ int Server::handleGetRequest(Client &client, HttpRequest* request) {
             else
                 request->setFullPath(filepath + getIndex());
             if (access(request->getFullPath().c_str(), F_OK) != 0) {
-                return sendErrorResponse(client, 404, "www/html/404.html");
+                return sendErrorResponse(client, 404);
             }
-            std::cout << "getFullPath: " << request->getFullPath() << std::endl;
             client.getHttpResponse()->setHeader("Content-Type", "text/html");
             client.getHttpResponse()->setHeader("Content-Length", std::to_string(readFileContent(filepath).size()));
             client.getHttpResponse()->setBody(readFileContent(request->getFullPath()));
@@ -394,10 +393,10 @@ int Server::handleGetRequest(Client &client, HttpRequest* request) {
         return 0;
     }
     if (access(filepath.c_str(), F_OK) != 0) {
-        return sendErrorResponse(client, 404, "www/html/404.html");
+        return sendErrorResponse(client, 404);
     }
     if (access(filepath.c_str(), R_OK) != 0) {
-        return sendErrorResponse(client, 403, "www/html/403.html");
+        return sendErrorResponse(client, 403);
     }
     client.getHttpResponse()->setHeader("Content-Type", "text/html");
     client.getHttpResponse()->setHeader("Content-Length", std::to_string(readFileContent(filepath).size()));
@@ -512,7 +511,7 @@ int Server::handleDeleteRequest(Client &client, HttpRequest* request) {
     request->setPathToCgi(pathToDelete); // TODO DO we need this? 
 
     if (pathToDelete.empty() || !fileExists(pathToDelete)) {
-        return sendErrorResponse(client, 404, "www/html/404.html");
+        return sendErrorResponse(client, 404);
     }
 
     if (pathToDelete.find("/cgi-bin") != std::string::npos) {
@@ -562,7 +561,7 @@ int Server::handlePostRequest(Client &client, HttpRequest* request) {
     size_t requestSize = request->getBody().size();
 
     if (requestSize > getMaxBodySize()) {
-        return sendErrorResponse(client, 413, "www/html/413.html");
+        return sendErrorResponse(client, 413);
     }
 
     if (request->getPath().find("/cgi-bin") != std::string::npos) {
@@ -629,7 +628,7 @@ void Server::ensureUploadDirectoryExists(const std::string& path) {
  */
 std::string Server::extractBoundary(Client &client, const std::string& contentType) {
     if (contentType.find("multipart/form-data") == std::string::npos) {
-        sendErrorResponse(client, 406, "www/html/406.html");
+        sendErrorResponse(client, 406);
 		return "";
         //throw std::runtime_error("Unsupported Content-Type: Only multipart/form-data is supported.");
     }
@@ -803,7 +802,7 @@ int Server::handleRedirect(Client& client) {
  */
 int Server::handleServerError(Client &client, const std::exception &e, const std::string &errorMessage) {
     std::cerr << errorMessage << ": " << e.what() << std::endl;
-    return sendErrorResponse(client, 500, "www/html/500.html");
+    return sendErrorResponse(client, 500);
 }
 
 /**
@@ -820,13 +819,16 @@ int Server::handleServerError(Client &client, const std::exception &e, const std
  *
  * @return The status code of the response
  */
-int Server::sendErrorResponse(Client &client, int statusCode, const std::string &errorPagePath) {
+int Server::sendErrorResponse(Client &client, int statusCode) {
     std::string errorPath;
-    if(getErrorPage(statusCode) != "")
+    std::string errorContent;
+    if (getErrorPage(statusCode) != "")
+    {
         errorPath = getErrorPage(statusCode);
-    else
-        errorPath = errorPagePath;
-    std::string errorContent = readFileContent(errorPagePath);
+        errorContent = readFileContent(errorPath);
+    }
+
+    std::cout << "Error Page: " << errorPath << std::endl;
     if (errorContent.empty()) {
         errorContent = "<html><body><h1>" + std::to_string(statusCode) + " - Error</h1></body></html>";
     }
