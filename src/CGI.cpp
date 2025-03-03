@@ -327,7 +327,6 @@ bool CGI::setupPipes() {
     return true;
 }
 
-
 /**
  * @brief       Clears the output of the CGI process.
  * 

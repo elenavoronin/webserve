@@ -345,7 +345,6 @@ void Config::pollLoop() {
 
         std::vector<pollfd> &pfds = _eventPoll.getPollEventFd();
         int pollResult = poll(pfds.data(), pfds.size(), -1);
-		// std::cout << "pollResult" << std::endl;
         if (pollResult == -1) {
             throw std::runtime_error("Poll failed!");
         }

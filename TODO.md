@@ -1,6 +1,10 @@
-2. Evaluator can add infinite loop to script, need to catch it, ADD TIMEOUT! if headers not there triggers timeout (solved by time)(Djoyke)
+1. Evaluator can add infinite loop to script, need to catch it, ADD TIMEOUT! if headers not there triggers timeout (solved by time)(Djoyke)
 
-3. Prepare POST for CGI (djoyke)
+2. Prepare POST for CGI (djoyke)
+
+3. Big files stuck looping
+
+4. Weird delay error page CGI
 
 
 FOR TESTING:
