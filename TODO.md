@@ -1,5 +1,3 @@
-1. Setup default error page (try to change the error 404). When we change default : "	error_page		404 www/html/504.html    " it still gives error 404 - change errorResponse everywhere (Lena)
-
 2. Evaluator can add infinite loop to script, need to catch it, ADD TIMEOUT! if headers not there triggers timeout (solved by time)(Djoyke)
 
 3. Prepare POST for CGI (djoyke)
