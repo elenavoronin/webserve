@@ -107,6 +107,16 @@ void Client::setHttpResponse(HttpResponse* httpResponse){
 	_HttpResponse = httpResponse;
 }
 
+
+/**
+ * @brief Sets the start time of the client's request.
+ *
+ * @param start_time The point in time when the client's request was started.
+ */
+void Client::setStartTime(std::chrono::steady_clock::time_point start_time){
+	_start_time = start_time;
+};
+
 /**
  * @brief Retrieves the HttpRequest object associated with the client.
  *
@@ -149,6 +159,27 @@ int Client::getCgiWrite(){
 	if (this->_CGI == NULL)
 		return -1;
 	return this->_CGI->getWriteFd();
+}
+
+/**
+ * @brief Retrieves the point in time when the client's request was started.
+ *
+ * @return A std::chrono::steady_clock::time_point object representing the start time of the client's request.
+ */
+std::chrono::steady_clock::time_point Client::getStartTime() const{
+	return _start_time;
+}
+
+/**
+ * @brief Retrieves the CGI object associated with the client.
+ *
+ * Returns a pointer to the CGI object associated with the client or NULL if no
+ * CGI object has been initialized.
+ *
+ * @return A pointer to the client's CGI object or NULL if not initialized.
+ */
+CGI* Client::getCGI() const {
+    return _CGI;
 }
 
 /**
@@ -300,6 +331,17 @@ void Client::closeConnection(EventPoll& eventPoll, int currentPollFd) {
     }
 }
 
+/**
+ * @brief Checks if a file descriptor is open.
+ *
+ * This function checks if a given file descriptor is open by calling fcntl()
+ * with the F_GETFD command. If the file descriptor is open, fcntl() will
+ * return a value other than -1. If the file descriptor is not open, fcntl()
+ * will return -1 and set errno to EBADF.
+ *
+ * @param fd The file descriptor to check.
+ * @return True if the file descriptor is open; otherwise, false.
+ */
 bool isFdOpen(int fd) {
     return fcntl(fd, F_GETFD) != -1 || errno != EBADF;
 }
@@ -320,22 +362,30 @@ void Client::writeToCgi() {
     _CGI->writeCgiInput();
 }
 
+/**
+ * @brief Removes a file descriptor and event type from the EventPoll's queue.
+ *
+ * This function schedules the removal of a specified file descriptor and event type
+ * from the EventPoll's queue. The removal is executed in the updateEventList() function.
+ *
+ * @param fd The file descriptor to remove from the EventPoll.
+ * @param eventType The event type (such as POLLIN or POLLOUT) to remove.
+ */
+
 void Client::addToEventPollRemove(int fd, int eventType) {
     _eventPoll->ToremovePollEventFd(fd, eventType);
 }
 
+/**
+ * @brief Adds a file descriptor and event type to the EventPoll's queue.
+ *
+ * This function adds a file descriptor and event type to the EventPoll's queue
+ * to be monitored for events. The addition is done in the updateEventList()
+ * function.
+ *
+ * @param fd The file descriptor to add to the EventPoll.
+ * @param eventType The event type (such as POLLIN or POLLOUT) to add.
+ */
 void Client::addToEventPollQueue(int fd, int eventType) {
     _eventPoll->addPollFdEventQueue(fd, eventType);
-}
-
-void Client::setStartTime(std::chrono::steady_clock::time_point start_time){
-	_start_time = start_time;
-};
-
-std::chrono::steady_clock::time_point Client::getStartTime() const{
-	return _start_time;
-}
-
-CGI* Client::getCGI() const {
-    return _CGI;
 }
