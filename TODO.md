@@ -37,3 +37,7 @@ curl -v -X POST -H "Content-Type: multipart/form-data" -F "file=@Makefile" http:
 Show it in the browser:
 http://localhost:8080/upload/Makefile
 
+
+kill a process:
+lsof -i :<PORT>
+kill -9 <PID>
