@@ -113,7 +113,7 @@ class Server  {
 		int												sendErrorResponse(Client &client, int statusCode);
 		bool											fileExists(const std::string& path);
 		void 											ensureUploadDirectoryExists(const std::string& path);
-		void											handleCgiError(int event_fd, Client* client);
+		void											handleCgiError(Client* client);
 
 		std::map<std::string, std::vector<Location>> 	getLocations() const {return _locations;}
 		std::string 									getPortStr() const {return this->_portString;}

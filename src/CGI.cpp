@@ -31,6 +31,7 @@ CGI::CGI(HttpRequest *request) {
  * @brief       Destructor for the CGI class.
  */
 CGI::~CGI(){
+    std::cout << "lol\n";
     close(_toCgiPipe[WRITE]);
     close(_toCgiPipe[READ]);
     close(_fromCgiPipe[WRITE]);
@@ -102,7 +103,7 @@ void CGI::handleChildProcess(HttpRequest* request) {
 /**
  * @brief Handles CGI processing in the parent process by closing the write end of the pipe to the CGI process and the read end of the pipe from the CGI process.
  * 
- * This method is called in the parent process after the child process has been forked. It closes the write end of the pipe to the CGI process and the read end of the pipe from the CGI process. This is necessary to prevent the parent process from writing to the pipe and to prevent the parent process from reading from the pipe.
+ * It closes the write end of the pipe to the CGI process and the read end of the pipe from the CGI process.
  */
 void CGI::handleParentProcess() {
     close(_fromCgiPipe[WRITE]);
@@ -200,6 +201,7 @@ void CGI::executeCgi() {
     dup2(_fromCgiPipe[WRITE], STDOUT_FILENO);
     close(_fromCgiPipe[READ]);
     close(_fromCgiPipe[WRITE]);
+    std::cerr << "EXECUTED DEAD NO JOKING" << std::endl;
     if (execve(argv[0], const_cast<char* const*>(argv), _env.data()) == -1){
         std::cerr << "Failed execute execve " << std::endl;
         exit(EXIT_FAILURE);
@@ -214,6 +216,7 @@ void CGI::executeCgi() {
 void CGI::readCgiOutput() {
     char buffer[READ_SIZE];
 
+    std::cout << "we readinhg" << std::endl;
     ssize_t bytes_read = read(_fromCgiPipe[READ], buffer, sizeof(buffer));
     if (bytes_read < 0) {
         throw std::runtime_error("Error reading from pipe");

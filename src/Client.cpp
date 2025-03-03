@@ -65,6 +65,7 @@ Client& Client::operator=(const Client& copy) {
     _HttpRequest = copy._HttpRequest ? new HttpRequest(*copy._HttpRequest) : nullptr;
     _HttpResponse = copy._HttpResponse ? new HttpResponse(*copy._HttpResponse) : nullptr;
     _CGI = nullptr; // Reset CGI in the assigned instance
+    // _CGI = copy._CGI ? new CGI(*copy._CGI) : nullptr;
     _eventPoll = copy._eventPoll; // References must remain valid
     _responseIndex = copy._responseIndex;
 
@@ -216,6 +217,7 @@ void Client::readFromCgi() {
     try {
         _CGI->readCgiOutput();
         if (_CGI->isCgiComplete()) {
+            std::cout << "doen we dit?" << std::endl;
             _HttpResponse->setFullResponse(_CGI->getCgiOutput());
             _eventPoll->addPollFdEventQueue(_clientSocket, POLLOUT);
             _eventPoll->ToremovePollEventFd(_CGI->getReadFd(), POLLIN);

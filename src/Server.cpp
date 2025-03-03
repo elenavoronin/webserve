@@ -158,6 +158,10 @@ void Server::handlePollEvent(EventPoll &eventPoll, int i, defaultServer defaultS
                 client->readFromSocket(this, defaultS, servers);
             }
         } catch (const std::runtime_error &e) {
+            // if (event_fd == client->getCgiRead() || event_fd == client->getCgiWrite()) {
+            //     handleCgiError(event_fd, client);
+            //     return;
+            // }
             client->closeConnection(eventPoll, currentPollFd.fd);
 			eraseClient(event_fd);
         }
@@ -175,7 +179,10 @@ void Server::handlePollEvent(EventPoll &eventPoll, int i, defaultServer defaultS
 				}
             }
         } catch (const std::runtime_error &e) {
-            handleCgiError(event_fd, client);
+            if (event_fd == client->getCgiRead() || event_fd == client->getCgiWrite()) {
+                handleCgiError(client);
+                return;
+            }
             client->closeConnection(eventPoll, currentPollFd.fd);
 			eraseClient(event_fd);
         }
@@ -183,7 +190,11 @@ void Server::handlePollEvent(EventPoll &eventPoll, int i, defaultServer defaultS
 
     // Handle hangup or disconnection events
     if (currentPollFd.revents & (POLLHUP | POLLRDHUP)) {
-        handleCgiError(event_fd, client);
+        std::cerr << "whyyyy" << std::endl;
+        if (event_fd == client->getCgiRead() || event_fd == client->getCgiWrite()) {
+            handleCgiError(client);
+            return;
+        }
         client->closeConnection(eventPoll, currentPollFd.fd);
 		eraseClient(event_fd);
     }
@@ -200,14 +211,13 @@ void Server::handlePollEvent(EventPoll &eventPoll, int i, defaultServer defaultS
  * @param event_fd The file descriptor that triggered the error.
  * @param client The Client object that owns the CGI process.
  */
-void Server::handleCgiError(int event_fd, Client* client) {
-    if (event_fd != client->getSocket() && (event_fd == client->getCgiRead() || event_fd == client->getCgiWrite())) {
-        int cgiExitStatus;
-        waitpid(client->getCGI()->getPid(), &cgiExitStatus, WNOHANG);
-        client->addToEventPollRemove(client->getCgiRead(), POLLIN);
-        client->addToEventPollRemove(client->getCgiWrite(), POLLOUT);
-        sendErrorResponse(*client, 500);
-    }
+void Server::handleCgiError(Client* client) {
+    std::cerr << "whyyyy2" << std::endl;
+    int cgiExitStatus;
+    waitpid(client->getCGI()->getPid(), &cgiExitStatus, WNOHANG);
+    client->addToEventPollRemove(client->getCgiRead(), POLLIN);
+    client->addToEventPollRemove(client->getCgiWrite(), POLLOUT);
+    sendErrorResponse(*client, 500);
 }
 
 /**
