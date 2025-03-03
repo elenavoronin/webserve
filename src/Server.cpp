@@ -191,6 +191,17 @@ void Server::handlePollEvent(EventPoll &eventPoll, int i, defaultServer defaultS
     }
 }
     
+/**
+ * @brief Handles CGI errors by closing the CGI pipes and sending an error response
+ *        to the client.
+ *
+ * This method is called when an error occurs while communicating with a CGI
+ * process. It closes the CGI pipes and sends an appropriate error response
+ * to the client.
+ *
+ * @param event_fd The file descriptor that triggered the error.
+ * @param client The Client object that owns the CGI process.
+ */
 void Server::handleCgiError(int event_fd, Client* client) {
     if (event_fd != client->getSocket() && (event_fd == client->getCgiRead() || event_fd == client->getCgiWrite())) {
         int cgiExitStatus;
@@ -200,6 +211,19 @@ void Server::handleCgiError(int event_fd, Client* client) {
         sendErrorResponse(*client, 500);
     }
 }
+
+/**
+ * @brief Checks and updates the server configuration based on the HTTP request.
+ *
+ * This function compares the server name from the HTTP request with the current
+ * server's name. If they match, it returns immediately. Otherwise, it iterates
+ * over a list of defaultServer objects to find a matching server configuration
+ * based on the request's server name. If a match is found, it updates the
+ * current server's configuration with the properties of the matching server.
+ *
+ * @param HttpRequest Pointer to the HttpRequest object containing the request details.
+ * @param servers A vector of defaultServer objects representing the available server configurations.
+ */
 
 void Server::checkServer(HttpRequest* HttpRequest, std::vector<defaultServer> servers) {
     if (getServerName() == HttpRequest->getServerName())

@@ -38,6 +38,78 @@ CGI::~CGI(){
 }
 
 /**
+ * @brief       Returns the process ID of the CGI process.
+ * 
+ * @return      The process ID of the CGI process.
+ */
+pid_t CGI::getPid() const {
+    return _pid;
+}
+
+/**
+ * @brief       Retrieves the path to the CGI script.
+ * 
+ * @return      The path to the CGI script as a string.
+ */
+
+std::string CGI::getPath() const {
+    return _path;
+}
+
+/**
+ * @brief Gets the file descriptor for the read end of the pipe used for communication with the CGI process.
+ * 
+ * @return The file descriptor for the read end of the pipe.
+ */
+int CGI::getReadFd() const {
+    return _fromCgiPipe[READ];
+}
+/**
+ * @brief Gets the file descriptor for the write end of the pipe used for communication with the CGI process.
+ * 
+ * @return The file descriptor for the write end of the pipe.
+ */
+int CGI::getWriteFd() const {
+    return _toCgiPipe[WRITE];
+}
+
+const std::string& CGI::getCgiOutput() const {
+    return _cgiOutput;
+}
+
+/**
+ * @brief Sets the CGI script path.
+ * 
+ * @param path The path to set for the CGI script.
+ */
+void CGI::setPath(std::string path){
+    _path = path;
+}
+
+/**
+ * @brief Handles CGI processing in the child process by setting up environment variables
+ *        and executing the CGI script.
+ * 
+ * @param request The HttpRequest object containing HTTP request details.
+ * @param server The Server object that might provide configuration details.
+ */
+void CGI::handleChildProcess(HttpRequest* request) {
+    close(_fromCgiPipe[READ]);
+    initializeEnvVars(request);
+    executeCgi();
+}
+
+/**
+ * @brief Handles CGI processing in the parent process by closing the write end of the pipe to the CGI process and the read end of the pipe from the CGI process.
+ * 
+ * This method is called in the parent process after the child process has been forked. It closes the write end of the pipe to the CGI process and the read end of the pipe from the CGI process. This is necessary to prevent the parent process from writing to the pipe and to prevent the parent process from reading from the pipe.
+ */
+void CGI::handleParentProcess() {
+    close(_fromCgiPipe[WRITE]);
+    close(_toCgiPipe[READ]);
+}
+
+/**
  * @brief       Parses the query string from the HTTP request path if the request method is GET.
  * 
  * @param       request    The HttpRequest object containing details of the HTTP request.
@@ -106,12 +178,10 @@ void CGI::initializeEnvVars(HttpRequest* request) {
  * @todo        Add check if python 3 is installed?
  */
 void CGI::executeCgi() {
-    std::cout << "CGI Path: " << _cgiPath << std::endl;
 
     std::size_t queryPos = _cgiPath.find("?");
     if (queryPos != std::string::npos) {
         _cgiPath = _cgiPath.substr(0, queryPos);
-        std::cout << "cgiPath after is: " << _cgiPath << std::endl;
     }
     size_t last_index = _cgiPath.rfind("/");
     if (last_index != std::string::npos) {
@@ -257,78 +327,56 @@ bool CGI::setupPipes() {
     return true;
 }
 
-/**
- * @brief Handles CGI processing in the child process by setting up environment variables
- *        and executing the CGI script.
- * 
- * @param request The HttpRequest object containing HTTP request details.
- * @param server The Server object that might provide configuration details.
- */
-void CGI::handleChildProcess(HttpRequest* request) {
-    close(_fromCgiPipe[READ]);
-    initializeEnvVars(request);
-    executeCgi();
-}
 
 /**
- * @brief Handles CGI processing in the parent process by closing the write end of the pipe to the CGI process and the read end of the pipe from the CGI process.
+ * @brief       Clears the output of the CGI process.
  * 
- * This method is called in the parent process after the child process has been forked. It closes the write end of the pipe to the CGI process and the read end of the pipe from the CGI process. This is necessary to prevent the parent process from writing to the pipe and to prevent the parent process from reading from the pipe.
+ * @details     This method simply clears the _cgiOutput string, which is used to store
+ *              the output of the CGI process.
  */
-void CGI::handleParentProcess() {
-    close(_fromCgiPipe[WRITE]);
-    close(_toCgiPipe[READ]);
-}
-
-/**
- * @brief Gets the file descriptor for the read end of the pipe used for communication with the CGI process.
- * 
- * @return The file descriptor for the read end of the pipe.
- */
-int CGI::getReadFd() const {
-    return _fromCgiPipe[READ];
-}
-/**
- * @brief Gets the file descriptor for the write end of the pipe used for communication with the CGI process.
- * 
- * @return The file descriptor for the write end of the pipe.
- */
-int CGI::getWriteFd() const {
-    return _toCgiPipe[WRITE];
-}
-
-const std::string& CGI::getCgiOutput() const {
-    return _cgiOutput;
-}
-
 void CGI::clearCgiOutput() {
         _cgiOutput.clear();
 }
+
+/**
+ * @brief       Checks if the HTTP headers have been sent to the client.
+ * 
+ * @return      True if the headers have been sent; otherwise, false.
+ */
 
 bool CGI::areHeadersSent() const {
         return _headersSent;
 }
 
+/**
+ * @brief       Marks the CGI headers as sent.
+ * 
+ * @details     This function sets the internal state to indicate that the HTTP headers
+ *              have been successfully sent to the client, preventing them from being sent again.
+ */
+
 void CGI::markHeadersSent() {
         _headersSent = true;
 }
 
+/**
+ * @brief       Checks if the CGI process is complete.
+ * 
+ * @return      True if the CGI process has finished; otherwise, false.
+ * 
+ * @details     This method simply returns the internal state variable _cgiComplete,
+ *              which indicates whether the CGI process has finished executing.
+ */
 bool CGI::isCgiComplete() const {
         return _cgiComplete;
 }
 
+/**
+ * @brief       Marks the CGI process as complete.
+ * 
+ * @details     This method simply sets the internal state variable _cgiComplete
+ *              to true, indicating that the CGI process has finished executing.
+ */
 void CGI::markCgiComplete() {
         _cgiComplete = true;
-}
-
-pid_t CGI::getPid() const {
-    return _pid;
-}
-
-void CGI::setPath(std::string path){
-    _path = path;
-}
-
-std::string CGI::getPath() const {
-    return _path;
 }
