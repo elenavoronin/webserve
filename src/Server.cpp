@@ -842,7 +842,6 @@ int Server::sendErrorResponse(Client &client, int statusCode) {
         errorContent = readFileContent(errorPath);
     }
 
-    std::cout << "Error Page: " << errorPath << std::endl;
     if (errorContent.empty()) {
         errorContent = "<html><body><h1>" + std::to_string(statusCode) + " - Error</h1></body></html>";
     }
