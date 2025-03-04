@@ -217,9 +217,12 @@ void Client::readFromCgi() {
         _CGI->readCgiOutput();
         if (_CGI->isCgiComplete()) {
             _HttpResponse->setFullResponse(_CGI->getCgiOutput());
-            _eventPoll->addPollFdEventQueue(_clientSocket, POLLOUT);
+            _eventPoll->ToremovePollEventFd(_clientSocket, POLLIN);
             _eventPoll->ToremovePollEventFd(_CGI->getReadFd(), POLLIN);
             _eventPoll->ToremovePollEventFd(_CGI->getWriteFd(), POLLOUT);
+
+            _eventPoll->addPollFdEventQueue(_clientSocket, POLLOUT); //Lena added
+
             kill(_CGI->getPid(), SIGTERM);
         }
     } catch (const std::exception& e) {
@@ -315,19 +318,26 @@ int Client::writeToSocket() {
  * @param eventPoll The EventPoll object to remove the client socket from.
  */
 void Client::closeConnection(EventPoll& eventPoll, int currentPollFd) {
-
+    if (_HttpResponse && _responseIndex < _HttpResponse->getFullResponse().size()) {
+        // Response not fully sent, keep POLLOUT active
+        eventPoll.addPollFdEventQueue(_clientSocket, POLLOUT);
+        return;
+    }
     if (currentPollFd != 0)
     {
         eventPoll.ToremovePollEventFd(currentPollFd, POLLIN | POLLOUT);
     }
     if (_CGI) {
         eventPoll.ToremovePollEventFd(_CGI->getReadFd(), POLLIN);
+        eventPoll.ToremovePollEventFd(_CGI->getWriteFd(), POLLOUT);
         delete _CGI;
         _CGI = nullptr;
     }
 
     if (_clientSocket >= 0) {
+        eventPoll.ToremovePollEventFd(_clientSocket, POLLIN | POLLOUT);
         close(_clientSocket);
+        _clientSocket = -1;
     }
 }
 

@@ -203,9 +203,17 @@ void Server::handlePollEvent(EventPoll &eventPoll, int i, defaultServer defaultS
 void Server::handleCgiError(int event_fd, Client* client) {
     if (event_fd != client->getSocket() && (event_fd == client->getCgiRead() || event_fd == client->getCgiWrite())) {
         int cgiExitStatus;
+    //     if (getHttpResponse() && _responseIndex < _HttpResponse->getFullResponse().size()) {
+    //     // Response not fully sent, keep POLLOUT active
+    //     eventPoll.addPollFdEventQueue(_clientSocket, POLLOUT);
+    //     return;
+    // }
         waitpid(client->getCGI()->getPid(), &cgiExitStatus, WNOHANG);
         client->addToEventPollRemove(client->getCgiRead(), POLLIN);
         client->addToEventPollRemove(client->getCgiWrite(), POLLOUT);
+
+        client->addToEventPollQueue(client->getSocket(), POLLOUT); // Lena added
+        
         sendErrorResponse(*client, 500);
     }
 }
