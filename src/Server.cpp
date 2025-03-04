@@ -156,6 +156,10 @@ void Server::handlePollEvent(EventPoll &eventPoll, int i, defaultServer defaultS
                 client->readFromSocket(this, defaultS, servers);
             }
         } catch (const std::runtime_error &e) {
+            if (event_fd == client->getCgiRead() || event_fd == client->getCgiWrite()) {
+                handleCgiError(client);
+                return;
+            }
             client->closeConnection(eventPoll, currentPollFd.fd);
 			eraseClient(event_fd);
         }
@@ -173,7 +177,6 @@ void Server::handlePollEvent(EventPoll &eventPoll, int i, defaultServer defaultS
 				}
             }
         } catch (const std::runtime_error &e) {
-            // handleCgiError(event_fd, client);
             if (event_fd == client->getCgiRead() || event_fd == client->getCgiWrite()) {
                 handleCgiError(client);
                 return;
@@ -209,7 +212,12 @@ void Server::handlePollEvent(EventPoll &eventPoll, int i, defaultServer defaultS
 void Server::handleCgiError(Client* client) {
 
         int cgiExitStatus;
-        waitpid(client->getCGI()->getPid(), &cgiExitStatus, WNOHANG);
+        pid_t cgiPid = client->getCGI()->getPid();
+
+        if (cgiPid > 0) {
+            kill(cgiPid, SIGTERM);
+            waitpid(cgiPid, &cgiExitStatus, WNOHANG);
+        }
         client->addToEventPollRemove(client->getCgiRead(), POLLIN);
         client->addToEventPollRemove(client->getCgiWrite(), POLLOUT);
         sendErrorResponse(*client, 500);
@@ -472,7 +480,6 @@ void Server::sendHeaders(int clientSocket, int statusCode, const std::string& co
             std::cerr << "Error sending data to client " << clientSocket << ": " << strerror(errno) << std::endl;
         }
         
-        // Close the socket and remove it from event polling (if necessary)
         close(clientSocket);
     }
 }
@@ -495,7 +502,6 @@ void Server::sendBody(int clientSocket, const std::string& body) {
             std::cerr << "Error sending data to client " << clientSocket << ": " << strerror(errno) << std::endl;
         }
         
-        // Close the socket and remove it from event polling (if necessary)
         close(clientSocket);
     }
 }
@@ -812,9 +818,6 @@ int Server::handleRedirect(Client& client) {
     client.getHttpResponse()->setStatus(getRedirect().first, getStatusMessage(getRedirect().first));
     client.getHttpResponse()->setHeader("Location", getRedirect().second);
     client.getHttpResponse()->setHeader("Content-Type", "text/html");
-    // client.getHttpResponse()->setHeader("Cache-Control:", "no-store, no-cache, must-revalidate, max-age=0\r\n");
-    // client.getHttpResponse()->setHeader("Pragma:", "no-cache\r\n");
-    // client.getHttpResponse()->setHeader("Expires:", "no-cache\r\n");
     
     std::string body = "<html><body><h1>Redirecting...</h1>"
                         "<p>If you are not redirected automatically, "
@@ -863,6 +866,8 @@ int Server::handleServerError(Client &client, const std::exception &e, const std
 int Server::sendErrorResponse(Client &client, int statusCode) {
     std::string errorPath;
     std::string errorContent;
+
+
     if (getErrorPage(statusCode) != "")
     {
         errorPath = getErrorPage(statusCode);
