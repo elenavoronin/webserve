@@ -113,9 +113,9 @@ class Server  {
 		int												sendErrorResponse(Client &client, int statusCode);
 		bool											fileExists(const std::string& path);
 		void 											ensureUploadDirectoryExists(const std::string& path);
-		void											handleCgiError(Client* client);
+        void 											handleCgiError(Client *client);
 
-		std::map<std::string, std::vector<Location>> 	getLocations() const {return _locations;}
+        std::map<std::string, std::vector<Location>> 	getLocations() const {return _locations;}
 		std::string 									getPortStr() const {return this->_portString;}
 		std::string 									getIndex() const {return this->_index;}
 		std::string 									getServerName() const {return this->_serverName;}

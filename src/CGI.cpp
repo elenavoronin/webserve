@@ -13,7 +13,6 @@ CGI::CGI(HttpRequest *request) {
 
     if (!setupPipes()) 
         return;
-
     _pid = fork();
     if (_pid == -1) {
         throw std::runtime_error("Fork failed!");
