@@ -105,7 +105,9 @@ void HttpResponse::buildResponse() {
 	
 	std::string statusCodeString = std::to_string(_statusCode);
 	std::string statusLine = "HTTP/1.1 " + statusCodeString + " " + _statusMessage + "\r\n";
-	
+	_fullResponse += "Cache-Control: no-store, no-cache, must-revalidate, max-age=0\r\n";
+	_fullResponse += "Pragma: no-cache\r\n";
+	_fullResponse += "Expires: 0\r\n";
 	std::ostringstream headersStream;
 	for (const auto& header : _headers) {
 		headersStream << header.first << ": " << header.second << "\r\n";
