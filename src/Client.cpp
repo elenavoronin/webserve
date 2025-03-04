@@ -196,9 +196,8 @@ void Client::startCgi(HttpRequest *request){
 		throw std::runtime_error("already initialized");
         
 	this->_CGI = new CGI(request);
-    
+        
     this->_start_time = std::chrono::steady_clock::now();
-    
     _eventPoll->addPollFdEventQueue(_CGI->getReadFd(), POLLIN);
     _eventPoll->addPollFdEventQueue(_CGI->getWriteFd(), POLLOUT);
     _eventPoll->ToremovePollEventFd(_clientSocket, POLLIN);
@@ -223,10 +222,8 @@ void Client::readFromCgi() {
             std::cout << "doen we dit?" << std::endl;
             _HttpResponse->setFullResponse(_CGI->getCgiOutput());
             _eventPoll->addPollFdEventQueue(_clientSocket, POLLOUT);
-            // _eventPoll->ToremovePollEventFd(_CGI->getReadFd(), POLLIN);
+            _eventPoll->ToremovePollEventFd(_CGI->getReadFd(), POLLIN);
             _eventPoll->ToremovePollEventFd(_CGI->getWriteFd(), POLLOUT);
-            _eventPoll->addPollFdEventQueue(_clientSocket, POLLOUT); //Lena added
-
             kill(_CGI->getPid(), SIGTERM);
         }
     } catch (const std::exception& e) {
@@ -342,6 +339,22 @@ void Client::closeConnection(EventPoll& eventPoll, int currentPollFd) {
         return;
     }
 }
+// void Client::closeConnection(EventPoll& eventPoll, int currentPollFd) {
+
+//     if (currentPollFd != 0)
+//     {
+//         eventPoll.ToremovePollEventFd(currentPollFd, POLLIN | POLLOUT);
+//     }
+//     if (_CGI) {
+//         eventPoll.ToremovePollEventFd(_CGI->getReadFd(), POLLIN);
+//         delete _CGI;
+//         _CGI = nullptr;
+//     }
+
+//     if (_clientSocket >= 0) {
+//         close(_clientSocket);
+//     }
+// }
 
 /**
  * @brief Checks if a file descriptor is open.
