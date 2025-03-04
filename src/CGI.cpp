@@ -13,7 +13,6 @@ CGI::CGI(HttpRequest *request) {
 
     if (!setupPipes()) 
         return;
-
     _pid = fork();
     if (_pid == -1) {
         throw std::runtime_error("Fork failed!");
@@ -200,6 +199,7 @@ void CGI::executeCgi() {
     dup2(_fromCgiPipe[WRITE], STDOUT_FILENO);
     close(_fromCgiPipe[READ]);
     close(_fromCgiPipe[WRITE]);
+
     if (execve(argv[0], const_cast<char* const*>(argv), _env.data()) == -1){
         std::cerr << "Failed execute execve " << std::endl;
         exit(EXIT_FAILURE);

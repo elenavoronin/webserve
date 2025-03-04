@@ -327,12 +327,6 @@ void Client::closeConnection(EventPoll& eventPoll, int currentPollFd) {
     {
         eventPoll.ToremovePollEventFd(currentPollFd, POLLIN | POLLOUT);
     }
-    if (_CGI) {
-        eventPoll.ToremovePollEventFd(_CGI->getReadFd(), POLLIN);
-        eventPoll.ToremovePollEventFd(_CGI->getWriteFd(), POLLOUT);
-        delete _CGI;
-        _CGI = nullptr;
-    }
 
     if (_clientSocket >= 0) {
         eventPoll.ToremovePollEventFd(_clientSocket, POLLIN | POLLOUT);
