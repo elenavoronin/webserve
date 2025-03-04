@@ -110,8 +110,6 @@ void Server::handleNewConnection(EventPoll &eventPoll){
     }
 
 	Client newClient(new_fd, eventPoll);
-	std::chrono::steady_clock::time_point start_time = std::chrono::steady_clock::now();
-	newClient.setStartTime(start_time);
     _clients.push_back(newClient);
     eventPoll.addPollFdEventQueue(new_fd, POLLIN);
     std::cout << "New client connected: " << new_fd << std::endl;
@@ -148,6 +146,17 @@ void Server::handlePollEvent(EventPoll &eventPoll, int i, defaultServer defaultS
     if (!client) {
 		    eraseClient(event_fd);
         return;
+    }
+    // ✅ **Check if CGI process has timed out**
+    if (client->getCGI() != NULL) {
+        auto now = std::chrono::steady_clock::now();
+        auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(now - client->getStartTime()).count();
+
+        if (elapsed > 5) {  // Timeout threshold (5 seconds)
+            std::cerr << "Error: CGI script timeout. Terminating process." << std::endl;
+            handleCgiError(client);
+            return;
+        }
     }
 
     // Handle readable events
@@ -216,7 +225,10 @@ void Server::handlePollEvent(EventPoll &eventPoll, int i, defaultServer defaultS
  * @param client The Client object that owns the CGI process.
  */
 void Server::handleCgiError(Client* client) {
-
+        if (!client || !client->getCGI() || !client->getHttpResponse()) {
+        std::cerr << "Error: handleCgiError called on a client with no CGI process." << std::endl;
+        return;
+    }
         int cgiExitStatus;
         pid_t cgiPid = client->getCGI()->getPid();
 
@@ -229,13 +241,6 @@ void Server::handleCgiError(Client* client) {
         sendErrorResponse(*client, 500);
 
 }
-// void Server::handleCgiError(Client* client) {
-//     int cgiExitStatus;
-//     waitpid(client->getCGI()->getPid(), &cgiExitStatus, WNOHANG);
-//     client->addToEventPollRemove(client->getCgiRead(), POLLIN);
-//     client->addToEventPollRemove(client->getCgiWrite(), POLLOUT);
-//     sendErrorResponse(*client, 500);
-// }
 
 /**
  * @brief Checks and updates the server configuration based on the HTTP request.
@@ -890,6 +895,8 @@ int Server::handleServerError(Client &client, const std::exception &e, const std
 int Server::sendErrorResponse(Client &client, int statusCode) {
     std::string errorPath;
     std::string errorContent;
+
+
     if (getErrorPage(statusCode) != "")
     {
         errorPath = getErrorPage(statusCode);
