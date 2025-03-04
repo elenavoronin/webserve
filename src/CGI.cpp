@@ -31,7 +31,6 @@ CGI::CGI(HttpRequest *request) {
  * @brief       Destructor for the CGI class.
  */
 CGI::~CGI(){
-    std::cout << "lol\n";
     close(_toCgiPipe[WRITE]);
     close(_toCgiPipe[READ]);
     close(_fromCgiPipe[WRITE]);
@@ -201,7 +200,6 @@ void CGI::executeCgi() {
     dup2(_fromCgiPipe[WRITE], STDOUT_FILENO);
     close(_fromCgiPipe[READ]);
     close(_fromCgiPipe[WRITE]);
-    std::cerr << "EXECUTED DEAD NO JOKING" << std::endl;
     if (execve(argv[0], const_cast<char* const*>(argv), _env.data()) == -1){
         std::cerr << "Failed execute execve " << std::endl;
         exit(EXIT_FAILURE);
