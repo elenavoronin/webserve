@@ -196,6 +196,9 @@ void Client::startCgi(HttpRequest *request){
 		throw std::runtime_error("already initialized");
         
 	this->_CGI = new CGI(request);
+    
+    this->_start_time = std::chrono::steady_clock::now();
+    
     _eventPoll->addPollFdEventQueue(_CGI->getReadFd(), POLLIN);
     _eventPoll->addPollFdEventQueue(_CGI->getWriteFd(), POLLOUT);
     _eventPoll->ToremovePollEventFd(_clientSocket, POLLIN);
@@ -320,11 +323,7 @@ int Client::writeToSocket() {
  * @param eventPoll The EventPoll object to remove the client socket from.
  */
 void Client::closeConnection(EventPoll& eventPoll, int currentPollFd) {
-    if (_HttpResponse && _responseIndex < _HttpResponse->getFullResponse().size()) {
-        // Response not fully sent, keep POLLOUT active
-        eventPoll.addPollFdEventQueue(_clientSocket, POLLOUT);
-        return;
-    }
+
     if (_HttpResponse && _responseIndex < _HttpResponse->getFullResponse().size()) {
         // Response not fully sent, keep POLLOUT active
         eventPoll.addPollFdEventQueue(_clientSocket, POLLOUT);
@@ -333,10 +332,6 @@ void Client::closeConnection(EventPoll& eventPoll, int currentPollFd) {
     if (currentPollFd != 0)
     {
         eventPoll.ToremovePollEventFd(currentPollFd, POLLIN | POLLOUT);
-    }
-        // close(_clientSocket);
-        // _clientSocket = -1;
-        // return;
     }
 
     if (_clientSocket >= 0) {
@@ -348,22 +343,6 @@ void Client::closeConnection(EventPoll& eventPoll, int currentPollFd) {
         return;
     }
 }
-// void Client::closeConnection(EventPoll& eventPoll, int currentPollFd) {
-    
-//     if (currentPollFd != 0)
-//     {
-//         eventPoll.ToremovePollEventFd(currentPollFd, POLLIN | POLLOUT);
-//     }
-//     if (_CGI) {
-//         eventPoll.ToremovePollEventFd(_CGI->getReadFd(), POLLIN);
-//         delete _CGI;
-//         _CGI = nullptr;
-//     }
-
-//     if (_clientSocket >= 0) {
-//         close(_clientSocket);
-//     }
-// }
 
 /**
  * @brief Checks if a file descriptor is open.

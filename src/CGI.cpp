@@ -30,10 +30,10 @@ CGI::CGI(HttpRequest *request) {
  * @brief       Destructor for the CGI class.
  */
 CGI::~CGI(){
-    close(_toCgiPipe[WRITE]);
-    close(_toCgiPipe[READ]);
-    close(_fromCgiPipe[WRITE]);
-    close(_fromCgiPipe[READ]); 
+    // close(_toCgiPipe[WRITE]);
+    // close(_toCgiPipe[READ]);
+    // close(_fromCgiPipe[WRITE]);
+    // close(_fromCgiPipe[READ]); 
 }
 
 /**
