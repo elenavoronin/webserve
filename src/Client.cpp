@@ -231,10 +231,9 @@ void Client::readFromCgi() {
         if (_CGI->isCgiComplete()) {
             std::cout << "doen we dit?" << std::endl;
             _HttpResponse->setFullResponse(_CGI->getCgiOutput());
-            _eventPoll->ToremovePollEventFd(_clientSocket, POLLIN);
-            _eventPoll->ToremovePollEventFd(_CGI->getReadFd(), POLLIN);
+            _eventPoll->addPollFdEventQueue(_clientSocket, POLLOUT);
+            // _eventPoll->ToremovePollEventFd(_CGI->getReadFd(), POLLIN);
             _eventPoll->ToremovePollEventFd(_CGI->getWriteFd(), POLLOUT);
-
             _eventPoll->addPollFdEventQueue(_clientSocket, POLLOUT); //Lena added
 
             kill(_CGI->getPid(), SIGTERM);
