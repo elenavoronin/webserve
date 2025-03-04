@@ -37,11 +37,11 @@ body = f"""
 # Calculate Content-Length
 content_length = len(body.encode('utf-8'))
 
-# # Send HTTP headers
-# print("HTTP/1.1 200 OK\r")
-# print("Content-Type: text/html\r")
-# print(f"Content-Length: {content_length}\r")
-# print("\r")  # Blank line to separate headers from body
+# Send HTTP headers
+print("HTTP/1.1 200 OK\r")
+print("Content-Type: text/html\r")
+print(f"Content-Length: {content_length}\r")
+print("\r")  # Blank line to separate headers from body
 
-# # Send response body
-# print(body)
+# Send response body
+print(body)

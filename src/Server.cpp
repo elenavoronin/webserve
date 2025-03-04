@@ -225,11 +225,10 @@ void Server::handlePollEvent(EventPoll &eventPoll, int i, defaultServer defaultS
  * @param client The Client object that owns the CGI process.
  */
 void Server::handleCgiError(Client* client) {
-        if (!client || !client->getCGI()) {
+        if (!client || !client->getCGI() || !client->getHttpResponse()) {
         std::cerr << "Error: handleCgiError called on a client with no CGI process." << std::endl;
         return;
     }
-
         int cgiExitStatus;
         pid_t cgiPid = client->getCGI()->getPid();
 

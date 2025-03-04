@@ -193,8 +193,17 @@ CGI* Client::getCGI() const {
  */
 void Client::startCgi(HttpRequest *request){
 	if (this->_CGI != NULL)
+    {
 		throw std::runtime_error("already initialized");
-        
+        return ;
+    }
+    
+    if (!request)
+    {
+        throw std::runtime_error("request empty");
+        return ;
+    }
+
 	this->_CGI = new CGI(request);
     
     this->_start_time = std::chrono::steady_clock::now();
