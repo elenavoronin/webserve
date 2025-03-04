@@ -11,6 +11,8 @@ CGI::CGI(HttpRequest *request) {
     _headersSent = false;
     _cgiPath = request->getPathToCgi();
 
+    _start_time = std::chrono::steady_clock::now();
+
     if (!setupPipes()) 
         return;
     _pid = fork();
@@ -285,7 +287,7 @@ void CGI::parseHeaders(const std::string& headers) {
  * The function keeps track of how much data has been written via the `_inputIndex` variable.
  */
 void CGI::writeCgiInput() {
-
+    
     if (_inputIndex >= _cgiInput.size()) {
         close(_toCgiPipe[WRITE]); // Signal EOF to the CGI process
         return;
