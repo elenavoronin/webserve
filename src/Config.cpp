@@ -253,8 +253,10 @@ std::vector<Server> Config::parseConfig(std::ifstream &file) {
             }
             if (insideServerBlock && tokens[0] == "}") {
                 insideServerBlock = false;
-                if (validateParsedData(currentServer))
+                if (validateParsedData(currentServer)) {
                     servers.push_back(currentServer);
+                    _defaultServers.push_back(currentServer.getDefaultServer());
+                }
                 else {
                     throw std::runtime_error("Error in config file: Invalid server block detected.");
                 }
@@ -343,7 +345,6 @@ void Config::pollLoop() {
 
         std::vector<pollfd> &pfds = _eventPoll.getPollEventFd();
         int pollResult = poll(pfds.data(), pfds.size(), -1);
-		// std::cout << "pollResult" << std::endl;
         if (pollResult == -1) {
             throw std::runtime_error("Poll failed!");
         }
@@ -373,14 +374,12 @@ void Config::pollLoop() {
                     if (currentServer.getOnOff() == true)
                         activeServer = &currentServer;
                     Server* selectedServer = activeServer ? activeServer : defaultServer;
-					std::vector<Server> &servers = _servers;
                     if (fd == currentServer.getListenerFd()) {
                         // Handle new connection
                         selectedServer->handleNewConnection(_eventPoll);
-						std::cout << "NEW" << std::endl;
                     } else {
-						std::cout << "OLD" << std::endl;
-                        selectedServer->handlePollEvent(_eventPoll, i, selectedServer->getDefaultServer(), servers);
+                        // Handle events for existing connections
+                        selectedServer->handlePollEvent(_eventPoll, i, selectedServer->getDefaultServer(), _defaultServers);
                     }
     
                 }

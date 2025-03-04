@@ -24,11 +24,13 @@
 #include <chrono>
 
 class Server;
+struct defaultServer;
 
 class Config {
     private:
-        EventPoll              _eventPoll;
-        std::vector<Server>    _servers;
+        EventPoll                   _eventPoll;
+        std::vector<Server>         _servers;
+        std::vector<defaultServer>   _defaultServers;
 
     public:
         Config();

@@ -1,21 +1,10 @@
-1. Setup multiple servers with different hostnames (use something like: curl --resolve example.com:80:127.0.0
-http://example.com/ (http://example.com/)). (Lena)
+1. Evaluator can add infinite loop to script, need to catch it, ADD TIMEOUT! if headers not there triggers timeout (solved by time)(Djoyke)
 
-2. Setup default error page (try to change the error 404). When we change default : "	error_page		404 www/html/504.html    " it still gives error 404 - change errorResponse everywhere (Lena)
+2. Prepare POST for CGI (djoyke)
 
-4. Something weird with locations, requesting /no when autoindex is off should displaye www/html/root2/no/index.html, but it's an empty page, also not for location /bin the notindex.html. ergo looks like something with index files in location blocks doesnt work correctly (Lena)
+3. Big files stuck looping
 
-7. Kind of more on top of the second todo, curl -X PUT localhost:8080, this doesn't display the error page, but just a string (Leno?)
-
-8. chdir before execve and change hard coded root stuff (getRoot does not return root) (Djoyke)
-
-9. localhost:8080///// should give error page (low prio)
-
-10. Evaluator can add infinite loop to script, need to catch it, ADD TIMEOUT! (Djoyke)
-
-11. Prepare POST for CGI (djoyke)
-
-12. Handle script errors CGI (djoyke) (if headers not there throw error)
+4. Weird delay error page CGI
 
 
 FOR TESTING:
@@ -51,3 +40,8 @@ Upload text (for example Makefile)
 curl -v -X POST -H "Content-Type: multipart/form-data" -F "file=@Makefile" http://localhost:8080/cat_upload.html
 Show it in the browser:
 http://localhost:8080/upload/Makefile
+
+
+kill a process:
+lsof -i :<PORT>
+kill -9 <PID>

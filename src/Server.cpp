@@ -129,7 +129,7 @@ void Server::handleNewConnection(EventPoll &eventPoll){
  * @param defaultServer The default Server object
  * @todo throw instead of error or cout
  */
-void Server::handlePollEvent(EventPoll &eventPoll, int i, defaultServer defaultServer, std::vector<Server> &servers) {
+void Server::handlePollEvent(EventPoll &eventPoll, int i, defaultServer defaultS, std::vector<defaultServer> servers) {
     Client *client = nullptr;
     pollfd &currentPollFd = eventPoll.getPollEventFd()[i];
     int event_fd = currentPollFd.fd;
@@ -148,16 +148,6 @@ void Server::handlePollEvent(EventPoll &eventPoll, int i, defaultServer defaultS
 		    eraseClient(event_fd);
         return;
     }
-	// std::chrono::steady_clock::time_point now = std::chrono::steady_clock::now();
-	// std::chrono::duration<double, std::micro> elapsed = now - client->getStartTime();
-	// std::cout << "Elapsed" << std::chrono::duration_cast<std::chrono::seconds>(elapsed).count() << std::endl;
-	// if (std::chrono::duration_cast<std::chrono::seconds>(elapsed).count() >= 5) {  // Timeout after 5 seconds
-	// 	std::cerr << "Timeout: Connection/Process " << currentPollFd.fd << " took too long, closing...\n";
-	// 	sendErrorResponse(*client, 408, "www/html/408.html");
-	// 	client->closeConnection(eventPoll, currentPollFd.fd);
-	// 	eraseClient(event_fd);
-	// 	return ;
-	// }
 
     // Handle readable events
     if (currentPollFd.revents & POLLIN) {
@@ -165,10 +155,9 @@ void Server::handlePollEvent(EventPoll &eventPoll, int i, defaultServer defaultS
             if (event_fd != client->getSocket() && event_fd == client->getCgiRead()) {
                 client->readFromCgi();
             } else {
-                client->readFromSocket(this, defaultServer, servers);
+                client->readFromSocket(this, defaultS, servers);
             }
         } catch (const std::runtime_error &e) {
-            std::cerr << "Read error: " << e.what() << std::endl;
             client->closeConnection(eventPoll, currentPollFd.fd);
 			eraseClient(event_fd);
         }
@@ -186,7 +175,7 @@ void Server::handlePollEvent(EventPoll &eventPoll, int i, defaultServer defaultS
 				}
             }
         } catch (const std::runtime_error &e) {
-            std::cerr << "Write error: " << e.what() << std::endl;
+            handleCgiError(event_fd, client);
             client->closeConnection(eventPoll, currentPollFd.fd);
 			eraseClient(event_fd);
         }
@@ -194,36 +183,64 @@ void Server::handlePollEvent(EventPoll &eventPoll, int i, defaultServer defaultS
 
     // Handle hangup or disconnection events
     if (currentPollFd.revents & (POLLHUP | POLLRDHUP)) {
+        handleCgiError(event_fd, client);
         client->closeConnection(eventPoll, currentPollFd.fd);
 		eraseClient(event_fd);
     }
 }
-
-void Server::checkServer(HttpRequest* HttpRequest, std::vector<Server> &servers) {
-	if (getServerName() == HttpRequest->getServerName())
-		return;
-	Server newServer;
-	for (std::vector<Server>::iterator it = servers.begin(); it != servers.end(); ++it) {
-		if (it->getServerName() == HttpRequest->getServerName()) {
-		newServer = *it;
-		break ;
-		}
-	}
-
-	this->setServerName(newServer.getServerName());
-	this->setPortString(newServer.getPortStr());
-	this->setRoot(newServer.getRoot());
-	this->setIndex(newServer.getIndex());
-	this->setAllowedMethods(newServer.getAllowedMethods());
-	this->setAutoindex(newServer.getAutoindex());
-	this->setMaxBodySize(newServer.getMaxBodySize());
-	this->setErrorPages(newServer.getErrorPages());
-	this->setRedirect(std::to_string(newServer.getRedirect().first), newServer.getRedirect().second);
-	this->setUploadStore(newServer.getUploadStore());
-	this->setMaxBodySize(newServer.getMaxBodySize());
-	
+    
+/**
+ * @brief Handles CGI errors by closing the CGI pipes and sending an error response
+ *        to the client.
+ *
+ * This method is called when an error occurs while communicating with a CGI
+ * process. It closes the CGI pipes and sends an appropriate error response
+ * to the client.
+ *
+ * @param event_fd The file descriptor that triggered the error.
+ * @param client The Client object that owns the CGI process.
+ */
+void Server::handleCgiError(int event_fd, Client* client) {
+    if (event_fd != client->getSocket() && (event_fd == client->getCgiRead() || event_fd == client->getCgiWrite())) {
+        int cgiExitStatus;
+        waitpid(client->getCGI()->getPid(), &cgiExitStatus, WNOHANG);
+        client->addToEventPollRemove(client->getCgiRead(), POLLIN);
+        client->addToEventPollRemove(client->getCgiWrite(), POLLOUT);
+        sendErrorResponse(*client, 500);
+    }
 }
 
+/**
+ * @brief Checks and updates the server configuration based on the HTTP request.
+ *
+ * This function compares the server name from the HTTP request with the current
+ * server's name. If they match, it returns immediately. Otherwise, it iterates
+ * over a list of defaultServer objects to find a matching server configuration
+ * based on the request's server name. If a match is found, it updates the
+ * current server's configuration with the properties of the matching server.
+ *
+ * @param HttpRequest Pointer to the HttpRequest object containing the request details.
+ * @param servers A vector of defaultServer objects representing the available server configurations.
+ */
+
+void Server::checkServer(HttpRequest* HttpRequest, std::vector<defaultServer> servers) {
+    if (getServerName() == HttpRequest->getServerName())
+		  return;
+	for (std::vector<defaultServer>::iterator it = servers.begin(); it != servers.end(); ++it) {
+        if (it->_serverName == HttpRequest->getServerName()) {
+			this->setServerName(it->_serverName);
+            this->setPortString(it->_portString);
+            this->setRoot(it->_root);
+            this->setIndex(it->_index);
+            this->setAllowedMethods(it->_allowedMethods);
+            this->setAutoindex(it->_autoindex);
+            this->setMaxBodySize(it->_maxBodySize);
+            this->setErrorPages(it->_errorPages);
+            this->setRedirect(std::to_string(it->_redirect.first), it->_redirect.second);
+            this->setUploadStore(it->_uploadStore);
+		}
+	}
+}
 
 /**
  * @brief Checks and updates the server's root based on the given path.
@@ -280,7 +297,6 @@ void Server::checkLocations(std::string path, defaultServer defaultServer) {
     
 }
 
-
 /**
  * @brief Process an HTTP request received from a client.
  *
@@ -299,23 +315,22 @@ void Server::checkLocations(std::string path, defaultServer defaultServer) {
  * @param HttpRequest The HttpRequest object associated with the client.
  * @return The HTTP status code indicating the result of the request processing.
  */
-int Server::processClientRequest(Client &client, const std::string& request, HttpRequest* HttpRequest, defaultServer defaultServer, std::vector<Server> &servers) {
+int Server::processClientRequest(Client &client, const std::string& request, HttpRequest* HttpRequest, defaultServer defaultS, std::vector<defaultServer> servers) {
 	HttpRequest->readRequest(request);
 
 	std::string method = HttpRequest->getMethod();
     std::string path = HttpRequest->getPath();
     std::string version = HttpRequest->getVersion();
 
-	checkLocations(path, defaultServer);
+	checkLocations(path, defaultS);
 	checkServer(HttpRequest, servers);
     if (getRedirect().first != 0)
     {
         return handleRedirect(client);
     }
-	
     int status = validateRequest(method, version);
 	if (status != 200) {
-		return sendErrorResponse(client, status, "");
+		return sendErrorResponse(client, status);
 	}
 	if (method == "GET" && std::find(this->_allowedMethods.begin(), this->_allowedMethods.end(), "GET") != this->_allowedMethods.end())
 		return handleGetRequest(client, HttpRequest);
@@ -346,11 +361,12 @@ int Server::processClientRequest(Client &client, const std::string& request, Htt
 int Server::handleGetRequest(Client &client, HttpRequest* request) {
     
     std::string filepath = this->getRoot() + request->getPath();
+    request->setPathToCgi(filepath);
     DIR* dir = opendir(filepath.c_str());
     if (dir) {
         closedir(dir);
         if (access(filepath.c_str(), R_OK | X_OK) != 0) {
-            return sendErrorResponse(client, 403, "www/html/403.html");
+            return sendErrorResponse(client, 403);
         }
     // Check if it's a directory and autoindex is enabled{
         if (getAutoindex() == "on") {  // Autoindex must be enabled
@@ -368,7 +384,17 @@ int Server::handleGetRequest(Client &client, HttpRequest* request) {
             if (filepath.back() != '/')
                 request->setFullPath(filepath + "/" + getIndex()) ;
             else
-                request->setFullPath(filepath + getIndex()) ;
+                request->setFullPath(filepath + getIndex());
+            if (access(request->getFullPath().c_str(), F_OK) != 0) {
+                return sendErrorResponse(client, 404);
+            }
+            client.getHttpResponse()->setHeader("Content-Type", "text/html");
+            client.getHttpResponse()->setHeader("Content-Length", std::to_string(readFileContent(filepath).size()));
+            client.getHttpResponse()->setBody(readFileContent(request->getFullPath()));
+            client.getHttpResponse()->buildResponse();
+            client.addToEventPollRemove(client.getSocket(), POLLIN);
+            client.addToEventPollQueue(client.getSocket(), POLLOUT);
+            return 200;
         }
     }
     if (filepath == "www/html/")
@@ -379,10 +405,10 @@ int Server::handleGetRequest(Client &client, HttpRequest* request) {
         return 0;
     }
     if (access(filepath.c_str(), F_OK) != 0) {
-        return sendErrorResponse(client, 404, "www/html/404.html");
+        return sendErrorResponse(client, 404);
     }
     if (access(filepath.c_str(), R_OK) != 0) {
-        return sendErrorResponse(client, 403, "www/html/403.html");
+        return sendErrorResponse(client, 403);
     }
     client.getHttpResponse()->setHeader("Content-Type", "text/html");
     client.getHttpResponse()->setHeader("Content-Length", std::to_string(readFileContent(filepath).size()));
@@ -391,29 +417,6 @@ int Server::handleGetRequest(Client &client, HttpRequest* request) {
     client.addToEventPollRemove(client.getSocket(), POLLIN);
     client.addToEventPollQueue(client.getSocket(), POLLOUT);
     return 200;
-}
-
-/**
- * @brief Send a file response to the client.
- *
- * This function reads the contents of the specified file and sends it as the body
- * of an HTTP response to the client. If the file does not exist, a 404 Not Found
- * response is sent with a simple HTML page indicating that the file was not found.
- *
- * @param clientSocket The socket to send the response to.
- * @param filepath The path to the file to send.
- * @param statusCode The HTTP status code to send in the response.
- */
-void Server::sendFileResponse(int clientSocket, const std::string& filepath, int statusCode) {
-	std::string fileContent = readFileContent(filepath);
-	if (fileContent.empty()) {
-		sendHeaders(clientSocket, 404, "text/html");
-		sendBody(clientSocket, "<html><body>404 - File Not Found</body></html>");
-	} else {
-		sendHeaders(clientSocket, statusCode, "text/html");
-		sendBody(clientSocket, fileContent);
-	}
-	close(clientSocket);
 }
 
 /**
@@ -517,9 +520,10 @@ int Server::validateRequest(const std::string& method, const std::string& versio
 int Server::handleDeleteRequest(Client &client, HttpRequest* request) {
 
     std::string pathToDelete = _root + request->getPath();
+    request->setPathToCgi(pathToDelete); // TODO DO we need this? 
 
     if (pathToDelete.empty() || !fileExists(pathToDelete)) {
-        return sendErrorResponse(client, 404, "www/html/404.html");
+        return sendErrorResponse(client, 404);
     }
 
     if (pathToDelete.find("/cgi-bin") != std::string::npos) {
@@ -569,11 +573,13 @@ int Server::handlePostRequest(Client &client, HttpRequest* request) {
     size_t requestSize = request->getBody().size();
 
     if (requestSize > getMaxBodySize()) {
-        return sendErrorResponse(client, 413, "www/html/413.html");
+        return sendErrorResponse(client, 413);
     }
 
     if (request->getPath().find("/cgi-bin") != std::string::npos) {
         request->setFullPath(request->getPath());
+        std::string filepath = this->getRoot() + request->getPath(); //TODO is this overkill?
+        request->setPathToCgi(filepath);
         client.startCgi(request);
         return 0;
     }
@@ -634,7 +640,7 @@ void Server::ensureUploadDirectoryExists(const std::string& path) {
  */
 std::string Server::extractBoundary(Client &client, const std::string& contentType) {
     if (contentType.find("multipart/form-data") == std::string::npos) {
-        sendErrorResponse(client, 406, "www/html/406.html");
+        sendErrorResponse(client, 406);
 		return "";
         //throw std::runtime_error("Unsupported Content-Type: Only multipart/form-data is supported.");
     }
@@ -808,7 +814,7 @@ int Server::handleRedirect(Client& client) {
  */
 int Server::handleServerError(Client &client, const std::exception &e, const std::string &errorMessage) {
     std::cerr << errorMessage << ": " << e.what() << std::endl;
-    return sendErrorResponse(client, 500, "www/html/500.html");
+    return sendErrorResponse(client, 500);
 }
 
 /**
@@ -825,13 +831,15 @@ int Server::handleServerError(Client &client, const std::exception &e, const std
  *
  * @return The status code of the response
  */
-int Server::sendErrorResponse(Client &client, int statusCode, const std::string &errorPagePath) {
+int Server::sendErrorResponse(Client &client, int statusCode) {
     std::string errorPath;
-    if(getErrorPage(statusCode) != "")
+    std::string errorContent;
+    if (getErrorPage(statusCode) != "")
+    {
         errorPath = getErrorPage(statusCode);
-    else
-        errorPath = errorPagePath;
-    std::string errorContent = readFileContent(errorPagePath);
+        errorContent = readFileContent(errorPath);
+    }
+
     if (errorContent.empty()) {
         errorContent = "<html><body><h1>" + std::to_string(statusCode) + " - Error</h1></body></html>";
     }
@@ -840,8 +848,10 @@ int Server::sendErrorResponse(Client &client, int statusCode, const std::string 
     client.getHttpResponse()->setHeader("Content-Type", "text/html");
     client.getHttpResponse()->setBody(errorContent);
     client.getHttpResponse()->buildResponse();
+
     client.addToEventPollRemove(client.getSocket(), POLLIN);
     client.addToEventPollQueue(client.getSocket(), POLLOUT);
+    
     return statusCode;
 }
 

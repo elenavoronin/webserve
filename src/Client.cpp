@@ -107,6 +107,16 @@ void Client::setHttpResponse(HttpResponse* httpResponse){
 	_HttpResponse = httpResponse;
 }
 
+
+/**
+ * @brief Sets the start time of the client's request.
+ *
+ * @param start_time The point in time when the client's request was started.
+ */
+void Client::setStartTime(std::chrono::steady_clock::time_point start_time){
+	_start_time = start_time;
+};
+
 /**
  * @brief Retrieves the HttpRequest object associated with the client.
  *
@@ -152,6 +162,27 @@ int Client::getCgiWrite(){
 }
 
 /**
+ * @brief Retrieves the point in time when the client's request was started.
+ *
+ * @return A std::chrono::steady_clock::time_point object representing the start time of the client's request.
+ */
+std::chrono::steady_clock::time_point Client::getStartTime() const{
+	return _start_time;
+}
+
+/**
+ * @brief Retrieves the CGI object associated with the client.
+ *
+ * Returns a pointer to the CGI object associated with the client or NULL if no
+ * CGI object has been initialized.
+ *
+ * @return A pointer to the client's CGI object or NULL if not initialized.
+ */
+CGI* Client::getCGI() const {
+    return _CGI;
+}
+
+/**
  * @brief Starts the CGI process with the given HttpRequest.
  *
  * Initializes the CGI object by passing the HttpRequest object to its constructor.
@@ -164,7 +195,6 @@ void Client::startCgi(HttpRequest *request){
 		throw std::runtime_error("already initialized");
         
 	this->_CGI = new CGI(request);
-    this->_CGI->setPath(request->getFullPath());
     _eventPoll->addPollFdEventQueue(_CGI->getReadFd(), POLLIN);
     _eventPoll->addPollFdEventQueue(_CGI->getWriteFd(), POLLOUT);
     _eventPoll->ToremovePollEventFd(_clientSocket, POLLIN);
@@ -210,7 +240,7 @@ void Client::readFromCgi() {
  * If the HTTP request headers have not been fully received, continues to read from the socket.
  */
 
-void Client::readFromSocket(Server *server, defaultServer defaultServer, std::vector<Server> &servers) {
+void Client::readFromSocket(Server *server, defaultServer defaultS, std::vector<defaultServer> servers) {
     if (!_HttpRequest) {
         throw std::runtime_error("_HttpRequest is null. Possible use-after-free.");
     }
@@ -240,7 +270,7 @@ void Client::readFromSocket(Server *server, defaultServer defaultServer, std::ve
     }
     if (_HttpRequest->isHeaderReceived()) {
 			_HttpRequest->parseBody(_HttpRequest->getStrReceived());
-			server->processClientRequest(*this, _HttpRequest->getStrReceived(), _HttpRequest, defaultServer, servers);
+			server->processClientRequest(*this, _HttpRequest->getStrReceived(), _HttpRequest, defaultS, servers);
 			_HttpRequest->setHeaderReceived(false);
 			_HttpRequest->clearStrReceived();
     }
@@ -302,10 +332,20 @@ void Client::closeConnection(EventPoll& eventPoll, int currentPollFd) {
     }
 }
 
+/**
+ * @brief Checks if a file descriptor is open.
+ *
+ * This function checks if a given file descriptor is open by calling fcntl()
+ * with the F_GETFD command. If the file descriptor is open, fcntl() will
+ * return a value other than -1. If the file descriptor is not open, fcntl()
+ * will return -1 and set errno to EBADF.
+ *
+ * @param fd The file descriptor to check.
+ * @return True if the file descriptor is open; otherwise, false.
+ */
 bool isFdOpen(int fd) {
     return fcntl(fd, F_GETFD) != -1 || errno != EBADF;
 }
-
 
 /**
  * @brief Writes the client's input to the CGI process via the pipe.
@@ -323,18 +363,30 @@ void Client::writeToCgi() {
     _CGI->writeCgiInput();
 }
 
+/**
+ * @brief Removes a file descriptor and event type from the EventPoll's queue.
+ *
+ * This function schedules the removal of a specified file descriptor and event type
+ * from the EventPoll's queue. The removal is executed in the updateEventList() function.
+ *
+ * @param fd The file descriptor to remove from the EventPoll.
+ * @param eventType The event type (such as POLLIN or POLLOUT) to remove.
+ */
+
 void Client::addToEventPollRemove(int fd, int eventType) {
     _eventPoll->ToremovePollEventFd(fd, eventType);
 }
 
+/**
+ * @brief Adds a file descriptor and event type to the EventPoll's queue.
+ *
+ * This function adds a file descriptor and event type to the EventPoll's queue
+ * to be monitored for events. The addition is done in the updateEventList()
+ * function.
+ *
+ * @param fd The file descriptor to add to the EventPoll.
+ * @param eventType The event type (such as POLLIN or POLLOUT) to add.
+ */
 void Client::addToEventPollQueue(int fd, int eventType) {
     _eventPoll->addPollFdEventQueue(fd, eventType);
-}
-
-void Client::setStartTime(std::chrono::steady_clock::time_point start_time){
-	_start_time = start_time;
-};
-
-std::chrono::steady_clock::time_point Client::getStartTime() const{
-	return _start_time;
 }

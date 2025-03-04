@@ -75,16 +75,15 @@ class Server  {
 		int												getListenerSocket();
 		/*Main loop*/
 		void 											handleNewConnection(EventPoll &eventPoll);
-		void 											handlePollEvent(EventPoll &eventPoll, int i, defaultServer defaultServer, std::vector<Server> &servers);
+		void											handlePollEvent(EventPoll &eventPoll, int i, defaultServer defaultS, std::vector<defaultServer> servers);
 		void											eraseClient(int event_fd);
 		/*Handle requests*/	
-		int 											processClientRequest(Client &client, const std::string& request, HttpRequest* Http, defaultServer defaultServer, std::vector<Server> &servers);
+		int 											processClientRequest(Client &client, const std::string& request, HttpRequest* Http, defaultServer defaultS, std::vector<defaultServer> servers);
 		int 											handleGetRequest(Client &client, HttpRequest* request);
 		int 											handlePostRequest(Client &client, HttpRequest* Http);
 		int 											handleDeleteRequest(Client &client, HttpRequest* request);
 		int												handleRedirect(Client& client);
 		void 											checkLocations(std::string path, defaultServer defaultServer);
-		void 											sendFileResponse(int clientSocket, const std::string& filepath, int statusCode);
 		std::string 									readFileContent(const std::string& filepath);
 		void 											sendHeaders(int clientSocket, int statusCode, const std::string& contentType);
 		void 											sendBody(int clientSocket, const std::string& body);
@@ -111,9 +110,10 @@ class Server  {
 		int												processMultipartPart(const std::string& part, const std::string& uploadPath);
 		void											saveUploadedFile(const std::string& filePath, const std::string& part, size_t dataStart);
 		int												handleServerError(Client &client, const std::exception &e, const std::string &errorMessage);
-		int												sendErrorResponse(Client &client, int statusCode, const std::string &errorPagePath);
+		int												sendErrorResponse(Client &client, int statusCode);
 		bool											fileExists(const std::string& path);
 		void 											ensureUploadDirectoryExists(const std::string& path);
+		void											handleCgiError(int event_fd, Client* client);
 
 		std::map<std::string, std::vector<Location>> 	getLocations() const {return _locations;}
 		std::string 									getPortStr() const {return this->_portString;}
@@ -130,5 +130,5 @@ class Server  {
 		std::pair<int, std::string>						getRedirect() const { return this->_redirect;}
 		bool											getOnOff() const {return this->_on;}
 		defaultServer									getDefaultServer() const {return this->_defaultServer;}
-		void 											checkServer(HttpRequest* HttpRequest, std::vector<Server> &servers);
+		void 											checkServer(HttpRequest* HttpRequest, std::vector<defaultServer> servers);
 };

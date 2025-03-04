@@ -9,8 +9,7 @@ form = cgi.FieldStorage()
 name = form.getvalue('name', 'Guest')
 
 # while True:
-# 	time.sleep(5)  # Simulate a delay
-
+# 	time.sleep(5)  # Simulate a delay to evoke time-out
 
 # Generate response
 body = f"""

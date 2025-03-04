@@ -9,6 +9,7 @@ CGI::CGI(HttpRequest *request) {
     _inputIndex = 0;
     _cgiComplete = false;
     _headersSent = false;
+    _cgiPath = request->getPathToCgi();
 
     if (!setupPipes()) 
         return;
@@ -20,7 +21,8 @@ CGI::CGI(HttpRequest *request) {
     }
     else if (_pid == 0) {
         handleChildProcess(request);
-    } else {
+    } 
+    else {
         handleParentProcess();
     }
 }
@@ -33,6 +35,78 @@ CGI::~CGI(){
     close(_toCgiPipe[READ]);
     close(_fromCgiPipe[WRITE]);
     close(_fromCgiPipe[READ]); 
+}
+
+/**
+ * @brief       Returns the process ID of the CGI process.
+ * 
+ * @return      The process ID of the CGI process.
+ */
+pid_t CGI::getPid() const {
+    return _pid;
+}
+
+/**
+ * @brief       Retrieves the path to the CGI script.
+ * 
+ * @return      The path to the CGI script as a string.
+ */
+
+std::string CGI::getPath() const {
+    return _path;
+}
+
+/**
+ * @brief Gets the file descriptor for the read end of the pipe used for communication with the CGI process.
+ * 
+ * @return The file descriptor for the read end of the pipe.
+ */
+int CGI::getReadFd() const {
+    return _fromCgiPipe[READ];
+}
+/**
+ * @brief Gets the file descriptor for the write end of the pipe used for communication with the CGI process.
+ * 
+ * @return The file descriptor for the write end of the pipe.
+ */
+int CGI::getWriteFd() const {
+    return _toCgiPipe[WRITE];
+}
+
+const std::string& CGI::getCgiOutput() const {
+    return _cgiOutput;
+}
+
+/**
+ * @brief Sets the CGI script path.
+ * 
+ * @param path The path to set for the CGI script.
+ */
+void CGI::setPath(std::string path){
+    _path = path;
+}
+
+/**
+ * @brief Handles CGI processing in the child process by setting up environment variables
+ *        and executing the CGI script.
+ * 
+ * @param request The HttpRequest object containing HTTP request details.
+ * @param server The Server object that might provide configuration details.
+ */
+void CGI::handleChildProcess(HttpRequest* request) {
+    close(_fromCgiPipe[READ]);
+    initializeEnvVars(request);
+    executeCgi();
+}
+
+/**
+ * @brief Handles CGI processing in the parent process by closing the write end of the pipe to the CGI process and the read end of the pipe from the CGI process.
+ * 
+ * This method is called in the parent process after the child process has been forked. It closes the write end of the pipe to the CGI process and the read end of the pipe from the CGI process. This is necessary to prevent the parent process from writing to the pipe and to prevent the parent process from reading from the pipe.
+ */
+void CGI::handleParentProcess() {
+    close(_fromCgiPipe[WRITE]);
+    close(_toCgiPipe[READ]);
 }
 
 /**
@@ -101,22 +175,35 @@ void CGI::initializeEnvVars(HttpRequest* request) {
  * @details     Uses `execve` to run the CGI script (`hello.py`) with the environment variables set up in `_env`.
  *              Redirects `stdout` to `_fromCgiPipe[WRITE]` so the output can be read back by the parent process.
  *              This function is meant to be called in the child process created by `fork`.
+ * @todo        Add check if python 3 is installed?
  */
 void CGI::executeCgi() {
-    std::size_t queryPos = _path.find("?");
+
+    std::size_t queryPos = _cgiPath.find("?");
     if (queryPos != std::string::npos) {
-        _path = _path.substr(0, queryPos);
+        _cgiPath = _cgiPath.substr(0, queryPos);
+    }
+    size_t last_index = _cgiPath.rfind("/");
+    if (last_index != std::string::npos) {
+        _path = _cgiPath.substr(0, last_index);
+        _pass = _cgiPath.substr(last_index + 1);
     }
 
-    std::string scriptPath = "www/html" + _path;
-    const char* cgiProgram = scriptPath.c_str();
+    if (chdir(_path.c_str()) == -1) {
+        std::cerr << "Failed to change directory to " << _path << std::endl;
+        exit(EXIT_FAILURE);
+    }
+
+    const char* cgiProgram = _pass.c_str();
     const char* argv[] = {"/usr/bin/python3", cgiProgram, nullptr};
 
     dup2(_fromCgiPipe[WRITE], STDOUT_FILENO);
     close(_fromCgiPipe[READ]);
     close(_fromCgiPipe[WRITE]);
-    if (execve(argv[0], const_cast<char* const*>(argv), _env.data()) == -1)
-        throw std::runtime_error("Failed to execute CGI script");
+    if (execve(argv[0], const_cast<char* const*>(argv), _env.data()) == -1){
+        std::cerr << "Failed execute execve " << std::endl;
+        exit(EXIT_FAILURE);
+    }    
 }
 
 /**
@@ -241,77 +328,54 @@ bool CGI::setupPipes() {
 }
 
 /**
- * @brief Handles CGI processing in the child process by setting up environment variables
- *        and executing the CGI script.
+ * @brief       Clears the output of the CGI process.
  * 
- * @param request The HttpRequest object containing HTTP request details.
- * @param server The Server object that might provide configuration details.
+ * @details     This method simply clears the _cgiOutput string, which is used to store
+ *              the output of the CGI process.
  */
-void CGI::handleChildProcess(HttpRequest* request) {
-    close(_fromCgiPipe[READ]);
-    initializeEnvVars(request);
-    executeCgi();
-}
-
-/**
- * @brief Handles CGI processing in the parent process by closing the write end of the pipe to the CGI process and the read end of the pipe from the CGI process.
- * 
- * This method is called in the parent process after the child process has been forked. It closes the write end of the pipe to the CGI process and the read end of the pipe from the CGI process. This is necessary to prevent the parent process from writing to the pipe and to prevent the parent process from reading from the pipe.
- */
-void CGI::handleParentProcess() {
-    close(_fromCgiPipe[WRITE]);
-    close(_toCgiPipe[READ]);
-}
-
-/**
- * @brief Gets the file descriptor for the read end of the pipe used for communication with the CGI process.
- * 
- * @return The file descriptor for the read end of the pipe.
- */
-int CGI::getReadFd() const {
-    return _fromCgiPipe[READ];
-}
-/**
- * @brief Gets the file descriptor for the write end of the pipe used for communication with the CGI process.
- * 
- * @return The file descriptor for the write end of the pipe.
- */
-int CGI::getWriteFd() const {
-    return _toCgiPipe[WRITE];
-}
-
-const std::string& CGI::getCgiOutput() const {
-        return _cgiOutput;
-}
-
 void CGI::clearCgiOutput() {
         _cgiOutput.clear();
 }
+
+/**
+ * @brief       Checks if the HTTP headers have been sent to the client.
+ * 
+ * @return      True if the headers have been sent; otherwise, false.
+ */
 
 bool CGI::areHeadersSent() const {
         return _headersSent;
 }
 
+/**
+ * @brief       Marks the CGI headers as sent.
+ * 
+ * @details     This function sets the internal state to indicate that the HTTP headers
+ *              have been successfully sent to the client, preventing them from being sent again.
+ */
+
 void CGI::markHeadersSent() {
         _headersSent = true;
 }
 
+/**
+ * @brief       Checks if the CGI process is complete.
+ * 
+ * @return      True if the CGI process has finished; otherwise, false.
+ * 
+ * @details     This method simply returns the internal state variable _cgiComplete,
+ *              which indicates whether the CGI process has finished executing.
+ */
 bool CGI::isCgiComplete() const {
         return _cgiComplete;
 }
 
+/**
+ * @brief       Marks the CGI process as complete.
+ * 
+ * @details     This method simply sets the internal state variable _cgiComplete
+ *              to true, indicating that the CGI process has finished executing.
+ */
 void CGI::markCgiComplete() {
         _cgiComplete = true;
-}
-
-pid_t CGI::getPid() const {
-    return _pid;
-}
-
-void CGI::setPath(std::string path){
-    _path = path;
-}
-
-std::string CGI::getPath() const {
-    return _path;
 }

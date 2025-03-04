@@ -48,12 +48,10 @@ class Client {
 		int 				getSocket() const;
 		HttpRequest* 		getHttpRequest() const;
 		HttpResponse* 		getHttpResponse() const;
-		Server* 			getServer() const;
-		std::string			getBaseDirectory() const;
 		void 				setHttpRequest(HttpRequest* httpRequest);
 		void 				setHttpResponse(HttpResponse* httpResponse);
 		int 				writeToSocket();
-		void 				readFromSocket(Server *server, defaultServer defaultServer, std::vector<Server> &servers);
+		void 				readFromSocket(Server *server, defaultServer defaultS, std::vector<defaultServer> servers);
 		void 				closeConnection(EventPoll& eventPoll, int currentPollFd);
 		void				addToEventPollRemove(int fd, int eventType);
 		void 				addToEventPollQueue(int fd, int eventType);
@@ -64,8 +62,7 @@ class Client {
 		void 				startCgi(HttpRequest *request);
 		void 				readFromCgi();
 		void 				writeToCgi();
-
-
+		CGI*				getCGI() const;
 
 		void 				setStartTime(std::chrono::steady_clock::time_point start_time);
 		std::chrono::steady_clock::time_point  				getStartTime() const;
