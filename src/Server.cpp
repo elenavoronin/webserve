@@ -112,7 +112,6 @@ void Server::handleNewConnection(EventPoll &eventPoll){
 	Client newClient(new_fd, eventPoll);
     _clients.push_back(newClient);
     eventPoll.addPollFdEventQueue(new_fd, POLLIN);
-    std::cout << "New client connected: " << new_fd << std::endl;
 }
 
 /**
@@ -148,16 +147,16 @@ void Server::handlePollEvent(EventPoll &eventPoll, int i, defaultServer defaultS
         return;
     }
     // ✅ **Check if CGI process has timed out**
-    if (client->getCGI() != NULL) {
-        auto now = std::chrono::steady_clock::now();
-        auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(now - client->getStartTime()).count();
+    // if (client->getCGI() != NULL) {
+    //     auto now = std::chrono::steady_clock::now();
+    //     auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(now - client->getStartTime()).count();
 
-        if (elapsed > 5) {  // Timeout threshold (5 seconds)
-            std::cerr << "Error: CGI script timeout. Terminating process." << std::endl;
-            handleCgiError(client);
-            return;
-        }
-    }
+    //     if (elapsed > 5) {  // Timeout threshold (5 seconds)
+            // std::cerr << "Error: CGI script timeout. Terminating process." << std::endl;
+    //         handleCgiError(client);
+    //         return;
+    //     }
+    // }
 
     // Handle readable events
     if (currentPollFd.revents & POLLIN) {
