@@ -220,7 +220,7 @@ void Client::readFromCgi() {
             std::cout << "doen we dit?" << std::endl;
             _HttpResponse->setFullResponse(_CGI->getCgiOutput());
             _eventPoll->addPollFdEventQueue(_clientSocket, POLLOUT);
-            _eventPoll->ToremovePollEventFd(_CGI->getReadFd(), POLLIN);
+            // _eventPoll->ToremovePollEventFd(_CGI->getReadFd(), POLLIN);
             _eventPoll->ToremovePollEventFd(_CGI->getWriteFd(), POLLOUT);
             kill(_CGI->getPid(), SIGTERM);
         }
