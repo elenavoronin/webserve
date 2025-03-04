@@ -65,6 +65,7 @@ Client& Client::operator=(const Client& copy) {
     _HttpRequest = copy._HttpRequest ? new HttpRequest(*copy._HttpRequest) : nullptr;
     _HttpResponse = copy._HttpResponse ? new HttpResponse(*copy._HttpResponse) : nullptr;
     _CGI = nullptr; // Reset CGI in the assigned instance
+    // _CGI = copy._CGI ? new CGI(*copy._CGI) : nullptr;
     _eventPoll = copy._eventPoll; // References must remain valid
     _responseIndex = copy._responseIndex;
 
@@ -216,6 +217,7 @@ void Client::readFromCgi() {
     try {
         _CGI->readCgiOutput();
         if (_CGI->isCgiComplete()) {
+            std::cout << "doen we dit?" << std::endl;
             _HttpResponse->setFullResponse(_CGI->getCgiOutput());
             _eventPoll->ToremovePollEventFd(_clientSocket, POLLIN);
             _eventPoll->ToremovePollEventFd(_CGI->getReadFd(), POLLIN);
@@ -323,17 +325,45 @@ void Client::closeConnection(EventPoll& eventPoll, int currentPollFd) {
         eventPoll.addPollFdEventQueue(_clientSocket, POLLOUT);
         return;
     }
+    if (_HttpResponse && _responseIndex < _HttpResponse->getFullResponse().size()) {
+        // Response not fully sent, keep POLLOUT active
+        eventPoll.addPollFdEventQueue(_clientSocket, POLLOUT);
+        return;
+    }
     if (currentPollFd != 0)
     {
         eventPoll.ToremovePollEventFd(currentPollFd, POLLIN | POLLOUT);
     }
+        // close(_clientSocket);
+        // _clientSocket = -1;
+        // return;
+    }
 
     if (_clientSocket >= 0) {
         eventPoll.ToremovePollEventFd(_clientSocket, POLLIN | POLLOUT);
+        eventPoll.ToremovePollEventFd(_clientSocket, POLLIN | POLLOUT);
         close(_clientSocket);
         _clientSocket = -1;
+        _clientSocket = -1;
+        return;
     }
 }
+// void Client::closeConnection(EventPoll& eventPoll, int currentPollFd) {
+    
+//     if (currentPollFd != 0)
+//     {
+//         eventPoll.ToremovePollEventFd(currentPollFd, POLLIN | POLLOUT);
+//     }
+//     if (_CGI) {
+//         eventPoll.ToremovePollEventFd(_CGI->getReadFd(), POLLIN);
+//         delete _CGI;
+//         _CGI = nullptr;
+//     }
+
+//     if (_clientSocket >= 0) {
+//         close(_clientSocket);
+//     }
+// }
 
 /**
  * @brief Checks if a file descriptor is open.

@@ -6,6 +6,8 @@
 
 4. Weird delay error page CGI
 
+5. /usr/bin/python3: can't open file '/home/dreijans/webserve/www/html/cgi-bin/hello': [Errno 2] No such file or directory check in waitpid with NOHANG if child has exited and then error page weeeeeh
+
 
 FOR TESTING:
 server that is off - make it respond to specific request :
