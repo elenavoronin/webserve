@@ -21,7 +21,6 @@ SRC 		= 	./src/start.cpp				\
 				./src/Config.cpp            \
 				./src/utils.cpp			    \
 				./src/EventPoll.cpp			\
-# TESTSRC		= 	./tests/testsCGI.cpp  # Test source file	
 				
 #object files
 OBJDIR 		= obj

@@ -376,8 +376,10 @@ void Config::pollLoop() {
                     Server* selectedServer = activeServer ? activeServer : defaultServer;
                     if (fd == currentServer.getListenerFd()) {
                         // Handle new connection
+                        std::cout << "new connection" << std::endl;
                         selectedServer->handleNewConnection(_eventPoll);
-                    } else {
+                    } 
+                    else {
                         // Handle events for existing connections
                         selectedServer->handlePollEvent(_eventPoll, i, selectedServer->getDefaultServer(), _defaultServers);
                     }

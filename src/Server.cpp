@@ -114,6 +114,7 @@ void Server::handleNewConnection(EventPoll &eventPoll){
 	newClient.setStartTime(start_time);
     _clients.push_back(newClient);
     eventPoll.addPollFdEventQueue(new_fd, POLLIN);
+    std::cout << "New client connected: " << new_fd << std::endl;
 }
 
 /**
@@ -153,11 +154,17 @@ void Server::handlePollEvent(EventPoll &eventPoll, int i, defaultServer defaultS
     if (currentPollFd.revents & POLLIN) {
         try {
             if (event_fd != client->getSocket() && event_fd == client->getCgiRead()) {
+                std::cout << "read from cgi" << std::endl;
                 client->readFromCgi();
             } else {
                 client->readFromSocket(this, defaultS, servers);
             }
-        } catch (const std::runtime_error &e) {
+        } 
+        catch (const std::runtime_error &e) {
+            if (event_fd == client->getCgiRead()) {
+                handleCgiError(client);
+                return;
+            }
             client->closeConnection(eventPoll, currentPollFd.fd);
 			eraseClient(event_fd);
         }
@@ -168,14 +175,19 @@ void Server::handlePollEvent(EventPoll &eventPoll, int i, defaultServer defaultS
         try {
             if (event_fd != client->getSocket() && event_fd == client->getCgiWrite()) {
                 client->writeToCgi();
-            } else {
+            } 
+            else {
                 if (client->writeToSocket() > 0) {
 					client->closeConnection(eventPoll, currentPollFd.fd);
 					eraseClient(event_fd);
 				}
             }
-        } catch (const std::runtime_error &e) {
-            handleCgiError(event_fd, client);
+        } 
+        catch (const std::runtime_error &e) {
+            if (event_fd == client->getCgiWrite()) {
+                handleCgiError(client);
+                return;
+            }
             client->closeConnection(eventPoll, currentPollFd.fd);
 			eraseClient(event_fd);
         }
@@ -183,7 +195,10 @@ void Server::handlePollEvent(EventPoll &eventPoll, int i, defaultServer defaultS
 
     // Handle hangup or disconnection events
     if (currentPollFd.revents & (POLLHUP | POLLRDHUP)) {
-        handleCgiError(event_fd, client);
+        if (event_fd == client->getCgiRead() || event_fd == client->getCgiWrite()) {
+            handleCgiError(client);
+            return;
+        }
         client->closeConnection(eventPoll, currentPollFd.fd);
 		eraseClient(event_fd);
     }
@@ -200,15 +215,27 @@ void Server::handlePollEvent(EventPoll &eventPoll, int i, defaultServer defaultS
  * @param event_fd The file descriptor that triggered the error.
  * @param client The Client object that owns the CGI process.
  */
-void Server::handleCgiError(int event_fd, Client* client) {
-    if (event_fd != client->getSocket() && (event_fd == client->getCgiRead() || event_fd == client->getCgiWrite())) {
+void Server::handleCgiError(Client* client) {
+
         int cgiExitStatus;
-        waitpid(client->getCGI()->getPid(), &cgiExitStatus, WNOHANG);
+        pid_t cgiPid = client->getCGI()->getPid();
+
+        if (cgiPid > 0) {
+            kill(cgiPid, SIGTERM);
+            waitpid(cgiPid, &cgiExitStatus, WNOHANG);
+        }
         client->addToEventPollRemove(client->getCgiRead(), POLLIN);
         client->addToEventPollRemove(client->getCgiWrite(), POLLOUT);
         sendErrorResponse(*client, 500);
-    }
+
 }
+// void Server::handleCgiError(Client* client) {
+//     int cgiExitStatus;
+//     waitpid(client->getCGI()->getPid(), &cgiExitStatus, WNOHANG);
+//     client->addToEventPollRemove(client->getCgiRead(), POLLIN);
+//     client->addToEventPollRemove(client->getCgiWrite(), POLLOUT);
+//     sendErrorResponse(*client, 500);
+// }
 
 /**
  * @brief Checks and updates the server configuration based on the HTTP request.
@@ -392,7 +419,7 @@ int Server::handleGetRequest(Client &client, HttpRequest* request) {
             client.getHttpResponse()->setHeader("Content-Length", std::to_string(readFileContent(filepath).size()));
             client.getHttpResponse()->setBody(readFileContent(request->getFullPath()));
             client.getHttpResponse()->buildResponse();
-            client.addToEventPollRemove(client.getSocket(), POLLIN);
+            client.addToEventPollRemove(client.getSocket(), POLLIN); //this is called many times
             client.addToEventPollQueue(client.getSocket(), POLLOUT);
             return 200;
         }
@@ -452,13 +479,30 @@ std::string Server::readFileContent(const std::string& filepath) {
  * @param statusCode The HTTP status code to send.
  * @param contentType The content type to send (optional, defaults to "text/html").
  */
+// void Server::sendHeaders(int clientSocket, int statusCode, const std::string& contentType = "text/html") {
+//     std::string statusMessage = getStatusMessage(statusCode);
+//     std::ostringstream headers;
+//     headers << "HTTP/1.1 " << statusCode << " " << statusMessage << "\r\n";
+//     headers << "Content-Type: " << contentType << "\r\n\r\n";
+//     std::string headersStr = headers.str();
+//     send(clientSocket, headersStr.c_str(), headersStr.size(), 0);
+// }
 void Server::sendHeaders(int clientSocket, int statusCode, const std::string& contentType = "text/html") {
     std::string statusMessage = getStatusMessage(statusCode);
     std::ostringstream headers;
     headers << "HTTP/1.1 " << statusCode << " " << statusMessage << "\r\n";
     headers << "Content-Type: " << contentType << "\r\n\r\n";
     std::string headersStr = headers.str();
-    send(clientSocket, headersStr.c_str(), headersStr.size(), 0);
+    ssize_t bytesSent = send(clientSocket, headersStr.c_str(), headersStr.size(), MSG_NOSIGNAL);
+    if (bytesSent == -1) {
+        if (errno == EPIPE) {
+            std::cerr << "Error: Broken pipe (SIGPIPE) while sending data to client " << clientSocket << std::endl;
+        } else {
+            std::cerr << "Error sending data to client " << clientSocket << ": " << strerror(errno) << std::endl;
+        }
+        
+        close(clientSocket);
+    }
 }
 
 /**
@@ -470,8 +514,20 @@ void Server::sendHeaders(int clientSocket, int statusCode, const std::string& co
  * @param clientSocket The socket to send the body to.
  * @param body The body content to send.
  */
+// void Server::sendBody(int clientSocket, const std::string& body) {
+//     send(clientSocket, body.c_str(), body.size(), 0);
+// }
 void Server::sendBody(int clientSocket, const std::string& body) {
-    send(clientSocket, body.c_str(), body.size(), 0);
+    ssize_t bytesSent = send(clientSocket, body.c_str(), body.size(), MSG_NOSIGNAL);
+        if (bytesSent == -1) {
+        if (errno == EPIPE) {
+            std::cerr << "Error: Broken pipe (SIGPIPE) while sending data to client " << clientSocket << std::endl;
+        } else {
+            std::cerr << "Error sending data to client " << clientSocket << ": " << strerror(errno) << std::endl;
+        }
+        
+        close(clientSocket);
+    }
 }
 
 /**
