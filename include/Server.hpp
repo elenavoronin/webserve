@@ -113,7 +113,7 @@ class Server  {
 		int												sendErrorResponse(Client &client, int statusCode);
 		bool											fileExists(const std::string& path);
 		void 											ensureUploadDirectoryExists(const std::string& path);
-        void 											handleCgiError(Client *client);
+        void 											handleCgiError(Client *client, int statusCode);
 
         std::map<std::string, std::vector<Location>> 	getLocations() const {return _locations;}
 		std::string 									getPortStr() const {return this->_portString;}
@@ -131,4 +131,6 @@ class Server  {
 		bool											getOnOff() const {return this->_on;}
 		defaultServer									getDefaultServer() const {return this->_defaultServer;}
 		void 											checkServer(HttpRequest* HttpRequest, std::vector<defaultServer> servers);
+
+		int 											checkCgiTimeout(Client *client);
 };

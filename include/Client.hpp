@@ -36,7 +36,6 @@ class Client {
 		CGI*			_CGI;
 		EventPoll*		_eventPoll;
 		unsigned long	_responseIndex;
-		std::chrono::steady_clock::time_point			_start_time;
 
 
 	public:

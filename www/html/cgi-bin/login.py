@@ -8,8 +8,8 @@ import sys
 form = cgi.FieldStorage()
 name = form.getvalue('name', 'Guest')
 
-# while True:
-# 	time.sleep(5)  # Simulate a delay to evoke time-out
+while True:
+	time.sleep(5)  # Simulate a delay to evoke time-out
 
 # Generate response
 body = f"""
@@ -37,11 +37,11 @@ body = f"""
 # Calculate Content-Length
 content_length = len(body.encode('utf-8'))
 
-# # Send HTTP headers
-# print("HTTP/1.1 200 OK\r")
-# print("Content-Type: text/html\r")
-# print(f"Content-Length: {content_length}\r")
-# print("\r")  # Blank line to separate headers from body
+#Send HTTP headers
+print("HTTP/1.1 200 OK\r")
+print("Content-Type: text/html\r")
+print(f"Content-Length: {content_length}\r")
+print("\r")  # Blank line to separate headers from body
 
 # # Send response body
 # print(body)

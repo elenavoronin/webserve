@@ -112,7 +112,6 @@ void Server::handleNewConnection(EventPoll &eventPoll){
 	Client newClient(new_fd, eventPoll);
     _clients.push_back(newClient);
     eventPoll.addPollFdEventQueue(new_fd, POLLIN);
-    std::cout << "New client connected: " << new_fd << std::endl;
 }
 
 /**
@@ -147,17 +146,9 @@ void Server::handlePollEvent(EventPoll &eventPoll, int i, defaultServer defaultS
 		    eraseClient(event_fd);
         return;
     }
-    // ✅ **Check if CGI process has timed out**
-    if (client->getCGI() != NULL) {
-        auto now = std::chrono::steady_clock::now();
-        auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(now - client->getStartTime()).count();
 
-        if (elapsed > 5) {  // Timeout threshold (5 seconds)
-            std::cerr << "Error: CGI script timeout. Terminating process." << std::endl;
-            handleCgiError(client);
-            return;
-        }
-    }
+    // if (checkCgiTimeout(client) == 1)
+    //     return ;
 
     // Handle readable events
     if (currentPollFd.revents & POLLIN) {
@@ -171,7 +162,7 @@ void Server::handlePollEvent(EventPoll &eventPoll, int i, defaultServer defaultS
         } 
         catch (const std::runtime_error &e) {
             if (event_fd == client->getCgiRead()) {
-                handleCgiError(client);
+                handleCgiError(client, 500);
                 return;
             }
             client->closeConnection(eventPoll, currentPollFd.fd);
@@ -194,7 +185,7 @@ void Server::handlePollEvent(EventPoll &eventPoll, int i, defaultServer defaultS
         } 
         catch (const std::runtime_error &e) {
             if (event_fd == client->getCgiWrite()) {
-                handleCgiError(client);
+                handleCgiError(client, 500);
                 return;
             }
             client->closeConnection(eventPoll, currentPollFd.fd);
@@ -205,13 +196,33 @@ void Server::handlePollEvent(EventPoll &eventPoll, int i, defaultServer defaultS
     // Handle hangup or disconnection events
     if (currentPollFd.revents & (POLLHUP | POLLRDHUP)) {
         if (event_fd == client->getCgiRead() || event_fd == client->getCgiWrite()) {
-            handleCgiError(client);
+            handleCgiError(client, 500);
             return;
         }
         client->closeConnection(eventPoll, currentPollFd.fd);
 		eraseClient(event_fd);
     }
 }
+
+int Server::checkCgiTimeout(Client *client) {
+    
+    // ✅ **Check if CGI process has timed out**
+    if (client->getCGI() != NULL) {
+        auto now = std::chrono::steady_clock::now();
+        auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(now - client->getCGI()->getStartTime()).count();
+        
+        std::cout << "Elapsed time: " << elapsed << " seconds" << std::endl;
+        
+        if (elapsed > 5) {  // Timeout threshold (5 seconds)
+            std::cerr << "Error: CGI script timeout. Terminating process." << std::endl;
+            handleCgiError(client, 408);
+            return 1;
+        }
+    }
+    return 0;
+}
+
+
     
 /**
  * @brief Handles CGI errors by closing the CGI pipes and sending an error response
@@ -224,7 +235,7 @@ void Server::handlePollEvent(EventPoll &eventPoll, int i, defaultServer defaultS
  * @param event_fd The file descriptor that triggered the error.
  * @param client The Client object that owns the CGI process.
  */
-void Server::handleCgiError(Client* client) {
+void Server::handleCgiError(Client* client, int statusCode) {
         if (!client || !client->getCGI() || !client->getHttpResponse()) {
         std::cerr << "Error: handleCgiError called on a client with no CGI process." << std::endl;
         return;
@@ -236,9 +247,11 @@ void Server::handleCgiError(Client* client) {
             kill(cgiPid, SIGTERM);
             waitpid(cgiPid, &cgiExitStatus, WNOHANG);
         }
+
         client->addToEventPollRemove(client->getCgiRead(), POLLIN);
         client->addToEventPollRemove(client->getCgiWrite(), POLLOUT);
-        sendErrorResponse(*client, 500);
+        
+        sendErrorResponse(*client, statusCode);
 
 }
 
@@ -896,6 +909,10 @@ int Server::sendErrorResponse(Client &client, int statusCode) {
     std::string errorPath;
     std::string errorContent;
 
+    if (!client.getHttpResponse()) {
+        std::cerr << "[ERROR] Cannot send error response, HTTP response is NULL." << std::endl;
+        return -1;
+    }
 
     if (getErrorPage(statusCode) != "")
     {

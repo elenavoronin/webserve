@@ -35,7 +35,7 @@ Client::Client(const Client& copy)
     : _clientSocket(copy._clientSocket), 
       _HttpRequest(copy._HttpRequest ? new HttpRequest(*copy._HttpRequest) : nullptr),
       _HttpResponse(copy._HttpResponse ? new HttpResponse(*copy._HttpResponse) : nullptr),
-      _CGI(nullptr),
+      _CGI(copy._CGI ? new CGI(*copy._CGI) : nullptr),
       _eventPoll(copy._eventPoll), // Initialize the reference
       _responseIndex(copy._responseIndex) {}
 
@@ -110,15 +110,6 @@ void Client::setHttpResponse(HttpResponse* httpResponse){
 
 
 /**
- * @brief Sets the start time of the client's request.
- *
- * @param start_time The point in time when the client's request was started.
- */
-void Client::setStartTime(std::chrono::steady_clock::time_point start_time){
-	_start_time = start_time;
-};
-
-/**
  * @brief Retrieves the HttpRequest object associated with the client.
  *
  * @return A pointer to the client's HttpRequest object.
@@ -163,15 +154,6 @@ int Client::getCgiWrite(){
 }
 
 /**
- * @brief Retrieves the point in time when the client's request was started.
- *
- * @return A std::chrono::steady_clock::time_point object representing the start time of the client's request.
- */
-std::chrono::steady_clock::time_point Client::getStartTime() const{
-	return _start_time;
-}
-
-/**
  * @brief Retrieves the CGI object associated with the client.
  *
  * Returns a pointer to the CGI object associated with the client or NULL if no
@@ -198,20 +180,14 @@ void Client::startCgi(HttpRequest *request){
         return ;
     }
     
-    if (!request)
-    {
-        throw std::runtime_error("request empty");
-        return ;
-    }
 
 	this->_CGI = new CGI(request);
     
-    this->_start_time = std::chrono::steady_clock::now();
     
     _eventPoll->addPollFdEventQueue(_CGI->getReadFd(), POLLIN);
     _eventPoll->addPollFdEventQueue(_CGI->getWriteFd(), POLLOUT);
     _eventPoll->ToremovePollEventFd(_clientSocket, POLLIN);
-	
+
 }
 
 /**
@@ -281,7 +257,7 @@ void Client::readFromSocket(Server *server, defaultServer defaultS, std::vector<
             contentLength = _HttpRequest->findContentLength(_HttpRequest->getStrReceived());
             if (static_cast<int>(_HttpRequest->getStrReceived().length() - _HttpRequest->getStrReceived().find("\r\n\r\n") - 4) >= contentLength)
                 _HttpRequest->setHeaderReceived(true);
-				_HttpRequest->parseHeaders(_HttpRequest->getStrReceived());
+            _HttpRequest->parseHeaders(_HttpRequest->getStrReceived());
         }
     }
     if (_HttpRequest->isHeaderReceived()) {
@@ -347,8 +323,6 @@ void Client::closeConnection(EventPoll& eventPoll, int currentPollFd) {
         eventPoll.ToremovePollEventFd(_clientSocket, POLLIN | POLLOUT);
         eventPoll.ToremovePollEventFd(_clientSocket, POLLIN | POLLOUT);
         close(_clientSocket);
-        _clientSocket = -1;
-        _clientSocket = -1;
         return;
     }
 }
