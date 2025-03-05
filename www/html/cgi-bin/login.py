@@ -44,4 +44,4 @@ print(f"Content-Length: {content_length}\r")
 print("\r")  # Blank line to separate headers from body
 
 # # Send response body
-# print(body)
+print(body)

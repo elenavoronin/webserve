@@ -6,7 +6,9 @@ Client::Client(int clientSocket, EventPoll& eventPoll) :
     _HttpResponse(new HttpResponse()), 
     _CGI(nullptr), 
     _eventPoll(&eventPoll),
-    _responseIndex(0){}
+    _responseIndex(0){
+		_start_time = std::chrono::system_clock::now();
+}
 
 /**
  * @brief client desctructor.
@@ -208,9 +210,9 @@ void Client::readFromCgi() {
         if (_CGI->isCgiComplete()) {
             std::cout << "doen we dit?" << std::endl;
             _HttpResponse->setFullResponse(_CGI->getCgiOutput());
-            _eventPoll->addPollFdEventQueue(_clientSocket, POLLOUT);
-            // _eventPoll->ToremovePollEventFd(_CGI->getReadFd(), POLLIN);
+            _eventPoll->ToremovePollEventFd(_CGI->getReadFd(), POLLIN);
             _eventPoll->ToremovePollEventFd(_CGI->getWriteFd(), POLLOUT);
+            // _eventPoll->addPollFdEventQueue(_clientSocket, POLLOUT);
             _eventPoll->addPollFdEventQueue(_clientSocket, POLLOUT); //Lena added
 
             kill(_CGI->getPid(), SIGTERM);
@@ -281,6 +283,8 @@ void Client::readFromSocket(Server *server, defaultServer defaultS, std::vector<
 int Client::writeToSocket() {
     unsigned long bytesToWrite = WRITE_SIZE;
     unsigned long bytesWritten = 0;
+	
+	std::cout << "rsponse index " << _responseIndex << std::endl;
 
     if (bytesToWrite > _HttpResponse->getFullResponse().size() - _responseIndex) {
         bytesToWrite = _HttpResponse->getFullResponse().size() - _responseIndex;
@@ -291,8 +295,13 @@ int Client::writeToSocket() {
         _responseIndex += bytesWritten;
     }
 
+	std::cout << "bytes written" << _responseIndex << std::endl;
+	std::cout << "body looks like" << _HttpResponse->getFullResponse().size() << std::endl;
+	std::cout << "body chunks like" << _HttpResponse->getFullResponse().data() << std::endl;
     if (_responseIndex >= _HttpResponse->getFullResponse().size()) {
+		std::cout << "client socket in writeTosocket = " << _clientSocket << std::endl;
         _eventPoll->ToremovePollEventFd(_clientSocket, POLLOUT);
+		std::cout << " in if statement write to socket" << std::endl; 
         return 1;
     }
     return 0;
@@ -320,8 +329,10 @@ void Client::closeConnection(EventPoll& eventPoll, int currentPollFd) {
     }
 
     if (_clientSocket >= 0) {
+		std::cout << "in closeConnection" << std::endl;
         eventPoll.ToremovePollEventFd(_clientSocket, POLLIN | POLLOUT);
         eventPoll.ToremovePollEventFd(_clientSocket, POLLIN | POLLOUT);
+		std::cout << "client socket = " << _clientSocket << std::endl;
         close(_clientSocket);
         return;
     }
@@ -384,4 +395,14 @@ void Client::addToEventPollRemove(int fd, int eventType) {
  */
 void Client::addToEventPollQueue(int fd, int eventType) {
     _eventPoll->addPollFdEventQueue(fd, eventType);
+}
+
+
+void Client::setStartTime(std::chrono::system_clock::time_point start_time){
+	_start_time = start_time;
+}
+
+
+std::chrono::system_clock::time_point  Client::getStartTime() const{
+	return _start_time;
 }

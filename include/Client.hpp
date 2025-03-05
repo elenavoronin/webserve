@@ -36,7 +36,7 @@ class Client {
 		CGI*			_CGI;
 		EventPoll*		_eventPoll;
 		unsigned long	_responseIndex;
-
+		std::chrono::system_clock::time_point			_start_time;
 
 	public:
 		Client(int clientSocket, EventPoll& eventPoll);
@@ -62,7 +62,8 @@ class Client {
 		void 				readFromCgi();
 		void 				writeToCgi();
 		CGI*				getCGI() const;
+		void				setToNullCGI() {this->_CGI = nullptr; };
 
-		void 				setStartTime(std::chrono::steady_clock::time_point start_time);
-		std::chrono::steady_clock::time_point  				getStartTime() const;
+		void 				setStartTime(std::chrono::system_clock::time_point start_time);
+		std::chrono::system_clock::time_point  				getStartTime() const;
 };
