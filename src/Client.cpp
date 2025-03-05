@@ -231,50 +231,96 @@ void Client::readFromCgi() {
  * If the HTTP request headers have not been fully received, continues to read from the socket.
  */
 
+// void Client::readFromSocket(Server *server, defaultServer defaultS, std::vector<defaultServer> servers) {
+//     if (!_HttpRequest) {
+//         throw std::runtime_error("_HttpRequest is null. Possible use-after-free.");
+//     }
+    
+//     char buf[READ_SIZE] = {0};
+// 	int contentLength;
+
+//     // Try to receive data
+//     int received = recv(_clientSocket, buf, sizeof(buf), 0);
+//     if (received == 0) {
+// 		return ;
+
+//     } 
+// 	if (received < 0) {
+//         throw std::runtime_error("Error reading from socket");
+//     }
+
+//     // Append the data to the HTTP request buffer
+//     _HttpRequest->getStrReceived().append(buf, received);
+
+//     // check if headers are fully received
+//     if (!_HttpRequest->isHeaderReceived()) {
+//         if (_HttpRequest->getStrReceived().find("\r\n\r\n") != std::string::npos) {
+//             contentLength = _HttpRequest->findContentLength(_HttpRequest->getStrReceived());
+//             // Check if the total length (headers + body) meets the expected Content-Length
+//             if (static_cast<int>(_HttpRequest->getStrReceived().length() - _HttpRequest->getStrReceived().find("\r\n\r\n") - 4) >= contentLength)
+//                 _HttpRequest->setHeaderReceived(true);
+//             _HttpRequest->parseHeaders(_HttpRequest->getStrReceived());
+//         }
+//     }
+//     // once headers and body received process request
+//     if (_HttpRequest->isHeaderReceived()) {
+// 			_HttpRequest->parseBody(_HttpRequest->getStrReceived());
+// 			server->processClientRequest(*this, _HttpRequest->getStrReceived(), _HttpRequest, defaultS, servers);
+			
+//             _HttpRequest->setHeaderReceived(false);
+// 			_HttpRequest->clearStrReceived();
+//             std::string emptyString = "";
+//             _HttpRequest->setBody(emptyString); //Clear the post body 
+//             // _HttpRequest->reset();
+//     }
+// }
 void Client::readFromSocket(Server *server, defaultServer defaultS, std::vector<defaultServer> servers) {
     if (!_HttpRequest) {
         throw std::runtime_error("_HttpRequest is null. Possible use-after-free.");
     }
     
     char buf[READ_SIZE] = {0};
-	int contentLength;
-
-    // Try to receive data
     int received = recv(_clientSocket, buf, sizeof(buf), 0);
     if (received == 0) {
-		return ;
-
-    } 
-	if (received < 0) {
+        return;
+    }
+    if (received < 0) {
         throw std::runtime_error("Error reading from socket");
     }
 
-    // Append the data to the HTTP request buffer
+    // Append the received data to the raw request string.
     _HttpRequest->getStrReceived().append(buf, received);
 
-    // check if headers are fully received
-    if (!_HttpRequest->isHeaderReceived()) {
-        if (_HttpRequest->getStrReceived().find("\r\n\r\n") != std::string::npos) {
-            contentLength = _HttpRequest->findContentLength(_HttpRequest->getStrReceived());
-            // Check if the total length (headers + body) meets the expected Content-Length
-            if (static_cast<int>(_HttpRequest->getStrReceived().length() - _HttpRequest->getStrReceived().find("\r\n\r\n") - 4) >= contentLength)
-                _HttpRequest->setHeaderReceived(true);
+    // Look for the header/body separator "\r\n\r\n"
+    size_t headerEnd = _HttpRequest->getStrReceived().find("\r\n\r\n");
+    if (headerEnd != std::string::npos) {
+        int contentLength = _HttpRequest->findContentLength(_HttpRequest->getStrReceived());
+        std::cerr << "DEBUG: headerEnd = " << headerEnd 
+                  << ", Content-Length = " << contentLength 
+                  << ", total received length = " << _HttpRequest->getStrReceived().length() << "\n";
+        
+        // Only proceed if we have received all headers plus the expected body.
+        if (_HttpRequest->getStrReceived().length() >= headerEnd + 4 + contentLength) {
+            _HttpRequest->setHeaderReceived(true);
             _HttpRequest->parseHeaders(_HttpRequest->getStrReceived());
+        } else {
+            // Not all data received yet; wait for more.
+            return;
         }
     }
-    // once headers and body received process request
+
+    // Once headers are received, process the request.
     if (_HttpRequest->isHeaderReceived()) {
-			_HttpRequest->parseBody(_HttpRequest->getStrReceived());
-			server->processClientRequest(*this, _HttpRequest->getStrReceived(), _HttpRequest, defaultS, servers);
-			
-            _HttpRequest->setHeaderReceived(false);
-			_HttpRequest->clearStrReceived();
-            
-            std::string emptyString = "";
-            _HttpRequest->setBody(emptyString); //Clear the post body 
-            // _HttpRequest->reset();
+        _HttpRequest->parseBody(_HttpRequest->getStrReceived());
+        std::cerr << "DEBUG: Parsed body: " << _HttpRequest->getBody() << "\n";
+        
+        server->processClientRequest(*this, _HttpRequest->getStrReceived(), _HttpRequest, defaultS, servers);
+        
+        // Reset the HttpRequest object for the next request.
+        _HttpRequest->reset();
     }
 }
+
 
 /**
  * @brief Writes the HTTP response to the client socket.
