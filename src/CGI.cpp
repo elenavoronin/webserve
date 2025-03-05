@@ -170,7 +170,6 @@ void CGI::initializeEnvVars(HttpRequest* request) {
  * @details     Uses `execve` to run the CGI script (`hello.py`) with the environment variables set up in `_env`.
  *              Redirects `stdout` to `_fromCgiPipe[WRITE]` so the output can be read back by the parent process.
  *              This function is meant to be called in the child process created by `fork`.
- * @todo        Add check if python 3 is installed?
  */
 void CGI::executeCgi() {
 
@@ -193,7 +192,7 @@ void CGI::executeCgi() {
     const char* argv[] = {"/usr/bin/python3", cgiProgram, nullptr};
 
     dup2(_fromCgiPipe[WRITE], STDOUT_FILENO);
-    dup2(_toCgiPipe[READ], STDIN_FILENO);//need this
+    dup2(_toCgiPipe[READ], STDIN_FILENO);
     close(_fromCgiPipe[READ]);
     close(_fromCgiPipe[WRITE]);
     close(_toCgiPipe[WRITE]);
@@ -211,7 +210,6 @@ void CGI::executeCgi() {
 void CGI::readCgiOutput() {
     char buffer[READ_SIZE];
 
-    std::cout << "we readinhg" << std::endl;
     ssize_t bytes_read = read(_fromCgiPipe[READ], buffer, sizeof(buffer));
     if (bytes_read < 0) {
         throw std::runtime_error("Error reading from pipe");

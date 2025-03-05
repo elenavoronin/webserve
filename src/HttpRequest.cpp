@@ -176,9 +176,9 @@ std::string HttpRequest::getBody() {
 std::string HttpRequest::getHeader(const std::string& key) {
 	auto it = _headers.find(key);
     if (it != _headers.end()) {
-        return it->second; // Return the value if the header exists
+        return it->second;
     }
-    return ""; // Return an empty string if the header is not found
+    return "";
 }
 
 /**
