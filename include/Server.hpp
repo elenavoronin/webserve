@@ -132,6 +132,5 @@ class Server  {
 		defaultServer									getDefaultServer() const {return this->_defaultServer;}
 		void 											checkServer(HttpRequest* HttpRequest, std::vector<defaultServer> servers);
 
-		// int 											checkCgiTimeout(Client *client);
 		int												timeout_check(EventPoll &eventPoll, int fd);
 };

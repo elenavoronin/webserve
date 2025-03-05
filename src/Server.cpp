@@ -99,16 +99,13 @@ int Server::reportReady(EventPoll &eventPoll){
  * can be monitored for incoming data.
  *
  * @param eventPoll The EventPoll to add the new client to
- * @todo replace perror with throw
  */
 void Server::handleNewConnection(EventPoll &eventPoll){
 
 	int new_fd = accept(_listener_fd, nullptr, nullptr);
     if (new_fd == -1) {
-        perror("Error accepting new connection");
         return;
     }
-	std::cout << "Created a client " << new_fd << std::endl;
 	Client newClient(new_fd, eventPoll);
     _clients.push_back(newClient);
     eventPoll.addPollFdEventQueue(new_fd, POLLIN);
@@ -125,7 +122,6 @@ void Server::handleNewConnection(EventPoll &eventPoll){
  * @param eventPoll The EventPoll object containing the pollfds
  * @param i The index into the pollfds vector
  * @param defaultServer The default Server object
- * @todo throw instead of error or cout
  */
 void Server::handlePollEvent(EventPoll &eventPoll, int i, defaultServer defaultS, std::vector<defaultServer> servers) {
     Client *client = nullptr;
@@ -146,12 +142,12 @@ void Server::handlePollEvent(EventPoll &eventPoll, int i, defaultServer defaultS
 		    eraseClient(event_fd);
         return;
     }
+
     // Handle readable events
 	client->setStartTime(std::chrono::system_clock::now());
     if (currentPollFd.revents & POLLIN) {
         try {
             if (event_fd != client->getSocket() && event_fd == client->getCgiRead()) {
-                std::cout << "read from cgi" << std::endl;
                 client->readFromCgi();
             } else {
                 client->readFromSocket(this, defaultS, servers);
@@ -175,7 +171,6 @@ void Server::handlePollEvent(EventPoll &eventPoll, int i, defaultServer defaultS
                 client->writeToCgi();
             } 
             else {
-				std::cout << "writing error 408" << std::endl;
                 if (client->writeToSocket() > 0) {
 					client->closeConnection(eventPoll, currentPollFd.fd);
 					eraseClient(event_fd);
@@ -205,27 +200,7 @@ void Server::handlePollEvent(EventPoll &eventPoll, int i, defaultServer defaultS
 		return;
     }
 }
-
-// int Server::checkCgiTimeout(Client *client) {
-    
-//     // ✅ **Check if CGI process has timed out**
-//     if (client->getCGI() != NULL) {
-//         auto now = std::chrono::steady_clock::now();
-//         auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(now - client->getCGI()->getStartTime()).count();
-        
-//         std::cout << "Elapsed time: " << elapsed << " seconds" << std::endl;
-        
-//         if (elapsed > 5) {  // Timeout threshold (5 seconds)
-//             std::cerr << "Error: CGI script timeout. Terminating process." << std::endl;
-//             handleCgiError(client, 408);
-//             return 1;
-//         }
-//     }
-//     return 0;
-// }
-
-
-    
+   
 /**
  * @brief Handles CGI errors by closing the CGI pipes and sending an error response
  *        to the client.
@@ -250,8 +225,6 @@ void Server::handleCgiError(Client* client, int statusCode) {
             waitpid(cgiPid, &cgiExitStatus, WNOHANG);
         }
 
-		std::cout <<  client->getCgiRead() << std::endl;
-		std::cout <<  client->getCgiWrite() << std::endl;
         client->addToEventPollRemove(client->getCgiRead(), POLLIN);
         client->addToEventPollRemove(client->getCgiRead(), POLLOUT);
         client->addToEventPollRemove(client->getCgiWrite(), POLLOUT);
@@ -305,7 +278,6 @@ void Server::checkServer(HttpRequest* HttpRequest, std::vector<defaultServer> se
  * defined in the location.
  *
  * @param path The path to check against the server's locations.
- * @todo figure out when to reset server information to default
  */
 void Server::checkLocations(std::string path, defaultServer defaultServer) {
     for (const auto& location : this->getLocations()) {
@@ -421,7 +393,7 @@ int Server::handleGetRequest(Client &client, HttpRequest* request) {
         if (access(filepath.c_str(), R_OK | X_OK) != 0) {
             return sendErrorResponse(client, 403);
         }
-    // Check if it's a directory and autoindex is enabled{
+    // Check if it's a directory and autoindex is enabled
         if (getAutoindex() == "on") {  // Autoindex must be enabled
             std::string htmlContent = generateDirectoryListing(filepath, request->getPath());
             client.getHttpResponse()->setHeader("Content-Type", "text/html");
@@ -505,14 +477,6 @@ std::string Server::readFileContent(const std::string& filepath) {
  * @param statusCode The HTTP status code to send.
  * @param contentType The content type to send (optional, defaults to "text/html").
  */
-// void Server::sendHeaders(int clientSocket, int statusCode, const std::string& contentType = "text/html") {
-//     std::string statusMessage = getStatusMessage(statusCode);
-//     std::ostringstream headers;
-//     headers << "HTTP/1.1 " << statusCode << " " << statusMessage << "\r\n";
-//     headers << "Content-Type: " << contentType << "\r\n\r\n";
-//     std::string headersStr = headers.str();
-//     send(clientSocket, headersStr.c_str(), headersStr.size(), 0);
-// }
 void Server::sendHeaders(int clientSocket, int statusCode, const std::string& contentType = "text/html") {
     std::string statusMessage = getStatusMessage(statusCode);
     std::ostringstream headers;
@@ -540,9 +504,6 @@ void Server::sendHeaders(int clientSocket, int statusCode, const std::string& co
  * @param clientSocket The socket to send the body to.
  * @param body The body content to send.
  */
-// void Server::sendBody(int clientSocket, const std::string& body) {
-//     send(clientSocket, body.c_str(), body.size(), 0);
-// }
 void Server::sendBody(int clientSocket, const std::string& body) {
     ssize_t bytesSent = send(clientSocket, body.c_str(), body.size(), MSG_NOSIGNAL);
         if (bytesSent == -1) {
@@ -594,15 +555,12 @@ int Server::validateRequest(const std::string& method, const std::string& versio
  * error response is sent, such as a 404 Not Found or 500 Internal Server Error.
  * @param client The client object associated with the request.
  * @param request The HttpRequest object associated with the client.
- * @todo ask LENA HOW ON EARTH DO YOU DELETE STUFF
- * added _root to the path for deleting - anna
- * 
  * @return The HTTP status code indicating the result of the request processing.
  */
 int Server::handleDeleteRequest(Client &client, HttpRequest* request) {
 
     std::string pathToDelete = _root + request->getPath();
-    request->setPathToCgi(pathToDelete); // TODO DO we need this? 
+    request->setPathToCgi(pathToDelete);
 
     if (pathToDelete.empty() || !fileExists(pathToDelete)) {
         return sendErrorResponse(client, 404);
@@ -660,7 +618,7 @@ int Server::handlePostRequest(Client &client, HttpRequest* request) {
 
     if (request->getPath().find("/cgi-bin") != std::string::npos) {
         request->setFullPath(request->getPath());
-        std::string filepath = this->getRoot() + request->getPath(); //TODO is this overkill?
+        std::string filepath = this->getRoot() + request->getPath();
         request->setPathToCgi(filepath);
         client.startCgi(request);
         return 0;
@@ -677,10 +635,7 @@ int Server::handlePostRequest(Client &client, HttpRequest* request) {
     std::string boundary = extractBoundary(client, request->getHeader("Content-Type"));
 	if (boundary.empty())
 		return 406;
-	// std::string UserAgent = request->getField("User-Agent");
-	// if (UserAgent.find("curl") != std::string::npos){
-	// 	boundary = "\r\n" + boundary;
-	// }
+
 	std::vector<std::string> parts = splitMultipartBody(request->getBody(), boundary);
 	for (const std::string& part : parts) {
 		processMultipartPart(part, uploadPath);
@@ -724,7 +679,6 @@ std::string Server::extractBoundary(Client &client, const std::string& contentTy
     if (contentType.find("multipart/form-data") == std::string::npos) {
         sendErrorResponse(client, 406);
 		return "";
-        //throw std::runtime_error("Unsupported Content-Type: Only multipart/form-data is supported.");
     }
 
     size_t boundaryPos = contentType.find("boundary=");

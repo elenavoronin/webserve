@@ -334,23 +334,18 @@ int Server::timeout_check(EventPoll &eventPoll, int fd){
 			auto now_time = std::chrono::system_clock::now();
 			std::time_t start_time = std::chrono::system_clock::to_time_t(c.getStartTime());
 			auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(now_time - c.getStartTime()).count();
-			// std::cout << start_time << " "<< elapsed << std::endl;
 			if (elapsed > 3 && start_time != 0) {  // Timeout threshold (5 seconds)
 				std::cerr << "Error: CGI script timeout. Terminating process." << std::endl;
 				if (c.getCGI()) {
-					std::cout << "yo cgi" << std::endl;
 					handleCgiError(&c, 504);
 					c.setStartTime(std::chrono::system_clock::now());
 					return -1;
 				}
 				else {
-					std::cout << "not in cgi" << std::endl;
 					sendErrorResponse(c, 500);
 					c.setStartTime(std::chrono::system_clock::now());
 					return -1;
 				}
-				// c.closeConnection(eventPoll, c.getSocket());
-				// eraseClient(c.getSocket());
 			}
 	}
 	return 0;
@@ -377,12 +372,6 @@ void Config::pollLoop() {
         if (pollResult == -1) {
             throw std::runtime_error("Poll failed!");
         }
-        // Iterate over the pollfds to handle events
-		// if (pollResult == 0) {
-		// 	throw std::runtime_error("Poll timed out!");
-		// }
-
-
 
         for (size_t i = 0; i < pfds.size(); i++) {
 			for (Server &currentServer : _servers) {
@@ -399,7 +388,6 @@ void Config::pollLoop() {
 					break ;
 				}
 			}
-			std::cout << "new poll event" << pfds[i].revents << "poll watching size: " << pfds.size()<< " " << pfds[i].fd << " " << POLLNVAL << std::endl;
             if (pfds[i].revents & POLLIN || pfds[i].revents & POLLOUT || pfds[i].revents & POLLHUP || pfds[i].revents & POLLRDHUP) {
                 int fd = pfds[i].fd;
                 Server* defaultServer = nullptr;

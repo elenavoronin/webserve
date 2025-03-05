@@ -63,12 +63,11 @@ Client& Client::operator=(const Client& copy) {
     delete _CGI;
 
     // Copy resources
-    _clientSocket = copy._clientSocket; // this messes things up
+    _clientSocket = copy._clientSocket; 
     _HttpRequest = copy._HttpRequest ? new HttpRequest(*copy._HttpRequest) : nullptr;
     _HttpResponse = copy._HttpResponse ? new HttpResponse(*copy._HttpResponse) : nullptr;
-    _CGI = nullptr; // Reset CGI in the assigned instance
-    // _CGI = copy._CGI ? new CGI(*copy._CGI) : nullptr;
-    _eventPoll = copy._eventPoll; // References must remain valid
+    _CGI = copy._CGI ? new CGI(*copy._CGI) : nullptr;
+    _eventPoll = copy._eventPoll; 
     _responseIndex = copy._responseIndex;
 
     return *this;
@@ -208,12 +207,10 @@ void Client::readFromCgi() {
     try {
         _CGI->readCgiOutput();
         if (_CGI->isCgiComplete()) {
-            std::cout << "doen we dit?" << std::endl;
             _HttpResponse->setFullResponse(_CGI->getCgiOutput());
             _eventPoll->ToremovePollEventFd(_CGI->getReadFd(), POLLIN);
             _eventPoll->ToremovePollEventFd(_CGI->getWriteFd(), POLLOUT);
-            // _eventPoll->addPollFdEventQueue(_clientSocket, POLLOUT);
-            _eventPoll->addPollFdEventQueue(_clientSocket, POLLOUT); //Lena added
+            _eventPoll->addPollFdEventQueue(_clientSocket, POLLOUT);
 
             kill(_CGI->getPid(), SIGTERM);
         }
@@ -283,8 +280,6 @@ void Client::readFromSocket(Server *server, defaultServer defaultS, std::vector<
 int Client::writeToSocket() {
     unsigned long bytesToWrite = WRITE_SIZE;
     unsigned long bytesWritten = 0;
-	
-	std::cout << "rsponse index " << _responseIndex << std::endl;
 
     if (bytesToWrite > _HttpResponse->getFullResponse().size() - _responseIndex) {
         bytesToWrite = _HttpResponse->getFullResponse().size() - _responseIndex;
@@ -295,13 +290,8 @@ int Client::writeToSocket() {
         _responseIndex += bytesWritten;
     }
 
-	std::cout << "bytes written" << _responseIndex << std::endl;
-	std::cout << "body looks like" << _HttpResponse->getFullResponse().size() << std::endl;
-	std::cout << "body chunks like" << _HttpResponse->getFullResponse().data() << std::endl;
     if (_responseIndex >= _HttpResponse->getFullResponse().size()) {
-		std::cout << "client socket in writeTosocket = " << _clientSocket << std::endl;
         _eventPoll->ToremovePollEventFd(_clientSocket, POLLOUT);
-		std::cout << " in if statement write to socket" << std::endl; 
         return 1;
     }
     return 0;
@@ -329,10 +319,8 @@ void Client::closeConnection(EventPoll& eventPoll, int currentPollFd) {
     }
 
     if (_clientSocket >= 0) {
-		std::cout << "in closeConnection" << std::endl;
         eventPoll.ToremovePollEventFd(_clientSocket, POLLIN | POLLOUT);
         eventPoll.ToremovePollEventFd(_clientSocket, POLLIN | POLLOUT);
-		std::cout << "client socket = " << _clientSocket << std::endl;
         close(_clientSocket);
         return;
     }
