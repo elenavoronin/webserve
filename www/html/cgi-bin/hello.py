@@ -15,7 +15,7 @@ name = form.getvalue('name', 'Guest')
 body = f"""
 <html>
 <head>
-    <title>Login Successful</title>
+    <title>Greetings!</title>
     <style>
         body {{ background-color: black; color: white; font-family: Arial, sans-serif; }}
         button {{ padding: 10px 20px; font-size: 16px; color: white; background-color: black; border: none; border-radius: 5px; cursor: pointer; }}
@@ -24,7 +24,7 @@ body = f"""
 </head>
 <body>
     <h1>Welcome, {name}!</h1>
-    <p>You are now logged in.</p>
+    <p>Nice to meet you.</p>
     <p>
         <a href="/index.html" style="text-decoration: none;">
             <button>Return to Homepage</button>
