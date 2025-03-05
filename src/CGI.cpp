@@ -1,16 +1,15 @@
 #include "../include/CGI.hpp"
 
-
 /**
  * @brief       Constructor for the CGI class.
  */
 CGI::CGI(HttpRequest *request) {
-    _cgiInput = request->getField("body");
+    // _cgiInput = request->getField("body");
+    _cgiInput = request->getBody();
     _inputIndex = 0;
     _cgiComplete = false;
     _headersSent = false;
     _cgiPath = request->getPathToCgi();
-
 
     if (!setupPipes()) 
         return;
@@ -145,9 +144,11 @@ void CGI::initializeEnvVars(HttpRequest* request) {
         if (!contentLength.empty()) {
             _envVars.push_back("CONTENT_LENGTH=" + contentLength);
         }
-        std::string body = request->getField("body");
-        if (!body.empty()) {
-            _envVars.push_back("BODY=" + body);
+        // std::string body = request->getField("body");
+        // if (!body.empty()) {
+        if (!_cgiInput.empty()) {
+            _envVars.push_back("BODY=" + _cgiInput);
+            // _envVars.push_back("BODY=" + body);
         }
     }
 

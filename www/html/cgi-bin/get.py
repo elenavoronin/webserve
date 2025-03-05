@@ -13,7 +13,7 @@ if os.environ.get("REQUEST_METHOD", "GET") != "GET":
     exit(1)
 
 # File where messages are saved
-filename = "/data/messages.txt"
+filename = "data/messages.txt"
 messages = []
 if os.path.exists(filename):
     with open(filename, "r") as f:

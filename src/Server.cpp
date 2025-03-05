@@ -624,6 +624,7 @@ int Server::handlePostRequest(Client &client, HttpRequest* request) {
         return 0;
     }
 
+    std::string contentType = request->getHeader("Content-Type"); //Djoyke
     std::string uploadPath = getUploadStore();
     if (uploadPath.empty()) {
         throw std::runtime_error("Upload path not set in configuration");
