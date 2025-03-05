@@ -17,9 +17,9 @@ body = f"""
 <head>
     <title>Greetings!</title>
     <style>
-        body {{ background-color: black; color: white; font-family: Arial, sans-serif; }}
+        body {{ background-color: grey; color: white; font-family: Arial, sans-serif; }}
         button {{ padding: 10px 20px; font-size: 16px; color: white; background-color: black; border: none; border-radius: 5px; cursor: pointer; }}
-        button:hover {{ background-color: gray; }}
+        button:hover {{ background-color: purple; }}
     </style>
 </head>
 <body>

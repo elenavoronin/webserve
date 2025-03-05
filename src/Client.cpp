@@ -267,11 +267,12 @@ void Client::readFromSocket(Server *server, defaultServer defaultS, std::vector<
 			_HttpRequest->parseBody(_HttpRequest->getStrReceived());
 			server->processClientRequest(*this, _HttpRequest->getStrReceived(), _HttpRequest, defaultS, servers);
 			
-            _HttpRequest->reset();
-            // _HttpRequest->setHeaderReceived(false);
-			// _HttpRequest->clearStrReceived();
-            // std::string emptyString = "";
-            // _HttpRequest->setBody(emptyString); //Clear the post body 
+            _HttpRequest->setHeaderReceived(false);
+			_HttpRequest->clearStrReceived();
+            
+            std::string emptyString = "";
+            _HttpRequest->setBody(emptyString); //Clear the post body 
+            // _HttpRequest->reset();
     }
 }
 

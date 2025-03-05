@@ -431,16 +431,15 @@ void HttpRequest::parseHeaders(const std::string& rawRequest) {
 	setHeader(rawRequest.substr(0, headerEnd));
 }
 
-void HttpRequest::reset() {
-    _strReceived.clear();
-    _body.clear();
-    _headers.clear();
-    _request.clear();
-    _headerReceived = false;
-    _bodyReceived = false;
-    _method.clear();
-    _path.clear();
-    _version.clear();
-    _pathToCgi.clear();
-    // Add any other fields that need to be cleared.
-}
+// void HttpRequest::reset() { //Djoyke added
+//     _strReceived.clear();
+//     _body.clear();
+//     _headers.clear();
+//     _request.clear();
+//     _headerReceived = false;
+//     _bodyReceived = false;
+//     _method.clear();
+//     _path.clear();
+//     _version.clear();
+//     _pathToCgi.clear();
+// }

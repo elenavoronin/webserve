@@ -1,4 +1,4 @@
-<!-- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -101,16 +101,36 @@
     </section>
 
     <section class="content-section">
-        <h3>Say Hi!</h3>
-        <form action="/cgi-bin/hello.py">
-            <label for="name">Name:</label><br>
-            <input type="text" id="name" name="name" placeholder="Enter your name" required><br><br>
-            <button class="btn" type="submit">Send</button>
-        </form>
+      <h3>Say Hello!</h3>
+      <form action="/cgi-bin/hello.py" method="get">
+        <label for="name_hello">Name:</label><br>
+        <input type="text" id="name_hello" name="name" placeholder="Enter your name" required><br><br>
+        <button class="btn" type="submit">Send</button>
+      </form>
     </section>
 
     <section class="content-section">
         <button class="btn" onclick="window.location.href='cat_upload.html'">Upload Your Cat</button>
+    </section>
+
+    <section class="content-section">
+      <h3>View Messages</h3>
+      <form action="/cgi-bin/get.py" method="get">
+        <button class="btn" type="submit">View Messages</button>
+      </form>
+    </section>
+
+    <section class="content-section">
+      <h3>Contact us</h3>
+      <form action="/cgi-bin/post.py" method="post">
+        <label for="name_post">Name:</label><br>
+        <input type="text" id="name_post" name="name" placeholder="Enter your name" required><br><br>
+        <label for="email_post">Email:</label><br>
+        <input type="email" id="email_post" name="email" placeholder="Enter your email" required><br><br>
+        <label for="message_post">Message:</label><br>
+        <textarea id="message_post" name="message" placeholder="Enter your message" required></textarea><br><br>
+        <button class="btn" type="submit">Send Message</button>
+      </form>
     </section>
 
     <footer class="footer">
@@ -118,141 +138,4 @@
     </footer>
 </body>
 
-</html> -->
-
-
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Team Website</title>
-  <style>
-    body {
-      margin: 0;
-      font-family: Poppins, sans-serif;
-      background-color: #1f1f1f;
-      color: white;
-    }
-    header {
-      background: #000000;
-      padding: 1rem;
-      text-align: center;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    header h1 {
-      margin: 0;
-      color: white;
-    }
-    .header-links {
-      display: flex;
-      gap: 1rem;
-    }
-    .header-links a {
-      color: white;
-      text-decoration: none;
-      font-weight: bold;
-      padding: 0.5rem 1rem;
-      border: 1px solid white;
-      border-radius: 5px;
-      transition: background 0.3s;
-    }
-    .header-links a:hover {
-      background: white;
-      color: #4CAF50;
-    }
-    .hero-section {
-      text-align: center;
-      padding: 2rem;
-      background: linear-gradient(135deg, #6b5b95, #076de8);
-    }
-    .hero-section h2 {
-      font-size: 2.5rem;
-      margin-bottom: 1rem;
-    }
-    .btn {
-      background-color: #C445C7;
-      color: white;
-      padding: 1rem 2rem;
-      font-size: 1rem;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      transition: background 0.3s;
-    }
-    .btn:hover {
-      background-color: #9b35a3;
-    }
-    .content-section {
-      text-align: center;
-      padding: 2rem;
-    }
-    .content-section form {
-      display: inline-block;
-      text-align: left;
-      margin-top: 1rem;
-    }
-    .footer {
-      text-align: center;
-      background-color: #333;
-      padding: 1rem;
-      color: white;
-      margin-top: 2rem;
-    }
-  </style>
-</head>
-<body>
-  <header>
-    <div class="header-links">
-      <a href="https://www.notion.so/Webserv-subject-d6f84a523f864bee9dc999d52da0cddc?pvs=4" target="_blank">Notion</a>
-      <a href="https://github.com/elenavoronin/webserve" target="_blank">GitHub</a>
-    </div>
-  </header>
-
-  <section class="hero-section">
-    <h2>You Can&#39;t Rush Puuuurfection</h2>
-  </section>
-
-  <!-- Hello Form using hello.py -->
-  <section class="content-section">
-    <h3>Say Hello!</h3>
-    <form action="/cgi-bin/hello.py" method="get">
-      <label for="name_hello">Name:</label><br>
-      <input type="text" id="name_hello" name="name" placeholder="Enter your name" required><br><br>
-      <button class="btn" type="submit">Send</button>
-    </form>
-  </section>
-
-  <!-- GET Form: retrieves data (e.g., saved messages) -->
-  <section class="content-section">
-    <h3>View Messages</h3>
-    <form action="/cgi-bin/get.py" method="get">
-      <button class="btn" type="submit">View Messages</button>
-    </form>
-  </section>
-
-  <!-- POST Form: submits data (e.g., contact form) -->
-  <section class="content-section">
-    <h3>Contact us</h3>
-    <form action="/cgi-bin/post.py" method="post">
-      <label for="name_post">Name:</label><br>
-      <input type="text" id="name_post" name="name" placeholder="Enter your name" required><br><br>
-      <label for="email_post">Email:</label><br>
-      <input type="email" id="email_post" name="email" placeholder="Enter your email" required><br><br>
-      <label for="message_post">Message:</label><br>
-      <textarea id="message_post" name="message" placeholder="Enter your message" required></textarea><br><br>
-      <button class="btn" type="submit">Send Message</button>
-    </form>
-  </section>
-
-  <section class="content-section">
-    <button class="btn" onclick="window.location.href='cat_upload.html'">Upload Your Cat</button>
-  </section>
-
-  <footer class="footer">
-    <p>&copy; 2025 Team Website. All Rights Reserved.</p>
-  </footer>
-</body>
 </html>

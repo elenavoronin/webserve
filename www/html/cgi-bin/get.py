@@ -24,9 +24,19 @@ body = """\
 <html>
 <head>
     <title>Saved Messages</title>
+    <style>
+        body {{ background-color: black; color: white; font-family: Arial, sans-serif; }}
+        button {{ padding: 10px 20px; font-size: 16px; color: white; background-color: black; border: none; border-radius: 5px; cursor: pointer; }}
+        button:hover {{ background-color: purple; }}
+    </style>
 </head>
 <body>
-    <h1>Saved Messages</h1>
+    <p><h1>Saved Messages</h1></p>
+    <p>
+        <a href="/index.html" style="text-decoration: none;">
+            <button>Return to Homepage</button>
+        </a>
+    </p>
     <ul>
 """
 for message in messages:

@@ -69,5 +69,5 @@ class HttpRequest {
 		std::string 										getServerName();
 		std::string											getPathToCgi();
 
-		void												reset();
+		void												reset(); //Djoyke added
 };
