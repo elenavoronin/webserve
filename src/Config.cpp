@@ -339,7 +339,7 @@ int Server::timeout_check(EventPoll &eventPoll, int fd){
 				std::cerr << "Error: CGI script timeout. Terminating process." << std::endl;
 				if (c.getCGI()) {
 					std::cout << "yo cgi" << std::endl;
-					handleCgiError(&c, 408);
+					handleCgiError(&c, 504);
 					c.setStartTime(std::chrono::system_clock::now());
 					return -1;
 				}
