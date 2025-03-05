@@ -607,7 +607,6 @@ int Server::handleDeleteRequest(Client &client, HttpRequest* request) {
  * leading to incorrect data extraction and processing.
  * ------WebKitFormBoundaryxyz123 is a boundary used in multipart/form-data requests.
  */
-
 int Server::handlePostRequest(Client &client, HttpRequest* request) {
 
     size_t requestSize = request->getBody().size();
@@ -624,7 +623,7 @@ int Server::handlePostRequest(Client &client, HttpRequest* request) {
         return 0;
     }
 
-    std::string contentType = request->getHeader("Content-Type"); //Djoyke
+    std::string contentType = request->getHeader("Content-Type"); //Djoyke Added
     std::string uploadPath = getUploadStore();
     if (uploadPath.empty()) {
         throw std::runtime_error("Upload path not set in configuration");

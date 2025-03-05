@@ -251,19 +251,27 @@ void Client::readFromSocket(Server *server, defaultServer defaultS, std::vector<
 
     // Append the data to the HTTP request buffer
     _HttpRequest->getStrReceived().append(buf, received);
+
+    // check if headers are fully received
     if (!_HttpRequest->isHeaderReceived()) {
         if (_HttpRequest->getStrReceived().find("\r\n\r\n") != std::string::npos) {
             contentLength = _HttpRequest->findContentLength(_HttpRequest->getStrReceived());
+            // Check if the total length (headers + body) meets the expected Content-Length
             if (static_cast<int>(_HttpRequest->getStrReceived().length() - _HttpRequest->getStrReceived().find("\r\n\r\n") - 4) >= contentLength)
                 _HttpRequest->setHeaderReceived(true);
             _HttpRequest->parseHeaders(_HttpRequest->getStrReceived());
         }
     }
+    // once headers and body received process request
     if (_HttpRequest->isHeaderReceived()) {
 			_HttpRequest->parseBody(_HttpRequest->getStrReceived());
 			server->processClientRequest(*this, _HttpRequest->getStrReceived(), _HttpRequest, defaultS, servers);
-			_HttpRequest->setHeaderReceived(false);
-			_HttpRequest->clearStrReceived();
+			
+            _HttpRequest->reset();
+            // _HttpRequest->setHeaderReceived(false);
+			// _HttpRequest->clearStrReceived();
+            // std::string emptyString = "";
+            // _HttpRequest->setBody(emptyString); //Clear the post body 
     }
 }
 
