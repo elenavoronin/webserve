@@ -309,6 +309,7 @@ std::vector<Server> Config::parseConfig(std::ifstream &file) {
     }  catch (const std::exception &e) {
         throw std::runtime_error("Error in config file: " + std::string(e.what()));
     }
+    file.close();
     return servers;
 }
 
