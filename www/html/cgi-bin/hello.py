@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 
 import cgi
-import time
-import sys
+# import time
+# import sys
 
 # Parse form data
 form = cgi.FieldStorage()
