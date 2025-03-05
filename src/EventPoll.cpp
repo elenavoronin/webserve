@@ -52,9 +52,9 @@ void	EventPoll::ToremovePollEventFd(int fd, int eventType)
 
 	tmp.fd = fd;
 	tmp.eventType = eventType;
-    // std::cout << "remove event" << eventType << std::endl;
+    std::cout << "remove event" << eventType << std::endl;
     _pollfdsToRemoveQueue.push_back(tmp);
-    // std::cout << "remove event fd" << fd << std::endl;
+    std::cout << "remove event fd" << fd << std::endl;
 }
 
 /**

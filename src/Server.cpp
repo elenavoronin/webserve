@@ -108,7 +108,7 @@ void Server::handleNewConnection(EventPoll &eventPoll){
         perror("Error accepting new connection");
         return;
     }
-
+	std::cout << "Created a client " << new_fd << std::endl;
 	Client newClient(new_fd, eventPoll);
     _clients.push_back(newClient);
     eventPoll.addPollFdEventQueue(new_fd, POLLIN);
@@ -146,11 +146,8 @@ void Server::handlePollEvent(EventPoll &eventPoll, int i, defaultServer defaultS
 		    eraseClient(event_fd);
         return;
     }
-
-    // if (checkCgiTimeout(client) == 1)
-    //     return ;
-
     // Handle readable events
+	client->setStartTime(std::chrono::system_clock::now());
     if (currentPollFd.revents & POLLIN) {
         try {
             if (event_fd != client->getSocket() && event_fd == client->getCgiRead()) {
@@ -167,6 +164,7 @@ void Server::handlePollEvent(EventPoll &eventPoll, int i, defaultServer defaultS
             }
             client->closeConnection(eventPoll, currentPollFd.fd);
 			eraseClient(event_fd);
+			return;
         }
     }
     // Handle writable events
@@ -177,9 +175,11 @@ void Server::handlePollEvent(EventPoll &eventPoll, int i, defaultServer defaultS
                 client->writeToCgi();
             } 
             else {
+				std::cout << "writing error 408" << std::endl;
                 if (client->writeToSocket() > 0) {
 					client->closeConnection(eventPoll, currentPollFd.fd);
 					eraseClient(event_fd);
+					return;
 				}
             }
         } 
@@ -190,6 +190,7 @@ void Server::handlePollEvent(EventPoll &eventPoll, int i, defaultServer defaultS
             }
             client->closeConnection(eventPoll, currentPollFd.fd);
 			eraseClient(event_fd);
+			return;
         }
     }
 
@@ -201,26 +202,27 @@ void Server::handlePollEvent(EventPoll &eventPoll, int i, defaultServer defaultS
         }
         client->closeConnection(eventPoll, currentPollFd.fd);
 		eraseClient(event_fd);
+		return;
     }
 }
 
-int Server::checkCgiTimeout(Client *client) {
+// int Server::checkCgiTimeout(Client *client) {
     
-    // ✅ **Check if CGI process has timed out**
-    if (client->getCGI() != NULL) {
-        auto now = std::chrono::steady_clock::now();
-        auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(now - client->getCGI()->getStartTime()).count();
+//     // ✅ **Check if CGI process has timed out**
+//     if (client->getCGI() != NULL) {
+//         auto now = std::chrono::steady_clock::now();
+//         auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(now - client->getCGI()->getStartTime()).count();
         
-        std::cout << "Elapsed time: " << elapsed << " seconds" << std::endl;
+//         std::cout << "Elapsed time: " << elapsed << " seconds" << std::endl;
         
-        if (elapsed > 5) {  // Timeout threshold (5 seconds)
-            std::cerr << "Error: CGI script timeout. Terminating process." << std::endl;
-            handleCgiError(client, 408);
-            return 1;
-        }
-    }
-    return 0;
-}
+//         if (elapsed > 5) {  // Timeout threshold (5 seconds)
+//             std::cerr << "Error: CGI script timeout. Terminating process." << std::endl;
+//             handleCgiError(client, 408);
+//             return 1;
+//         }
+//     }
+//     return 0;
+// }
 
 
     
@@ -248,11 +250,17 @@ void Server::handleCgiError(Client* client, int statusCode) {
             waitpid(cgiPid, &cgiExitStatus, WNOHANG);
         }
 
+		std::cout <<  client->getCgiRead() << std::endl;
+		std::cout <<  client->getCgiWrite() << std::endl;
         client->addToEventPollRemove(client->getCgiRead(), POLLIN);
+        client->addToEventPollRemove(client->getCgiRead(), POLLOUT);
         client->addToEventPollRemove(client->getCgiWrite(), POLLOUT);
+        client->addToEventPollRemove(client->getCgiWrite(), POLLIN);
         
         sendErrorResponse(*client, statusCode);
 
+		delete(client->getCGI());
+		client->setToNullCGI();
 }
 
 /**

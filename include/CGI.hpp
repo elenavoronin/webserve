@@ -45,7 +45,7 @@ class CGI {
     	bool 											_cgiComplete;   		// Tracks if CGI process is complete
 		unsigned long									_contentLength = 0;
 		unsigned long									_receivedBodySize = 0;
-		std::chrono::steady_clock::time_point			_start_time;
+		// std::chrono::steady_clock::time_point			_start_time;
 
 	public:
 		CGI(HttpRequest* request);
@@ -72,6 +72,6 @@ class CGI {
 		int 				getWriteFd() const;
 		const std::string&  getCgiOutput() const;
 		pid_t				getPid() const;
-		std::chrono::steady_clock::time_point		getStartTime() const { return _start_time; }
+		// std::chrono::steady_clock::time_point		getStartTime() const { return _start_time; }
 
 };

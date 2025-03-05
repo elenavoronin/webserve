@@ -11,7 +11,6 @@ CGI::CGI(HttpRequest *request) {
     _headersSent = false;
     _cgiPath = request->getPathToCgi();
 
-    _start_time = std::chrono::steady_clock::now();
 
     if (!setupPipes()) 
         return;
