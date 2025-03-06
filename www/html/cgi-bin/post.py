@@ -3,9 +3,9 @@ import os
 import cgi
 import cgitb
 import datetime
-import sys
+# import sys
 
-sys.stderr.write("Received POST data: " + repr(os.environ.get("CONTENT_LENGTH")) + "\n")
+# sys.stderr.write("Received POST data: " + repr(os.environ.get("CONTENT_LENGTH")) + "\n")
 
 
 # Enable debugging

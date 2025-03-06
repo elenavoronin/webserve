@@ -4,7 +4,6 @@
  * @brief       Constructor for the CGI class.
  */
 CGI::CGI(HttpRequest *request) {
-    // _cgiInput = request->getField("body");
     _cgiInput = request->getBody();
     _inputIndex = 0;
     _cgiComplete = false;
@@ -58,6 +57,7 @@ std::string CGI::getPath() const {
 int CGI::getReadFd() const {
     return _fromCgiPipe[READ];
 }
+
 /**
  * @brief Gets the file descriptor for the write end of the pipe used for communication with the CGI process.
  * 
@@ -144,11 +144,8 @@ void CGI::initializeEnvVars(HttpRequest* request) {
         if (!contentLength.empty()) {
             _envVars.push_back("CONTENT_LENGTH=" + contentLength);
         }
-        // std::string body = request->getField("body");
-        // if (!body.empty()) {
         if (!_cgiInput.empty()) {
             _envVars.push_back("BODY=" + _cgiInput);
-            // _envVars.push_back("BODY=" + body);
         }
     }
 

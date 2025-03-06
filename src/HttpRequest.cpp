@@ -54,7 +54,6 @@ void	HttpRequest::setFullPath(std::string path) {
 	_fullPath = path;
 }
 
-
 /**
  * @brief       Sets the method field of the HttpRequest object.
  * 
@@ -77,14 +76,6 @@ void	HttpRequest::setMethod(std::string method) {
 void HttpRequest::setPathToCgi(std::string path) {
 	_pathToCgi = path;
 }
-
-/**
- * @brief       Sets the version field of the HttpRequest object.
- * 
- * @param       version  The value to assign to the version field.
- * 
- * @return      The assigned version value.
- */
 
 /**
  * @brief       Sets the version field of the HttpRequest object.
@@ -154,7 +145,6 @@ std::string	HttpRequest::getMethod() {
 std::string	HttpRequest::getVersion() {
 	return _version;
 }
-
 
 /**
  * @brief       Retrieves the body of the HTTP request.
@@ -291,6 +281,7 @@ bool HttpRequest::isHeaderReceived() const{
 bool HttpRequest::getBodyReceived(){
 	return _bodyReceived;
 }
+
 /**
  * @brief       Parses an HTTP request string and populates the HttpRequest fields.
  * 
@@ -431,7 +422,12 @@ void HttpRequest::parseHeaders(const std::string& rawRequest) {
 	setHeader(rawRequest.substr(0, headerEnd));
 }
 
-void HttpRequest::reset() { //Djoyke added
+/**
+ * @brief Resets the HttpRequest object to its initial state.
+ * 
+ * @details Clears all received data, headers, and body, and resets flags to their initial state.
+ */
+void HttpRequest::reset() {
     _strReceived.clear();
     _body.clear();
     _headers.clear();
