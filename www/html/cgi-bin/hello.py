@@ -2,9 +2,11 @@
 
 import cgi
 # import time
+import os
 # import sys
 
 # Parse form data
+# file = open("hi","x")
 form = cgi.FieldStorage()
 name = form.getvalue('name', 'Guest')
 

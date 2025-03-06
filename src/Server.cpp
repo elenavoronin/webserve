@@ -250,7 +250,6 @@ void Server::checkServer(HttpRequest* HttpRequest, std::vector<defaultServer> se
 		  return;
 	for (std::vector<defaultServer>::iterator it = servers.begin(); it != servers.end(); ++it) {
         if (it->_serverName == HttpRequest->getServerName()) {
-			this->setServerName(it->_serverName);
             this->setPortString(it->_portString);
             this->setRoot(it->_root);
             this->setIndex(it->_index);
@@ -360,7 +359,7 @@ int Server::processClientRequest(Client &client, const std::string& request, Htt
 	if (method == "DELETE" && std::find(this->_allowedMethods.begin(), this->_allowedMethods.end(), "DELETE") != this->_allowedMethods.end())
 		return handleDeleteRequest(client, HttpRequest);
     else
-        
+		return sendErrorResponse(client, 405);
     return 0;
 }
 
