@@ -40,16 +40,6 @@ pid_t CGI::getPid() const {
 }
 
 /**
- * @brief       Retrieves the path to the CGI script.
- * 
- * @return      The path to the CGI script as a string.
- */
-
-std::string CGI::getPath() const {
-    return _path;
-}
-
-/**
  * @brief Gets the file descriptor for the read end of the pipe used for communication with the CGI process.
  * 
  * @return The file descriptor for the read end of the pipe.
@@ -69,15 +59,6 @@ int CGI::getWriteFd() const {
 
 const std::string& CGI::getCgiOutput() const {
     return _cgiOutput;
-}
-
-/**
- * @brief Sets the CGI script path.
- * 
- * @param path The path to set for the CGI script.
- */
-void CGI::setPath(std::string path){
-    _path = path;
 }
 
 /**
@@ -318,37 +299,6 @@ bool CGI::setupPipes() {
         return false;
     }
     return true;
-}
-
-/**
- * @brief       Clears the output of the CGI process.
- * 
- * @details     This method simply clears the _cgiOutput string, which is used to store
- *              the output of the CGI process.
- */
-void CGI::clearCgiOutput() {
-        _cgiOutput.clear();
-}
-
-/**
- * @brief       Checks if the HTTP headers have been sent to the client.
- * 
- * @return      True if the headers have been sent; otherwise, false.
- */
-
-bool CGI::areHeadersSent() const {
-        return _headersSent;
-}
-
-/**
- * @brief       Marks the CGI headers as sent.
- * 
- * @details     This function sets the internal state to indicate that the HTTP headers
- *              have been successfully sent to the client, preventing them from being sent again.
- */
-
-void CGI::markHeadersSent() {
-        _headersSent = true;
 }
 
 /**

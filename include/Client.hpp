@@ -43,12 +43,8 @@ class Client {
 		~Client();
 		Client& 			operator=(const Client& copy);
 		Client(const Client& copy);
-		void 				setSocket(int clientSocket);
 		int 				getSocket() const;
-		HttpRequest* 		getHttpRequest() const;
 		HttpResponse* 		getHttpResponse() const;
-		void 				setHttpRequest(HttpRequest* httpRequest);
-		void 				setHttpResponse(HttpResponse* httpResponse);
 		int 				writeToSocket();
 		void 				readFromSocket(Server *server, defaultServer defaultS, std::vector<defaultServer> servers);
 		void 				closeConnection(EventPoll& eventPoll, int currentPollFd);

@@ -143,11 +143,32 @@ void printInfoLocations(const Location &location) {
     std::cout << "---------------------------" << std::endl;
 }
 
+/**
+ * @brief Checks if a Location object is empty.
+ *
+ * This function takes a Location object as parameter and checks if it is empty.
+ * A Location object is considered empty if all of its configuration options are
+ * set to their default values.
+ *
+ * @param location The Location object to check.
+ *
+ * @return true if the Location object is empty, false otherwise.
+ */
 bool isEmpty(const Location& location) {
     return location.getRoot().empty() && location.getIndex().empty() 
         && location.getAllowedMethods().empty() && location.getCgiPass().empty() 
         && location.getCgiPath().empty() && location.getMaxBodySize() == 0;
 }
+
+/**
+ * @brief Prints the socket information of each client in the vector.
+ *
+ * This function iterates over a vector of Client objects and prints the socket
+ * associated with each client to the standard output. It is useful for debugging
+ * purposes to verify the active client connections.
+ *
+ * @param Clients A vector of Client objects whose sockets are to be printed.
+ */
 
 void printClientsVector(const std::vector<Client>& Clients) {
     for (unsigned long i = 0; i < Clients.size(); i++) {
@@ -157,6 +178,15 @@ void printClientsVector(const std::vector<Client>& Clients) {
 
 }
 
+/**
+ * @brief Prints the contents of the EventPoll object.
+ *
+ * This function takes an EventPoll object as parameter and prints the contents
+ * of the poll event queue. It iterates over the vector of pollfd structures
+ * and prints the file descriptor of each event.
+ *
+ * @param eventPoll The EventPoll object to print.
+ */
 void printEventPoll(EventPoll& eventPoll) {
     for (unsigned long i = 0; i < eventPoll.getPollEventFd().size(); i++) {
         std::cout << "event:  " << eventPoll.getPollEventFd()[i].fd << std::endl;
@@ -165,18 +195,19 @@ void printEventPoll(EventPoll& eventPoll) {
 
 }
 
-std::map<int, int> stuckFdCounter;  // Track stuck FDs
-
-bool isFdStuck(int fd) {
-    stuckFdCounter[fd]++;
-
-    if (stuckFdCounter[fd] > 5) {  // Adjust threshold as needed
-        stuckFdCounter.erase(fd);  // Remove it from tracking
-        return true;  // FD is stuck
-    }
-    return false;
-}
-
+/**
+ * @brief Generates an HTML directory listing for the given directory path and request path.
+ *
+ * Given a directory path and a request path, this function generates an HTML
+ * directory listing that includes links to all files and directories in the
+ * given directory. The HTML response will include a title with the request path,
+ * followed by an unordered list of files and directories. Directory names will
+ * have a trailing slash to indicate they are directories.
+ *
+ * @param[in] directoryPath The path to the directory to list.
+ * @param[in] requestPath The path used in the request URL to access the directory.
+ * @return An HTML string containing the directory listing.
+ */
 std::string generateDirectoryListing(const std::string &directoryPath, const std::string &requestPath) {
     std::ostringstream html;
     html << "<html><head><title>Directory Listing</title></head><body>";

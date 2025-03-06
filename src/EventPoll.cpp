@@ -49,7 +49,6 @@ void	EventPoll::ToremovePollEventFd(int fd, int eventType)
 {
 	t_pollfdToRemove	tmp;
 
-
 	tmp.fd = fd;
 	tmp.eventType = eventType;
     _pollfdsToRemoveQueue.push_back(tmp);
@@ -62,11 +61,10 @@ void	EventPoll::ToremovePollEventFd(int fd, int eventType)
  *             This function should be called before polling to ensure
  *             that the internal list of events is up to date.
  */
-void	EventPoll::updateEventList( void )
+void	EventPoll::updateEventList(void)
 {
 
 	while (!_pollfdsToRemoveQueue.empty()) {
-
         t_pollfdToRemove fdToRemove = _pollfdsToRemoveQueue.back();
         _pollfdsToRemoveQueue.pop_back();
 

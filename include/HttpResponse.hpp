@@ -33,11 +33,8 @@ class HttpResponse {
 		void				setFullResponse(const std::string& response);
 		std::string 		getHeader(const std::string& key) const;
 		std::string 		getStatusMessage() const;
-		int 				getStatusCode() const;
 		std::string 		&getFullResponse();
 		void 				buildResponse();
 		void 				redirect(const std::string& location, int status_code, const std::string& message);
-		std::string			getHeadersOnly() const;
-
 		std::string 		getBody() { return this->_body; };
 };

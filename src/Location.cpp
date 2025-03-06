@@ -28,7 +28,6 @@ Location::Location() : _root(), _index(),  _errorPages(),
       _maxBodySize(0), _cgiExtension(), _redirect(){}
 Location::~Location() {}
 
-
 /**
  * @brief Sets the root path of the location.
  *
@@ -121,7 +120,6 @@ void Location::setCgiPath(const std::string& cgiPath) {
 void Location::setIndex(const std::string& index) {
     _index = index;
 }
-
 
 /**
  * @brief Sets the maximum body size for the location.

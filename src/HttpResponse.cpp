@@ -59,15 +59,6 @@ std::string HttpResponse::getStatusMessage() const {
 }
 
 /**
- * @brief       Retrieves the current HTTP status code.
- * 
- * @return      An integer representing the HTTP status code (e.g., 200).
- */
-int HttpResponse::getStatusCode() const {
-	return _statusCode;
-}
-
-/**
  * @brief       Sets the body content of the HTTP response.
  * 
  * @param       content     The content to be set as the response body.
@@ -147,19 +138,6 @@ void HttpResponse::redirect(const std::string& location, int status_code, const 
  */
 std::string &HttpResponse::getFullResponse() {
     return _fullResponse;
-}
-
-/**
- * @brief       Returns the HTTP headers as a string.
- *
- * @details     This method returns only the headers of the HTTP response
- *              without the body. Useful for cases where headers are sent
- *              separately from the body, such as in chunked transfer encoding.
- *
- * @return      A string containing the HTTP headers.
- */
-std::string HttpResponse::getHeadersOnly() const {
-    return _headersOnly;
 }
 
 /**
