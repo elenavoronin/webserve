@@ -38,8 +38,9 @@ Client::Client(const Client& copy)
       _HttpRequest(copy._HttpRequest ? new HttpRequest(*copy._HttpRequest) : nullptr),
       _HttpResponse(copy._HttpResponse ? new HttpResponse(*copy._HttpResponse) : nullptr),
       _CGI(copy._CGI ? new CGI(*copy._CGI) : nullptr),
-      _eventPoll(copy._eventPoll), // Initialize the reference
-      _responseIndex(copy._responseIndex) {}
+      _eventPoll(copy._eventPoll),
+      _responseIndex(copy._responseIndex),
+      _start_time(copy._start_time) {}
 
 /**
  * @brief Copy assignment operator for the Client class.
@@ -56,18 +57,17 @@ Client::Client(const Client& copy)
 Client& Client::operator=(const Client& copy) {    
     if (this == &copy) return *this;
 
-    // Cleanup existing resources
     delete _HttpRequest;
     delete _HttpResponse;
     delete _CGI;
 
-    // Copy resources
     _clientSocket = copy._clientSocket; 
     _HttpRequest = copy._HttpRequest ? new HttpRequest(*copy._HttpRequest) : nullptr;
     _HttpResponse = copy._HttpResponse ? new HttpResponse(*copy._HttpResponse) : nullptr;
     _CGI = copy._CGI ? new CGI(*copy._CGI) : nullptr;
     _eventPoll = copy._eventPoll; 
     _responseIndex = copy._responseIndex;
+    _start_time = copy._start_time;
 
     return *this;
 }
@@ -107,7 +107,6 @@ void Client::setHttpRequest(HttpRequest* httpRequest){
 void Client::setHttpResponse(HttpResponse* httpResponse){
 	_HttpResponse = httpResponse;
 }
-
 
 /**
  * @brief Retrieves the HttpRequest object associated with the client.
@@ -243,28 +242,23 @@ void Client::readFromSocket(Server *server, defaultServer defaultS, std::vector<
         throw std::runtime_error("Error reading from socket");
     }
 
-    // Append the received data to the raw request string.
     _HttpRequest->getStrReceived().append(buf, received);
-
-    // Look for the header/body separator "\r\n\r\n"
     size_t headerEnd = _HttpRequest->getStrReceived().find("\r\n\r\n");
+
     if (headerEnd != std::string::npos) {
         int contentLength = _HttpRequest->findContentLength(_HttpRequest->getStrReceived());
         
-        // Only proceed if we have received all headers plus the expected body.
         if (_HttpRequest->getStrReceived().length() >= headerEnd + 4 + contentLength) {
             _HttpRequest->setHeaderReceived(true);
             _HttpRequest->parseHeaders(_HttpRequest->getStrReceived());
-        } else {
-            // Not all data received, wait for more.
+        } 
+        else {
             return;
         }
     }
 
-    // Once headers are received, process the request.
     if (_HttpRequest->isHeaderReceived()) {
         _HttpRequest->parseBody(_HttpRequest->getStrReceived());
-        
         server->processClientRequest(*this, _HttpRequest->getStrReceived(), _HttpRequest, defaultS, servers);
         _HttpRequest->reset();
     }
@@ -312,7 +306,6 @@ int Client::writeToSocket() {
 void Client::closeConnection(EventPoll& eventPoll, int currentPollFd) {
 
     if (_HttpResponse && _responseIndex < _HttpResponse->getFullResponse().size()) {
-        // Response not fully sent, keep POLLOUT active
         eventPoll.addPollFdEventQueue(_clientSocket, POLLOUT);
         return;
     }
@@ -388,12 +381,26 @@ void Client::addToEventPollQueue(int fd, int eventType) {
     _eventPoll->addPollFdEventQueue(fd, eventType);
 }
 
+/**
+ * @brief Sets the start time for the client.
+ *
+ * This function assigns the provided time point to the client's start time,
+ * which can be used to track the duration or timeout of a client connection.
+ *
+ * @param start_time The time point to set as the client's start time.
+ */
 
 void Client::setStartTime(std::chrono::system_clock::time_point start_time){
 	_start_time = start_time;
 }
 
-
+/**
+ * @brief Retrieves the client's start time.
+ *
+ * This function returns the time point set as the client's start time.
+ *
+ * @return The client's start time.
+ */
 std::chrono::system_clock::time_point  Client::getStartTime() const{
 	return _start_time;
 }

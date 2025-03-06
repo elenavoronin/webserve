@@ -31,10 +31,10 @@ int Server::getListenerSocket(){
 
 	int serverSocket;
 	int opt = 1;
-	memset(&hints, 0, sizeof hints); //is used to clear out the hints struct. Then, we fill in some details:
-	hints.ai_family = AF_UNSPEC; // allows either IPv4 or IPv6.
-	hints.ai_socktype = SOCK_STREAM; // tells the system to use TCP
-	hints.ai_flags = AI_PASSIVE; //makes the program automatically fill in the IP 
+	memset(&hints, 0, sizeof hints);
+	hints.ai_family = AF_UNSPEC;
+	hints.ai_socktype = SOCK_STREAM;
+	hints.ai_flags = AI_PASSIVE;
     
     std::string bindAddress = (getServerName() == "localhost") ? "127.0.0.1" : "0.0.0.0";
 
@@ -43,13 +43,13 @@ int Server::getListenerSocket(){
         return 1;
     }
 	for (newConnect = servinfo; newConnect != NULL; newConnect= newConnect->ai_next){
-		if ((serverSocket = socket(newConnect->ai_family, newConnect->ai_socktype, newConnect->ai_protocol)) == -1){ //creates a socket
+		if ((serverSocket = socket(newConnect->ai_family, newConnect->ai_socktype, newConnect->ai_protocol)) == -1){
             throw std::runtime_error("Socket Error");
             continue;
 		}
-        setsockopt(serverSocket, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt)); //allows the program to reuse the address
+        setsockopt(serverSocket, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt));
 
-        if (bind(serverSocket, newConnect->ai_addr, newConnect->ai_addrlen) == -1){ //associates the socket with an address (IP and port).
+        if (bind(serverSocket, newConnect->ai_addr, newConnect->ai_addrlen) == -1){
 			throw std::runtime_error("Bind Error");
             close(serverSocket);
 			continue;
@@ -59,7 +59,6 @@ int Server::getListenerSocket(){
 
 	freeaddrinfo(servinfo);
 
-    //If no address was successfully bound, the program exits with an error.
 	if (newConnect == NULL) {
 		throw std::runtime_error("Failed to bind to address");
         return -1;
@@ -128,7 +127,6 @@ void Server::handlePollEvent(EventPoll &eventPoll, int i, defaultServer defaultS
     pollfd &currentPollFd = eventPoll.getPollEventFd()[i];
     int event_fd = currentPollFd.fd;
 
-    // Find the client associated with the file descriptor
     for (auto &c : _clients) {
         if (c.getSocket() == event_fd || 
 			c.getCgiRead() == event_fd || 
@@ -143,7 +141,6 @@ void Server::handlePollEvent(EventPoll &eventPoll, int i, defaultServer defaultS
         return;
     }
 
-    // Handle readable events
 	client->setStartTime(std::chrono::system_clock::now());
     if (currentPollFd.revents & POLLIN) {
         try {
@@ -163,7 +160,7 @@ void Server::handlePollEvent(EventPoll &eventPoll, int i, defaultServer defaultS
 			return;
         }
     }
-    // Handle writable events
+
     if (currentPollFd.revents & POLLOUT) {
 
         try {
@@ -189,7 +186,6 @@ void Server::handlePollEvent(EventPoll &eventPoll, int i, defaultServer defaultS
         }
     }
 
-    // Handle hangup or disconnection events
     if (currentPollFd.revents & (POLLHUP | POLLRDHUP)) {
         if (event_fd == client->getCgiRead() || event_fd == client->getCgiWrite()) {
             handleCgiError(client, 500);
@@ -304,7 +300,7 @@ void Server::checkLocations(std::string path, defaultServer defaultServer) {
                 if (!loc.getUploadPath().empty())
                     this->setUploadStore(loc.getUploadPath());
                 else
-                    this->setUploadStore(defaultServer._uploadStore); // Use the upload path from the Server config, not Location?
+                    this->setUploadStore(defaultServer._uploadStore);
                 return;
             }
         }
@@ -393,8 +389,8 @@ int Server::handleGetRequest(Client &client, HttpRequest* request) {
         if (access(filepath.c_str(), R_OK | X_OK) != 0) {
             return sendErrorResponse(client, 403);
         }
-    // Check if it's a directory and autoindex is enabled
-        if (getAutoindex() == "on") {  // Autoindex must be enabled
+
+        if (getAutoindex() == "on") {
             std::string htmlContent = generateDirectoryListing(filepath, request->getPath());
             client.getHttpResponse()->setHeader("Content-Type", "text/html");
             client.getHttpResponse()->setHeader("Content-Length", std::to_string(htmlContent.size()));
@@ -417,7 +413,7 @@ int Server::handleGetRequest(Client &client, HttpRequest* request) {
             client.getHttpResponse()->setHeader("Content-Length", std::to_string(readFileContent(filepath).size()));
             client.getHttpResponse()->setBody(readFileContent(request->getFullPath()));
             client.getHttpResponse()->buildResponse();
-            client.addToEventPollRemove(client.getSocket(), POLLIN); //this is called many times
+            client.addToEventPollRemove(client.getSocket(), POLLIN);
             client.addToEventPollQueue(client.getSocket(), POLLOUT);
             return 200;
         }
@@ -623,7 +619,6 @@ int Server::handlePostRequest(Client &client, HttpRequest* request) {
         return 0;
     }
 
-    // std::string contentType = request->getHeader("Content-Type"); //Djoyke Added
     std::string uploadPath = getUploadStore();
     if (uploadPath.empty()) {
         throw std::runtime_error("Upload path not set in configuration");
@@ -685,7 +680,7 @@ std::string Server::extractBoundary(Client &client, const std::string& contentTy
     if (boundaryPos == std::string::npos) {
         throw std::runtime_error("Malformed multipart/form-data request: Missing boundary.");
     }
-    return "--" + contentType.substr(boundaryPos + 9); // Extract boundary
+    return "--" + contentType.substr(boundaryPos + 9);
 }
 
 /**
@@ -767,13 +762,11 @@ std::string Server::extractFilename(const std::string& headers) {
  *              If the part is malformed, it is skipped.
  */
 int Server::processMultipartPart(const std::string& part, const std::string& uploadPath) {
-    // Find Content-Disposition header
+
     size_t headerEnd = part.find("\r\n\r\n");
     if (headerEnd == std::string::npos) return 0;
-
     std::string headers = part.substr(0, headerEnd);
-
-    // Extract filename
+    
     std::string filename = extractFilename(part);
     if (filename.empty()) {
 		return -1;

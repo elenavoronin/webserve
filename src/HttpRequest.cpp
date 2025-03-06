@@ -352,9 +352,24 @@ int HttpRequest::findContentLength(std::string request){
 void HttpRequest::setStrReceived(std::string input) {
 	_strReceived = input;
 }
+
+/**
+ * @brief       Sets the raw HTTP request header string.
+ * 
+ * @param       input       The string to set as the HTTP request header.
+ * 
+ * @details     Replaces the current value of the internal _header with the provided input string.
+ */
+
 void HttpRequest::setHeader(std::string input) {
 	_header = input;
 }
+
+/**
+ * @brief       Retrieves the string representing the HTTP request header.
+ * 
+ * @return      The raw HTTP request header string.
+ */
 std::string HttpRequest::getRequestHeader() {
 	return _header;
 }
@@ -372,18 +387,17 @@ std::string HttpRequest::getRequestHeader() {
  * @throws      std::runtime_error if the request does not contain headers and body separator.
  */
 void HttpRequest::parseBody(const std::string& rawRequest) {
-    // Find the double CRLF that separates headers and body
     size_t headerEnd = rawRequest.find("\r\n\r\n");
     if (headerEnd == std::string::npos) {
         throw std::runtime_error("Invalid HTTP request: Missing headers and body separator");
     }
 
-    // Extract the body (if any)
-    size_t bodyStart = headerEnd + 4;  // Skip over "\r\n\r\n"
+    size_t bodyStart = headerEnd + 4;
     if (bodyStart < rawRequest.size()) {
         _body = rawRequest.substr(bodyStart);
-    } else {
-        _body.clear();  // No body
+    } 
+	else {
+        _body.clear();
     }
 	setBody(_body);
 }
@@ -400,7 +414,6 @@ void HttpRequest::parseBody(const std::string& rawRequest) {
  * 
  * @throws      std::runtime_error if the request does not contain headers.
  */
-
 void HttpRequest::parseHeaders(const std::string& rawRequest) {
     size_t headerEnd = rawRequest.find("\r\n\r\n");
     if (headerEnd == std::string::npos) {

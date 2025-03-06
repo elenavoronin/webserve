@@ -149,7 +149,6 @@ void CGI::initializeEnvVars(HttpRequest* request) {
         }
     }
 
-    // Additional standard CGI variables
     _envVars.push_back("SCRIPT_NAME=" + request->getField("script_name"));
     _envVars.push_back("SERVER_PROTOCOL=HTTP/1.1");
     _envVars.push_back("GATEWAY_INTERFACE=CGI/1.1");
@@ -284,7 +283,7 @@ void CGI::parseHeaders(const std::string& headers) {
 void CGI::writeCgiInput() {
     
     if (_inputIndex >= _cgiInput.size()) {
-        close(_toCgiPipe[WRITE]); // Signal EOF to the CGI process
+        close(_toCgiPipe[WRITE]);
         return;
     }
 
