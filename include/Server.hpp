@@ -85,8 +85,6 @@ class Server  {
 		int												handleRedirect(Client& client);
 		void 											checkLocations(std::string path, defaultServer defaultServer);
 		std::string 									readFileContent(const std::string& filepath);
-		void 											sendHeaders(int clientSocket, int statusCode, const std::string& contentType);
-		void 											sendBody(int clientSocket, const std::string& body);
 		int 											validateRequest(const std::string& method, const std::string& version);
 		void											setRedirect(const std::string& statusCode, const std::string& redirectPath);
 		void 											setServerName(const std::string &server_name) { _serverName = server_name;}
@@ -109,7 +107,6 @@ class Server  {
 		std::string										extractFilename(const std::string& headers);
 		int												processMultipartPart(const std::string& part, const std::string& uploadPath);
 		void											saveUploadedFile(const std::string& filePath, const std::string& part, size_t dataStart);
-		int												handleServerError(Client &client, const std::exception &e, const std::string &errorMessage);
 		int												sendErrorResponse(Client &client, int statusCode);
 		bool											fileExists(const std::string& path);
 		void 											ensureUploadDirectoryExists(const std::string& path);

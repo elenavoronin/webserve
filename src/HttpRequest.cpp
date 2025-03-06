@@ -21,18 +21,6 @@ void HttpRequest::setHeaderReceived(bool received){
 }
 
 /**
- * @brief       Sets the state indicating whether the HTTP request body has been fully received.
- * 
- * @param       received    Boolean indicating whether the body has been received.
- * 
- * @details     This method is used by the HTTP server to keep track of the request state.
- *              It is not intended to be used by the caller.
- */
-void HttpRequest::setBodyReceived(bool received){
-	_bodyReceived = received;
-}
-
-/**
  * @brief       Sets the path field of the HttpRequest object.
  * 
  * @param       path    The value to assign to the path field.
@@ -55,17 +43,6 @@ void	HttpRequest::setFullPath(std::string path) {
 }
 
 /**
- * @brief       Sets the method field of the HttpRequest object.
- * 
- * @param       method  The value to assign to the method field.
- * 
- * @return      The assigned method value.
- */
-void	HttpRequest::setMethod(std::string method) {
-	_method	= method;
-}
-
-/**
  * @brief       Sets the path to the CGI script to be executed.
  * 
  * @param       path    The path to the CGI script, relative to the server's root directory.
@@ -75,17 +52,6 @@ void	HttpRequest::setMethod(std::string method) {
  */
 void HttpRequest::setPathToCgi(std::string path) {
 	_pathToCgi = path;
-}
-
-/**
- * @brief       Sets the version field of the HttpRequest object.
- * 
- * @param       version  The value to assign to the version field.
- * 
- * @return      The assigned version value.
- */
-void	HttpRequest::setVersion(std::string version) {
-	_version = version;
 }
 
 /**
@@ -195,40 +161,6 @@ std::string& HttpRequest::getStrReceived(){
 	return _strReceived;
 }
 
-
-/**
- * @brief       Retrieves the raw received HTTP request as a string.
- * 
- * @details     This method returns the exact string received from the client, without any parsing or processing.
- * 
- * @return      The raw received HTTP request as a string.
- */
-std::string HttpRequest::getRawRequest(){
-	return _strReceived;
-}
-
-/**
- * @brief       Extracts and returns the path to the resource intended for deletion.
- * 
- * @param       rawRequest  The raw HTTP request string.
- * 
- * @details     Parses the raw HTTP request to extract the path of the resource 
- *              that is to be deleted. If the path is not found, throws a runtime error.
- * 
- * @return      The path to the resource as a string.
- * 
- * @throws      std::runtime_error if the path to the resource is not found.
- */
-
-std::string HttpRequest::getPathToDelete(const std::string& rawRequest) {
-	
-	readRequest(rawRequest);
-	if (_path.empty()) {
-		throw std::runtime_error("Path to resource not found");
-	}
-	return _path;
-}
-
 /**
  * @brief       Retrieves the server name from the "Host" request field.
  * 
@@ -256,30 +188,12 @@ std::string HttpRequest::getPathToCgi() {
 }
 
 /**
- * @brief       Clears the _strReceived string.
- * 
- * @details     Resets the received request string to an empty state.
- */
-void HttpRequest::clearStrReceived(){
-	_strReceived = "";
-}
-
-/**
  * @brief       Checks if the HTTP request headers have been fully received.
  * 
  * @return      True if the headers have been received; otherwise, false.
  */
 bool HttpRequest::isHeaderReceived() const{
 	return _headerReceived;
-}
-
-/**
- * @brief       Checks if the HTTP request body has been fully received.
- * 
- * @return      True if the body has been received; otherwise, false.
- */
-bool HttpRequest::getBodyReceived(){
-	return _bodyReceived;
 }
 
 /**
@@ -343,17 +257,6 @@ int HttpRequest::findContentLength(std::string request){
 }
 
 /**
- * @brief       Sets the string representing the raw received HTTP request.
- * 
- * @param       input       The string to set as the raw received HTTP request.
- * 
- * @details     Replaces the current value of _strReceived with the input string.
- */
-void HttpRequest::setStrReceived(std::string input) {
-	_strReceived = input;
-}
-
-/**
  * @brief       Sets the raw HTTP request header string.
  * 
  * @param       input       The string to set as the HTTP request header.
@@ -363,15 +266,6 @@ void HttpRequest::setStrReceived(std::string input) {
 
 void HttpRequest::setHeader(std::string input) {
 	_header = input;
-}
-
-/**
- * @brief       Retrieves the string representing the HTTP request header.
- * 
- * @return      The raw HTTP request header string.
- */
-std::string HttpRequest::getRequestHeader() {
-	return _header;
 }
 
 /**

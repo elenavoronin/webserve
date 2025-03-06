@@ -38,8 +38,6 @@ class HttpRequest {
 		void 												setField(std::string key, std::string value);
 		std::string 										getField(std::string key);
 		std::string& 										getStrReceived();
-		void 												setStrReceived(std::string input);
-		void 												clearStrReceived();
 		bool 												isHeaderReceived() const;
 		void 												setHeaderReceived(bool received);
 		void 												readRequest(std::string request);
@@ -47,27 +45,19 @@ class HttpRequest {
 		int 												findContentLength(std::string request);
 		void												setPath(std::string path);
 		void												setFullPath(std::string path);
-		void												setMethod(std::string method);
-		void												setVersion(std::string version);
 		void 												setBody(std::string& body);
 		void 												setHeader(std::string input);
-		void 												setBodyReceived(bool received);
 		void												setPathToCgi(std::string path);
 
-		bool 												getBodyReceived();
 		std::string 										getPath();
 		std::string 										getFullPath();
 		std::string											getMethod();
 		std::string											getVersion();
 		std::string 										getBody();
 		std::string 										getHeader(const std::string& key);
-		std::string											getRawRequest();
-		std::string											getPathToDelete(const std::string& rawRequest);
-		std::string 										getRequestHeader();	
 		void 												parseHeaders(const std::string& rawRequest);
 		void												parseBody(const std::string& rawRequest);
 		std::string 										getServerName();
 		std::string											getPathToCgi();
-
-		void												reset(); //Djoyke added
+		void												reset();
 };

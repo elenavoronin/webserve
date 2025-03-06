@@ -33,3 +33,10 @@ http://localhost:8080/upload/Makefile
 kill a process:
 lsof -i :<PORT>
 kill -9 <PID>
+
+curl --resolve webserv:8080:127.0.0.1 \
+     -v \
+     -X POST \
+     -H "Content-Type: application/x-www-form-urlencoded" \
+     -d "name=John+Doe&email=john%40example.com&message=Hello+World" \
+     http://webserv:8080/cgi-bin/post.py

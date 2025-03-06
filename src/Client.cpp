@@ -73,48 +73,12 @@ Client& Client::operator=(const Client& copy) {
 }
 
 /**
- * @brief Sets the file descriptor for the client's socket.
- *
- * @param clientSocket The file descriptor for the client's socket.
- */
-void Client::setSocket(int clientSocket){
-	_clientSocket = clientSocket;
-}
-
-/**
  * @brief Returns the file descriptor of the client's socket.
  *
  * @return The file descriptor of the client's socket.
  */
 int Client::getSocket() const {
 	return _clientSocket;
-}
-
-/**
- * @brief Sets the HttpRequest object for the client.
- *
- * @param httpRequest The HttpRequest object for the client.
- */
-void Client::setHttpRequest(HttpRequest* httpRequest){
-	_HttpRequest = httpRequest;
-}
-
-/**
- * @brief Sets the HttpResponse object for the client.
- *
- * @param httpResponse The HttpResponse object for the client.
- */
-void Client::setHttpResponse(HttpResponse* httpResponse){
-	_HttpResponse = httpResponse;
-}
-
-/**
- * @brief Retrieves the HttpRequest object associated with the client.
- *
- * @return A pointer to the client's HttpRequest object.
- */
-HttpRequest* Client::getHttpRequest() const{
-	return _HttpRequest;
 }
 
 /**
@@ -320,21 +284,6 @@ void Client::closeConnection(EventPoll& eventPoll, int currentPollFd) {
         close(_clientSocket);
         return;
     }
-}
-
-/**
- * @brief Checks if a file descriptor is open.
- *
- * This function checks if a given file descriptor is open by calling fcntl()
- * with the F_GETFD command. If the file descriptor is open, fcntl() will
- * return a value other than -1. If the file descriptor is not open, fcntl()
- * will return -1 and set errno to EBADF.
- *
- * @param fd The file descriptor to check.
- * @return True if the file descriptor is open; otherwise, false.
- */
-bool isFdOpen(int fd) {
-    return fcntl(fd, F_GETFD) != -1 || errno != EBADF;
 }
 
 /**

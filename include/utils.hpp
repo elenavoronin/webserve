@@ -29,5 +29,4 @@ void                    printInfoLocations(const Location &location);
 void                    printTokens(const std::vector<std::string>& tokens);
 bool                    isEmpty(const Location& location);
 void                    printClientsVector(const std::vector<Client>& Clients);
-bool                    isFdStuck(int fd);
 std::string             generateDirectoryListing(const std::string &directoryPath, const std::string &requestPath);

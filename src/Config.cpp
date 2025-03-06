@@ -4,7 +4,14 @@ Config::Config() {}
 
 Config::~Config() {}
 
-
+/**
+ * @brief Validates the configuration of a given vector of Server objects.
+ *
+ * This function returns true if the configuration is valid, and false otherwise.
+ * A valid configuration is one in which no two servers have the same name and port.
+ * If there are two servers with the same port, the server with the name "localhost"
+ * has precedence and is set to be on, and the other server is set to be off.
+ */
 bool Config::validateConfig(std::vector<Server> &servers) {
     if (servers.size() < 2)
         return true;
@@ -27,6 +34,18 @@ bool Config::validateConfig(std::vector<Server> &servers) {
     return true;
 }
 
+/**
+ * @brief Validates and adjusts the configuration of a Location object.
+ *
+ * This function ensures that the redirect status code of the Location object
+ * is either 301, 302 or 0. If the autoindex is not set to "on", it defaults
+ * to "off". Additionally, if the maximum body size is not set, it is assigned
+ * a default value of 1000000.
+ *
+ * @param location A reference to the Location object that is being validated and adjusted.
+ * 
+ * @return true if the Location configuration is valid and adjustments have been made, false otherwise.
+ */
 
 bool Config::validateParsedLocation(Location& location) {
     if (location.getRedirect().first != 301 && location.getRedirect().first != 302 && location.getRedirect().first != 0)
@@ -161,8 +180,17 @@ bool Config::isFileEmpty(const std::string& fileName) {
     return file.tellg() == 0;
 }
 
+/**
+ * @brief Parses a vector of tokens into a Location object.
+ *
+ * This function takes a vector of strings and a Location object as parameters.
+ * It then iterates over the vector and calls the appropriate setter functions
+ * of the Location object to fill in its fields.
+ *
+ * @param tokens The vector of strings to parse.
+ * @param newLocation The Location object to fill in.
+ */
 void Config::parseLocationTokens(const std::vector<std::string>& tokens, Location& newLocation)
-
 {
     if (tokens.size() >= 2) {
         std::string key = tokens[0];
@@ -327,6 +355,18 @@ void Config::addPollFds() {
     pollLoop();
 }
 
+/**
+ * @brief Checks for CGI script timeouts and handles them.
+ *
+ * This function checks every client in the server's client list for CGI script timeouts.
+ * If a timeout is detected, it handles the error by either terminating the CGI process or
+ * sending a 500 error response to the client. If a timeout is found, the function returns -1,
+ * otherwise it returns 0.
+ *
+ * @param eventPoll The EventPoll object to use for handling events.
+ * @param fd The file descriptor of the client to check.
+ * @return -1 if a timeout is detected, 0 otherwise.
+ */
 int Server::timeout_check(EventPoll &eventPoll, int fd){
 	(void)fd;
 	(void)eventPoll;

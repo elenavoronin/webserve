@@ -461,59 +461,6 @@ std::string Server::readFileContent(const std::string& filepath) {
 }
 
 /**
- * @brief Send HTTP headers to the client.
- *
- * This function sends the HTTP headers (status line and content type) to
- * the client. The status line is constructed with the provided status code
- * and the corresponding status message. The "Content-Type" header is set to
- * the provided content type. If no content type is provided, it defaults
- * to "text/html".
- *
- * @param clientSocket The socket to send the headers to.
- * @param statusCode The HTTP status code to send.
- * @param contentType The content type to send (optional, defaults to "text/html").
- */
-void Server::sendHeaders(int clientSocket, int statusCode, const std::string& contentType = "text/html") {
-    std::string statusMessage = getStatusMessage(statusCode);
-    std::ostringstream headers;
-    headers << "HTTP/1.1 " << statusCode << " " << statusMessage << "\r\n";
-    headers << "Content-Type: " << contentType << "\r\n\r\n";
-    std::string headersStr = headers.str();
-    ssize_t bytesSent = send(clientSocket, headersStr.c_str(), headersStr.size(), MSG_NOSIGNAL);
-    if (bytesSent == -1) {
-        if (errno == EPIPE) {
-            std::cerr << "Error: Broken pipe (SIGPIPE) while sending data to client " << clientSocket << std::endl;
-        } else {
-            std::cerr << "Error sending data to client " << clientSocket << ": " << strerror(errno) << std::endl;
-        }
-        
-        close(clientSocket);
-    }
-}
-
-/**
- * @brief Send the body of the HTTP response to the client.
- *
- * This function sends the contents of the provided string as the body
- * of the HTTP response to the client.
- *
- * @param clientSocket The socket to send the body to.
- * @param body The body content to send.
- */
-void Server::sendBody(int clientSocket, const std::string& body) {
-    ssize_t bytesSent = send(clientSocket, body.c_str(), body.size(), MSG_NOSIGNAL);
-        if (bytesSent == -1) {
-        if (errno == EPIPE) {
-            std::cerr << "Error: Broken pipe (SIGPIPE) while sending data to client " << clientSocket << std::endl;
-        } else {
-            std::cerr << "Error sending data to client " << clientSocket << ": " << strerror(errno) << std::endl;
-        }
-        
-        close(clientSocket);
-    }
-}
-
-/**
  * @brief Validates the HTTP method and version of the request.
  * 
  * This function checks if the provided HTTP method is one of the
@@ -826,24 +773,6 @@ int Server::handleRedirect(Client& client) {
     client.addToEventPollQueue(client.getSocket(), POLLOUT);
 
     return getRedirect().first;
-}
-
-/**
- * @brief Handles an error encountered while handling a client request.
- *
- * This function writes an error message to the standard error stream and
- * sends a 500 Internal Server Error response to the client with a simple
- * HTML page indicating that an internal server error occurred.
- *
- * @param client The client connection to send the error response to
- * @param e The exception that caused the error
- * @param errorMessage A string describing the error
- *
- * @return The status code of the response (500)
- */
-int Server::handleServerError(Client &client, const std::exception &e, const std::string &errorMessage) {
-    std::cerr << errorMessage << ": " << e.what() << std::endl;
-    return sendErrorResponse(client, 500);
 }
 
 /**
