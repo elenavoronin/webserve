@@ -335,7 +335,6 @@ int Server::timeout_check(EventPoll &eventPoll, int fd){
 			std::time_t start_time = std::chrono::system_clock::to_time_t(c.getStartTime());
 			auto elapsed = std::chrono::duration_cast<std::chrono::seconds>(now_time - c.getStartTime()).count();
 			if (elapsed > 3 && start_time != 0) {  // Timeout threshold (5 seconds)
-				std::cerr << "Error: CGI script timeout. Terminating process." << std::endl;
 				if (c.getCGI()) {
 					handleCgiError(&c, 504);
 					c.setStartTime(std::chrono::system_clock::now());
