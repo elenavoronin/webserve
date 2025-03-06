@@ -1,15 +1,10 @@
-1. Prepare POST for CGI (djoyke)
+**********TESTS**********
 
-FOR TESTING:
 server that is off - make it respond to specific request :
           curl --resolve webserv:8080:0.0.0.0 webserv:8080 
 
 Just for us (traces): 
 curl --trace-ascii trace.log -X POST -H "Content-Type: multipart/form-data" -F "file=@www/html/test_images/cat2.jpeg" http://localhost:8080/cat_upload.html
-
-
-
-				**********TESTS**********
 
 Check if website works:
 curl localhost:8080
