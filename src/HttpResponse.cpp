@@ -112,11 +112,11 @@ void HttpResponse::buildResponse() {
 	for (const auto& header : _headers) {
 		headersStream << header.first << ": " << header.second << "\r\n";
 	}
+
 	headersStream << "\r\n";
-
 	_headersOnly = statusLine + headersStream.str();
-
 	_fullResponse = _headersOnly;
+
 	if (!_body.empty()) {
 		_fullResponse += _body;	
 	}
@@ -135,7 +135,7 @@ void HttpResponse::buildResponse() {
 void HttpResponse::redirect(const std::string& location, int status_code, const std::string& message) {
 	setStatus(status_code, message);
 	setHeader("Location", location);
-	setBody(""); // Redirections typically have no body
+	setBody("");
 }
 
 /**
@@ -162,6 +162,15 @@ std::string HttpResponse::getHeadersOnly() const {
     return _headersOnly;
 }
 
+/**
+ * @brief       Sets the full HTTP response as a string.
+ * 
+ * @param       response     The full HTTP response as a string.
+ * 
+ * @details     This method sets the full HTTP response, including the status line,
+ *              headers, and body. This should be used with caution, as it will
+ *              overwrite all previously set headers and body.
+ */
 void HttpResponse::setFullResponse(const std::string& response) {
 	_fullResponse = response;
 }

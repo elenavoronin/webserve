@@ -54,7 +54,6 @@ void	HttpRequest::setFullPath(std::string path) {
 	_fullPath = path;
 }
 
-
 /**
  * @brief       Sets the method field of the HttpRequest object.
  * 
@@ -77,14 +76,6 @@ void	HttpRequest::setMethod(std::string method) {
 void HttpRequest::setPathToCgi(std::string path) {
 	_pathToCgi = path;
 }
-
-/**
- * @brief       Sets the version field of the HttpRequest object.
- * 
- * @param       version  The value to assign to the version field.
- * 
- * @return      The assigned version value.
- */
 
 /**
  * @brief       Sets the version field of the HttpRequest object.
@@ -154,7 +145,6 @@ std::string	HttpRequest::getMethod() {
 std::string	HttpRequest::getVersion() {
 	return _version;
 }
-
 
 /**
  * @brief       Retrieves the body of the HTTP request.
@@ -291,6 +281,7 @@ bool HttpRequest::isHeaderReceived() const{
 bool HttpRequest::getBodyReceived(){
 	return _bodyReceived;
 }
+
 /**
  * @brief       Parses an HTTP request string and populates the HttpRequest fields.
  * 
@@ -361,9 +352,24 @@ int HttpRequest::findContentLength(std::string request){
 void HttpRequest::setStrReceived(std::string input) {
 	_strReceived = input;
 }
+
+/**
+ * @brief       Sets the raw HTTP request header string.
+ * 
+ * @param       input       The string to set as the HTTP request header.
+ * 
+ * @details     Replaces the current value of the internal _header with the provided input string.
+ */
+
 void HttpRequest::setHeader(std::string input) {
 	_header = input;
 }
+
+/**
+ * @brief       Retrieves the string representing the HTTP request header.
+ * 
+ * @return      The raw HTTP request header string.
+ */
 std::string HttpRequest::getRequestHeader() {
 	return _header;
 }
@@ -381,18 +387,17 @@ std::string HttpRequest::getRequestHeader() {
  * @throws      std::runtime_error if the request does not contain headers and body separator.
  */
 void HttpRequest::parseBody(const std::string& rawRequest) {
-    // Find the double CRLF that separates headers and body
     size_t headerEnd = rawRequest.find("\r\n\r\n");
     if (headerEnd == std::string::npos) {
         throw std::runtime_error("Invalid HTTP request: Missing headers and body separator");
     }
 
-    // Extract the body (if any)
-    size_t bodyStart = headerEnd + 4;  // Skip over "\r\n\r\n"
+    size_t bodyStart = headerEnd + 4;
     if (bodyStart < rawRequest.size()) {
         _body = rawRequest.substr(bodyStart);
-    } else {
-        _body.clear();  // No body
+    } 
+	else {
+        _body.clear();
     }
 	setBody(_body);
 }
@@ -409,7 +414,6 @@ void HttpRequest::parseBody(const std::string& rawRequest) {
  * 
  * @throws      std::runtime_error if the request does not contain headers.
  */
-
 void HttpRequest::parseHeaders(const std::string& rawRequest) {
     size_t headerEnd = rawRequest.find("\r\n\r\n");
     if (headerEnd == std::string::npos) {
@@ -429,4 +433,22 @@ void HttpRequest::parseHeaders(const std::string& rawRequest) {
         }
     }
 	setHeader(rawRequest.substr(0, headerEnd));
+}
+
+/**
+ * @brief Resets the HttpRequest object to its initial state.
+ * 
+ * @details Clears all received data, headers, and body, and resets flags to their initial state.
+ */
+void HttpRequest::reset() {
+    _strReceived.clear();
+    _body.clear();
+    _headers.clear();
+    _request.clear();
+    _headerReceived = false;
+    _bodyReceived = false;
+    _method.clear();
+    _path.clear();
+    _version.clear();
+    _pathToCgi.clear();
 }

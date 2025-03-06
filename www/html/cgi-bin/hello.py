@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 
 import cgi
-import time
-import sys
+# import time
+# import sys
 
 # Parse form data
 form = cgi.FieldStorage()
@@ -15,16 +15,16 @@ name = form.getvalue('name', 'Guest')
 body = f"""
 <html>
 <head>
-    <title>Login Successful</title>
+    <title>Greetings!</title>
     <style>
-        body {{ background-color: black; color: white; font-family: Arial, sans-serif; }}
+        body {{ background-color: grey; color: white; font-family: Arial, sans-serif; }}
         button {{ padding: 10px 20px; font-size: 16px; color: white; background-color: black; border: none; border-radius: 5px; cursor: pointer; }}
-        button:hover {{ background-color: gray; }}
+        button:hover {{ background-color: purple; }}
     </style>
 </head>
 <body>
     <h1>Welcome, {name}!</h1>
-    <p>You are now logged in.</p>
+    <p>Nice to meet you.</p>
     <p>
         <a href="/index.html" style="text-decoration: none;">
             <button>Return to Homepage</button>

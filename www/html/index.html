@@ -101,16 +101,36 @@
     </section>
 
     <section class="content-section">
-        <h3>Login</h3>
-        <form action="/cgi-bin/login.py">
-            <label for="name">Name:</label><br>
-            <input type="text" id="name" name="name" placeholder="Enter your name" required><br><br>
-            <button class="btn" type="submit">Login</button>
-        </form>
+      <h3>Say Hello!</h3>
+      <form action="/cgi-bin/hello.py" method="get">
+        <label for="name_hello">Name:</label><br>
+        <input type="text" id="name_hello" name="name" placeholder="Enter your name" required><br><br>
+        <button class="btn" type="submit">Send</button>
+      </form>
     </section>
 
     <section class="content-section">
         <button class="btn" onclick="window.location.href='cat_upload.html'">Upload Your Cat</button>
+    </section>
+
+    <section class="content-section">
+      <h3>View Reviews</h3>
+      <form action="/cgi-bin/get.py" method="get">
+        <button class="btn" type="submit">Go</button>
+      </form>
+    </section>
+
+    <section class="content-section">
+      <h3>Leave a Review</h3>
+      <form action="/cgi-bin/post.py" method="post">
+        <label for="name_post">Name:</label><br>
+        <input type="text" id="name_post" name="name" placeholder="Enter your name" required><br><br>
+        <label for="email_post">Email:</label><br>
+        <input type="email" id="email_post" name="email" placeholder="Enter your email" required><br><br>
+        <label for="message_post">Message:</label><br>
+        <textarea id="message_post" name="message" placeholder="Enter your message" required></textarea><br><br>
+        <button class="btn" type="submit">Send Review</button>
+      </form>
     </section>
 
     <footer class="footer">

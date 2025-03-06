@@ -1,16 +1,14 @@
 #include "../include/CGI.hpp"
 
-
 /**
  * @brief       Constructor for the CGI class.
  */
 CGI::CGI(HttpRequest *request) {
-    _cgiInput = request->getField("body");
+    _cgiInput = request->getBody();
     _inputIndex = 0;
     _cgiComplete = false;
     _headersSent = false;
     _cgiPath = request->getPathToCgi();
-
 
     if (!setupPipes()) 
         return;
@@ -59,6 +57,7 @@ std::string CGI::getPath() const {
 int CGI::getReadFd() const {
     return _fromCgiPipe[READ];
 }
+
 /**
  * @brief Gets the file descriptor for the write end of the pipe used for communication with the CGI process.
  * 
@@ -145,13 +144,11 @@ void CGI::initializeEnvVars(HttpRequest* request) {
         if (!contentLength.empty()) {
             _envVars.push_back("CONTENT_LENGTH=" + contentLength);
         }
-        std::string body = request->getField("body");
-        if (!body.empty()) {
-            _envVars.push_back("BODY=" + body);
+        if (!_cgiInput.empty()) {
+            _envVars.push_back("BODY=" + _cgiInput);
         }
     }
 
-    // Additional standard CGI variables
     _envVars.push_back("SCRIPT_NAME=" + request->getField("script_name"));
     _envVars.push_back("SERVER_PROTOCOL=HTTP/1.1");
     _envVars.push_back("GATEWAY_INTERFACE=CGI/1.1");
@@ -286,7 +283,7 @@ void CGI::parseHeaders(const std::string& headers) {
 void CGI::writeCgiInput() {
     
     if (_inputIndex >= _cgiInput.size()) {
-        close(_toCgiPipe[WRITE]); // Signal EOF to the CGI process
+        close(_toCgiPipe[WRITE]);
         return;
     }
 

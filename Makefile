@@ -68,6 +68,7 @@ clean:
 	@ rm -rf $(OBJDIR) $(OBJTESTDIR)
 	@ rm  -rf *.txt
 	@ rm  -rf ./www/html/upload/
+	@ rm -rf ./www/html/cgi-bin/data
 
 fclean: clean
 	@ rm -f $(NAME) $(TESTNAME)

@@ -68,4 +68,6 @@ class HttpRequest {
 		void												parseBody(const std::string& rawRequest);
 		std::string 										getServerName();
 		std::string											getPathToCgi();
+
+		void												reset(); //Djoyke added
 };
