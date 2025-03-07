@@ -247,6 +247,10 @@ int Client::writeToSocket() {
     }
     bytesWritten = write(_clientSocket, _HttpResponse->getFullResponse().data() + _responseIndex, bytesToWrite);
 
+    if (bytesWritten < 0) {
+        throw std::runtime_error("Error writing to socket");
+    }
+
     if (bytesWritten > 0) {
         _responseIndex += bytesWritten;
     }
