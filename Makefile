@@ -7,8 +7,7 @@ HEADERDIR	= ./include
 
 #compiler + flags
 CC			= c++
-CPPFLAGS	= -std=c++11 -Wall -Werror -Wextra -Wall -Wextra -Werror -g -fsanitize=address -I $(HEADERDIR)
-# CPPFLAGS	= -std=c++11 -Wall -Werror -Wextra -Wall -Wextra -Werror -g -I $(HEADERDIR)
+CPPFLAGS	= -std=c++11 -Wall -Werror -Wextra -g -fsanitize=address -I $(HEADERDIR)
 
 #sources
 SRC 		= 	./src/start.cpp				\
