@@ -86,6 +86,8 @@ bool Config::validateParsedData(Server &server) {
     if (!std::isdigit(c)) {
         return false;
     } }
+    if (server.getPortStr().size() < 4)
+        return false;
     if (server.getRoot().empty())
         return false;
     if (server.getIndex().empty())
