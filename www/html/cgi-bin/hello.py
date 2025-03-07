@@ -5,11 +5,14 @@ import cgi
 import os
 # import sys
 
-# Parse form data
+# check for opening file in correct dir
 # file = open("hi","x")
+
+# Parse form data
 form = cgi.FieldStorage()
 name = form.getvalue('name', 'Guest')
 
+# evoke timeout
 # while True:
 # 	time.sleep(3)  # Simulate a delay to evoke time-out
 
@@ -39,11 +42,11 @@ body = f"""
 # Calculate Content-Length
 content_length = len(body.encode('utf-8'))
 
-#Send HTTP headers
+# Send HTTP headers
 print("HTTP/1.1 200 OK\r")
 print("Content-Type: text/html\r")
 print(f"Content-Length: {content_length}\r")
 print("\r")  # Blank line to separate headers from body
 
-# # Send response body
+# Send response body
 print(body)
